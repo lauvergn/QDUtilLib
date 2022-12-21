@@ -1,0 +1,7 @@
+.DS_Store */.DS_Store */*/.DS_Store
+OBJ/*
+build
+Tests/*log
+Tests/res*
+*.x
+*.a *.log res
