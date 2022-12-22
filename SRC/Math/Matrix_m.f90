@@ -26,29 +26,28 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE QMLLib_Matrix_m
-!$ USE omp_lib
+MODULE QDUtil_Matrix_m
   IMPLICIT NONE
 
   PRIVATE
 
   PUBLIC inv_m1_TO_m2
   INTERFACE inv_m1_TO_m2
-     MODULE PROCEDURE QML_inv_m1_TO_m2
-     MODULE PROCEDURE QML_inv_m1_TO_m2_cplx
+     MODULE PROCEDURE QDUtil_inv_m1_TO_m2
+     MODULE PROCEDURE QDUtil_inv_m1_TO_m2_cplx
   END INTERFACE
 
   PUBLIC Linear_Sys
   INTERFACE Linear_Sys
-     MODULE PROCEDURE QML_Linear_Sys
+     MODULE PROCEDURE QDUtil_Linear_Sys
   END INTERFACE
 
   CONTAINS
 !================================================================
 !    inversion de la matrice m1 : m2=m1^-1
 !================================================================
-      SUBROUTINE QML_inv_m1_TO_m2(m1,m2,n,inv_type,epsi)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_inv_m1_TO_m2(m1,m2,n,inv_type,epsi)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer          :: n
@@ -68,44 +67,44 @@ MODULE QMLLib_Matrix_m
 
 
 
-       CALL QML_mat_id(m2,n)
+       CALL QDUtil_mat_id(m2,n)
        m1w = m1
 
        SELECT CASE (inv_type)
        CASE (0) ! ludcmp ...
-         CALL QML_ludcmp(m1w,n,trav,indx,d)
+         CALL QDUtil_ludcmp(m1w,n,trav,indx,d)
          DO j=1,n
-           CALL QML_lubksb(m1w,n,indx,m2(:,j))
+           CALL QDUtil_lubksb(m1w,n,indx,m2(:,j))
          END DO
        CASE (1) ! svd
-         CALL QML_SVDCMP(m1w,n,n,trav,vv,n)
+         CALL QDUtil_SVDCMP(m1w,n,n,trav,vv,n)
          ! Find maximum singular value
-         !write(out_unitp,*) 'SVD : epsi',epsi
-         !write(out_unitp,*) 'SVD : trav',trav
+         !write(out_unit,*) 'SVD : epsi',epsi
+         !write(out_unit,*) 'SVD : trav',trav
 
          wmax = maxval(trav(:))
          wmin = wmax * epsi
-         !write(out_unitp,*) 'SVD : count non zero',count(trav >= wmin)
+         !write(out_unit,*) 'SVD : count non zero',count(trav >= wmin)
          ! Zero the "small" singular values
          WHERE (trav < WMIN) trav = ZERO
 
          DO j=1,n
            b(:) = m2(:,j)
-           CALL QML_SVBKSB(m1w,trav,vv,n,n,b,m2(:,j),n)
+           CALL QDUtil_SVBKSB(m1w,trav,vv,n,n,b,m2(:,j),n)
          END DO
        CASE Default ! ludcmp ...
-          CALL QML_ludcmp(m1w,n,trav,indx,d)
+          CALL QDUtil_ludcmp(m1w,n,trav,indx,d)
           DO j=1,n
-            CALL QML_lubksb(m1w,n,indx,m2(:,j))
+            CALL QDUtil_lubksb(m1w,n,indx,m2(:,j))
           END DO
        END SELECT
 
-       END SUBROUTINE QML_inv_m1_TO_m2
+       END SUBROUTINE QDUtil_inv_m1_TO_m2
 !================================================================
 !    inversion de la matrice m1 : m2=m1^-1
 !================================================================
-      SUBROUTINE QML_inv_m1_TO_m2_cplx(m1,m2,n,inv_type,epsi)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_inv_m1_TO_m2_cplx(m1,m2,n,inv_type,epsi)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer          :: n
@@ -125,14 +124,14 @@ MODULE QMLLib_Matrix_m
 
 
 
-       CALL QML_Cplx_mat_id(m2,n)
+       CALL QDUtil_Cplx_mat_id(m2,n)
        m1w = m1
 
        SELECT CASE (inv_type)
        CASE (0) ! ludcmp ...
-         CALL QML_ludcmp_cplx(m1w,n,trav,indx,d)
+         CALL QDUtil_ludcmp_cplx(m1w,n,trav,indx,d)
          DO j=1,n
-           CALL QML_lubksb_cplx(m1w,n,indx,m2(:,j))
+           CALL QDUtil_lubksb_cplx(m1w,n,indx,m2(:,j))
          END DO
 
        CASE (1) ! svd
@@ -140,18 +139,18 @@ MODULE QMLLib_Matrix_m
           STOP 'SVD not yet in complex'
 
        CASE Default ! ludcmp ...
-         CALL QML_ludcmp_cplx(m1w,n,trav,indx,d)
+         CALL QDUtil_ludcmp_cplx(m1w,n,trav,indx,d)
          DO j=1,n
-           CALL QML_lubksb_cplx(m1w,n,indx,m2(:,j))
+           CALL QDUtil_lubksb_cplx(m1w,n,indx,m2(:,j))
          END DO
        END SELECT
 
-     END SUBROUTINE QML_inv_m1_TO_m2_cplx
+     END SUBROUTINE QDUtil_inv_m1_TO_m2_cplx
 !================================================================
 !    Dertermniant of m1
 !================================================================
-      SUBROUTINE QML_Det_OF_m1(m1,det,n)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_Det_OF_m1(m1,det,n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer          :: n
@@ -166,19 +165,19 @@ MODULE QMLLib_Matrix_m
 
        m1w = m1
 
-       CALL QML_ludcmp(m1w,n,trav,index,d)
+       CALL QDUtil_ludcmp(m1w,n,trav,index,d)
 
        det = d
        DO j=1,n
          det = det * m1w(j,j)
        END DO
 
-       END SUBROUTINE QML_Det_OF_m1
+       END SUBROUTINE QDUtil_Det_OF_m1
 !================================================================
 !    Solve,x: a.x=b
 !================================================================
-      SUBROUTINE QML_Linear_Sys(a,b,x,n)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_Linear_Sys(a,b,x,n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer          :: n
@@ -199,7 +198,7 @@ MODULE QMLLib_Matrix_m
 
        IF (svd) THEN
            ! une facon.... SVD
-           CALL QML_SVDCMP(aa,n,n,trav,vv,n)
+           CALL QDUtil_SVDCMP(aa,n,n,trav,vv,n)
            ! Find maximum singular value
            wmax = maxval(trav(:))
            wmin = wmax * epsi
@@ -208,26 +207,26 @@ MODULE QMLLib_Matrix_m
               IF (trav(k) < WMIN) trav(k) = ZERO
            END DO
 
-           CALL QML_SVBKSB(aa,trav,vv,n,n,b,x,n)
+           CALL QDUtil_SVBKSB(aa,trav,vv,n,n,b,x,n)
 
 
-           !write(out_unitp,*) 'solve?',sum(abs(matmul(a,x)-b))
+           !write(out_unit,*) 'solve?',sum(abs(matmul(a,x)-b))
            !STOP
         ELSE
           ! une autre ...
-          CALL QML_ludcmp(aa,n,trav,indx,d)
-          CALL QML_lubksb(aa,n,indx,x)
+          CALL QDUtil_ludcmp(aa,n,trav,indx,d)
+          CALL QDUtil_lubksb(aa,n,indx,x)
           !IF (mpro) CALL CALL mprove(a,aa,n,indx,b,x)
 
         END IF
 
-       END SUBROUTINE QML_Linear_Sys
+       END SUBROUTINE QDUtil_Linear_Sys
 !================================================================
 !    ameliore la solution d un systeme d equations
 !    par une iteration
 !================================================================
-      SUBROUTINE QML_mprove(A,ALUD,N,INDX,B,X)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_mprove(A,ALUD,N,INDX,B,X)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer          :: n
@@ -240,11 +239,11 @@ MODULE QMLLib_Matrix_m
       DO I=1,N
         R(I) = -B(I) + dot_product(A(I,:),X(:))
       END DO
-      CALL QML_LUBKSB(ALUD,N,INDX,R)
+      CALL QDUtil_LUBKSB(ALUD,N,INDX,R)
 
       X(:) = X(:) - R(:)
 
-      END SUBROUTINE QML_mprove
+      END SUBROUTINE QDUtil_mprove
 
 !
 !================================================================
@@ -252,8 +251,8 @@ MODULE QMLLib_Matrix_m
 !
 !================================================================
 
-      SUBROUTINE QML_lubksb(a,n,index,b)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_lubksb(a,n,index,b)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer n
@@ -286,7 +285,7 @@ MODULE QMLLib_Matrix_m
  14    CONTINUE
 
        RETURN
-       end subroutine QML_lubksb
+       end subroutine QDUtil_lubksb
 !================================================================
 !    decomposition de a=l*u (pour la resolution d un systeme d equations
 !     l matrice triangulaire inferieur
@@ -296,9 +295,8 @@ MODULE QMLLib_Matrix_m
 !
 !================================================================
 
-      SUBROUTINE QML_ludcmp(a,n,vv,index,d)
-      USE QMLLib_NumParameters_m
-      USE QMLLib_UtilLib_m
+      SUBROUTINE QDUtil_ludcmp(a,n,vv,index,d)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer n
@@ -346,10 +344,10 @@ MODULE QMLLib_Matrix_m
          ENDIF
  16     CONTINUE
         IF (imax ==0) THEN
-          write(out_unitp,*) ' ERROR in ludcmp'
-          write(out_unitp,*) ' imax = 0 !!!'
-          write(out_unitp,*) ' matrix a:'
-          CALL Write_RMat(a,out_unitp,4)
+          write(out_unit,*) ' ERROR in ludcmp'
+          write(out_unit,*) ' imax = 0 !!!'
+          write(out_unit,*) ' matrix a:'
+          CALL Write_RMat(a,out_unit,4)
           STOP
         END IF
 
@@ -376,10 +374,10 @@ MODULE QMLLib_Matrix_m
 
 
        RETURN
-     END SUBROUTINE QML_ludcmp
+     END SUBROUTINE QDUtil_ludcmp
 
-      SUBROUTINE QML_SVDCMP(A,M,N,W,V,max_n)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_SVDCMP(A,M,N,W,V,max_n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer max_n,N,M
@@ -614,11 +612,11 @@ MODULE QMLLib_Matrix_m
 3       CONTINUE
 49    CONTINUE
       RETURN
-    END SUBROUTINE QML_SVDCMP
+    END SUBROUTINE QDUtil_SVDCMP
 
 
-      SUBROUTINE QML_SVBKSB(U,W,V,M,N,B,X,max_n)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_SVBKSB(U,W,V,M,N,B,X,max_n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer max_n,M,N
@@ -646,15 +644,14 @@ MODULE QMLLib_Matrix_m
 14    CONTINUE
       RETURN
 
-    END SUBROUTINE QML_SVBKSB
+    END SUBROUTINE QDUtil_SVBKSB
 
 
 !================================================================
 !    inversion de la matrice a : c=1/a
 !================================================================
-
-      SUBROUTINE QML_inversion_cplx(c,a,trav,index,n)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_inversion_cplx(c,a,trav,index,n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer n
@@ -672,20 +669,20 @@ MODULE QMLLib_Matrix_m
          END DO
          c(i,i)=CONE
        END DO
-       CALL QML_ludcmp_cplx(a,n,trav,index,d)
+       CALL QDUtil_ludcmp_cplx(a,n,trav,index,d)
 
        DO j=1,n
-         CALL QML_lubksb_cplx(a,n,index,c(1,j))
+         CALL QDUtil_lubksb_cplx(a,n,index,c(1,j))
        END DO
 
        RETURN
-       end subroutine QML_inversion_cplx
+       end subroutine QDUtil_inversion_cplx
 !================================================================
 !    resolution de a*x=b apres la procedure ludcmp
 !================================================================
-  SUBROUTINE QML_Driver_LU_solve_cplx(a,n,LU_index,b,type_lu)
+  SUBROUTINE QDUtil_Driver_LU_solve_cplx(a,n,LU_index,b,type_lu)
   USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
-  USE QMLLib_NumParameters_m
+  USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
   integer,             intent(in)    :: n,type_lu
@@ -709,7 +706,7 @@ MODULE QMLLib_Matrix_m
 
     SELECT CASE (type_lu)
     CASE(1) ! ori
-      CALL QML_lubksb_cplx(a,n,LU_index,b)
+      CALL QDUtil_lubksb_cplx(a,n,LU_index,b)
     CASE(3) ! lapack
 #if __LAPACK == 1
       n4     = int(n,kind=int32)
@@ -717,21 +714,21 @@ MODULE QMLLib_Matrix_m
       err = int(ierr4)
       IF (err /= 0) STOP 'LU Driver_LU_solve_cplx'
 #else
-      write(out_unitp,*) ' ERROR in Driver_LU_solve_cplx'
-      write(out_unitp,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
-      write(out_unitp,*) '  The program should not reach the LAPACK case.'
-      write(out_unitp,*) '  => Probabely, wrong type_diag_default.'
-      write(out_unitp,*) '  => CHECK the fortran!!'
+      write(out_unit,*) ' ERROR in Driver_LU_solve_cplx'
+      write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
+      write(out_unit,*) '  The program should not reach the LAPACK case.'
+      write(out_unit,*) '  => Probabely, wrong type_diag_default.'
+      write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in Driver_LU_solve_cplx: LAPACK case impossible'
 #endif
     CASE Default
-      CALL QML_lubksb_cplx(a,n,LU_index,b)
+      CALL QDUtil_lubksb_cplx(a,n,LU_index,b)
     END SELECT
 
-  END SUBROUTINE QML_Driver_LU_solve_cplx
-  SUBROUTINE QML_Driver_LU_decomp_cplx(a,n,LU_index,d,type_lu)
+  END SUBROUTINE QDUtil_Driver_LU_solve_cplx
+  SUBROUTINE QDUtil_Driver_LU_decomp_cplx(a,n,LU_index,d,type_lu)
   USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
-  USE QMLLib_NumParameters_m
+  USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
   integer,             intent(in)    :: n,type_lu
@@ -757,7 +754,7 @@ MODULE QMLLib_Matrix_m
     SELECT CASE (type_lu)
     CASE(1) ! ori
       allocate(work(n))
-      CALL QML_ludcmp_cplx(a,n,work,LU_index,d)
+      CALL QDUtil_ludcmp_cplx(a,n,work,LU_index,d)
       deallocate(work)
     CASE(3) ! lapack
 #if __LAPACK == 1
@@ -766,22 +763,22 @@ MODULE QMLLib_Matrix_m
       err = int(ierr4)
       IF (err /= 0) STOP 'Driver_LU_decomp_cplx'
 #else
-      write(out_unitp,*) ' ERROR in Driver_LU_decomp_cplx'
-      write(out_unitp,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
-      write(out_unitp,*) '  The program should not reach the LAPACK case.'
-      write(out_unitp,*) '  => Probabely, wrong type_diag_default.'
-      write(out_unitp,*) '  => CHECK the fortran!!'
+      write(out_unit,*) ' ERROR in Driver_LU_decomp_cplx'
+      write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
+      write(out_unit,*) '  The program should not reach the LAPACK case.'
+      write(out_unit,*) '  => Probabely, wrong type_diag_default.'
+      write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in Driver_LU_decomp_cplx: LAPACK case impossible'
 #endif
     CASE Default
       allocate(work(n))
-      CALL QML_ludcmp_cplx(a,n,work,LU_index,d)
+      CALL QDUtil_ludcmp_cplx(a,n,work,LU_index,d)
       deallocate(work)
     END SELECT
 
-  END SUBROUTINE QML_Driver_LU_decomp_cplx
-  SUBROUTINE QML_lubksb_cplx(a,n,index,b)
-      USE QMLLib_NumParameters_m
+  END SUBROUTINE QDUtil_Driver_LU_decomp_cplx
+  SUBROUTINE QDUtil_lubksb_cplx(a,n,index,b)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer n
@@ -814,7 +811,7 @@ MODULE QMLLib_Matrix_m
  14    CONTINUE
 
        RETURN
-     end subroutine QML_lubksb_cplx
+     end subroutine QDUtil_lubksb_cplx
 !================================================================
 !    decomposition de a=l*u (pour la resolution d un systeme d equations
 !     l matrice triangulaire inferieur
@@ -824,8 +821,8 @@ MODULE QMLLib_Matrix_m
 !
 !================================================================
 
-      SUBROUTINE QML_ludcmp_cplx(a,n,vv,index,d)
-      USE QMLLib_NumParameters_m
+      SUBROUTINE QDUtil_ludcmp_cplx(a,n,vv,index,d)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer n
@@ -896,7 +893,7 @@ MODULE QMLLib_Matrix_m
 
 
        RETURN
-       end subroutine QML_ludcmp_cplx
+       end subroutine QDUtil_ludcmp_cplx
 
 
 !=====================================================================
@@ -906,8 +903,8 @@ MODULE QMLLib_Matrix_m
 !
 !=====================================================================
 !
-  SUBROUTINE QML_mat_id(a,n)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_mat_id(a,n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer          :: i,n
@@ -919,9 +916,9 @@ MODULE QMLLib_Matrix_m
          a(i,i) = ONE
        END DO
 
-  END SUBROUTINE QML_mat_id
-  SUBROUTINE QML_Cplx_mat_id(a,n)
-      USE QMLLib_NumParameters_m
+  END SUBROUTINE QDUtil_mat_id
+  SUBROUTINE QDUtil_Cplx_mat_id(a,n)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
        integer          :: i,n
@@ -933,6 +930,6 @@ MODULE QMLLib_Matrix_m
          a(i,i) = CONE
        END DO
 
-  END SUBROUTINE QML_Cplx_mat_id
+  END SUBROUTINE QDUtil_Cplx_mat_id
 
-END MODULE QMLLib_Matrix_m
+END MODULE QDUtil_Matrix_m

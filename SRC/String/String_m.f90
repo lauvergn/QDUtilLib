@@ -26,7 +26,7 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE QDString_m
+MODULE QDUtil_String_m
 IMPLICIT NONE
 
   PRIVATE
@@ -40,56 +40,52 @@ IMPLICIT NONE
   PUBLIC :: int_TO_char,logical_TO_char,real_TO_char
   PUBLIC :: TO_string
 
+  PUBLIC :: Test_QDUtil_String
+
   INTERFACE string_uppercase_TO_lowercase
-    MODULE PROCEDURE QD_string_uppercase_TO_lowercase
+    MODULE PROCEDURE QDUtil_string_uppercase_TO_lowercase
   END INTERFACE
   INTERFACE string_lowercase_TO_uppercase
-    MODULE PROCEDURE QD_string_lowercase_TO_uppercase
+    MODULE PROCEDURE QDUtil_string_lowercase_TO_uppercase
   END INTERFACE
   INTERFACE TO_lowercase
-    MODULE PROCEDURE QD_string_TO_lowercase
+    MODULE PROCEDURE QDUtil_string_TO_lowercase
   END INTERFACE
   INTERFACE TO_uppercase
-    MODULE PROCEDURE QD_string_TO_uppercase
+    MODULE PROCEDURE QDUtil_string_TO_uppercase
   END INTERFACE
 
   INTERFACE strdup
-    MODULE PROCEDURE QD_strdup
-  END INTERFACE
-  INTERFACE LEQ
-    MODULE PROCEDURE QD_string_LEQ
+    MODULE PROCEDURE QDUtil_strdup
   END INTERFACE
   INTERFACE string_IS_empty
-    MODULE PROCEDURE QD_string_IS_empty
-  END INTERFACE
-  INTERFACE LNE
-    MODULE PROCEDURE QD_string_LNE
+    MODULE PROCEDURE QDUtil_string_IS_empty
   END INTERFACE
 
   INTERFACE TO_string
-    MODULE PROCEDURE QD_int32_TO_string,QD_int64_TO_string
-    MODULE PROCEDURE QD_logical_TO_string
-    MODULE PROCEDURE QD_real32_TO_string,QD_real64_TO_string,QD_real128_TO_string
+    MODULE PROCEDURE QDUtil_int32_TO_string,QDUtil_int64_TO_string
+    MODULE PROCEDURE QDUtil_logical_TO_string
+    MODULE PROCEDURE QDUtil_real32_TO_string,QDUtil_real64_TO_string,QDUtil_real128_TO_string
   END INTERFACE
 
   INTERFACE int_TO_char
-    MODULE PROCEDURE QD_int32_TO_string,QD_int64_TO_string
+    MODULE PROCEDURE QDUtil_int32_TO_string,QDUtil_int64_TO_string
   END INTERFACE
   INTERFACE logical_TO_char
-    MODULE PROCEDURE QD_logical_TO_string
+    MODULE PROCEDURE QDUtil_logical_TO_string
   END INTERFACE
   INTERFACE real_TO_char
-    MODULE PROCEDURE QD_real32_TO_string,QD_real64_TO_string,QD_real128_TO_string
+    MODULE PROCEDURE QDUtil_real32_TO_string,QDUtil_real64_TO_string,QDUtil_real128_TO_string
   END INTERFACE
 
   INTERFACE Read_line
-    MODULE PROCEDURE QD_Read_line
+    MODULE PROCEDURE QDUtil_Read_line
   END INTERFACE
   
 
 
 CONTAINS
-  PURE FUNCTION QD_string_TO_lowercase(string) RESULT (lstring)
+  PURE FUNCTION QDUtil_string_TO_lowercase(string) RESULT (lstring)
     IMPLICIT NONE
 
     character (len=*),         intent(in)  :: string
@@ -104,8 +100,8 @@ CONTAINS
       IF (ascii_char >= 65 .AND. ascii_char <= 90) lstring(i:i) = achar(ascii_char+32)
     END DO
 
-  END FUNCTION QD_string_TO_lowercase
-  PURE FUNCTION QD_string_TO_uppercase(string) RESULT (ustring)
+  END FUNCTION QDUtil_string_TO_lowercase
+  PURE FUNCTION QDUtil_string_TO_uppercase(string) RESULT (ustring)
     IMPLICIT NONE
   
     character (len=*),         intent(in)  :: string
@@ -120,13 +116,13 @@ CONTAINS
       IF (ascii_char >= 97 .AND. ascii_char <= 122) ustring(i:i) = achar(ascii_char-32)
     END DO
 
-  END FUNCTION QD_string_TO_uppercase
+  END FUNCTION QDUtil_string_TO_uppercase
   !!@description: Change the case of a string (default lowercase)
   !!@param: string: character (len=*)
   !!@param: lower If the variable is present and its value is F,
   !!              the string will be converted into a uppercase string, otherwise,
   !!              it will be convert into a lowercase string.
-  SUBROUTINE QD_string_uppercase_TO_lowercase(string,lower)
+  SUBROUTINE QDUtil_string_uppercase_TO_lowercase(string,lower)
   IMPLICIT NONE
 
     character (len=*), intent(inout)  :: string
@@ -134,35 +130,35 @@ CONTAINS
 
     IF (present(lower)) THEN
       IF (lower) THEN
-        string = QD_string_TO_lowercase(string)
+        string = QDUtil_string_TO_lowercase(string)
       ELSE
-        string = QD_string_TO_uppercase(string)
+        string = QDUtil_string_TO_uppercase(string)
       END IF
     ELSE
-      string = QD_string_TO_lowercase(string)
+      string = QDUtil_string_TO_lowercase(string)
     END IF
 
-  END SUBROUTINE QD_string_uppercase_TO_lowercase
+  END SUBROUTINE QDUtil_string_uppercase_TO_lowercase
   !!@description: Change the case of a string to upercase
   !!@param: string: character (len=*)
-  SUBROUTINE QD_string_lowercase_TO_uppercase(string)
+  SUBROUTINE QDUtil_string_lowercase_TO_uppercase(string)
 
     character (len=*), intent(inout)  :: string
   
-    string = QD_string_TO_uppercase(string)
+    string = QDUtil_string_TO_uppercase(string)
  
-  END SUBROUTINE QD_string_lowercase_TO_uppercase
-  PURE FUNCTION QD_strdup(string)
+  END SUBROUTINE QDUtil_string_lowercase_TO_uppercase
+  PURE FUNCTION QDUtil_strdup(string)
   IMPLICIT NONE
 
    character (len=*), intent(in)   :: string
-   character (len=:), allocatable  :: QD_strdup
+   character (len=:), allocatable  :: QDUtil_strdup
 
-   allocate(character(len=len_trim(string)) :: QD_strdup)
-   QD_strdup = trim(string)
+   allocate(character(len=len_trim(string)) :: QDUtil_strdup)
+   QDUtil_strdup = trim(string)
 
-  END FUNCTION QD_strdup
-  PURE FUNCTION QD_logical_TO_string(l)  RESULT(string)
+  END FUNCTION QDUtil_strdup
+  PURE FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
 
     character (len=:), allocatable  :: string
     logical, intent(in)             :: l
@@ -173,10 +169,9 @@ CONTAINS
       string = 'F'
     END IF
 
-  END FUNCTION QD_logical_TO_string
-  PURE FUNCTION QD_int32_TO_string(i) RESULT(string)
+  END FUNCTION QDUtil_logical_TO_string
+  PURE FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : IkS,RkD
-    !$ USE omp_lib
     IMPLICIT NONE
 
     character (len=:),  allocatable             :: string
@@ -201,16 +196,15 @@ CONTAINS
     ! write i in name_int
     write(name_int,'(i0)') i
 
-    ! transfert name_int in QD_int_TO_char
+    ! transfert name_int in QDUtil_int_TO_char
     string = trim(adjustl(name_int))
 
     ! deallocate name_int
     deallocate(name_int)
 
-  END FUNCTION QD_int32_TO_string
-  PURE FUNCTION QD_int64_TO_string(i) RESULT(string)
+  END FUNCTION QDUtil_int32_TO_string
+  PURE FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : IkD,RkD
-    !$ USE omp_lib
     IMPLICIT NONE
 
     character (len=:),  allocatable             :: string
@@ -235,14 +229,14 @@ CONTAINS
     ! write i in name_int
     write(name_int,'(i0)') i
 
-    ! transfert name_int in QD_int_TO_char
+    ! transfert name_int in QDUtil_int_TO_char
     string = trim(adjustl(name_int))
 
     ! deallocate name_int
     deallocate(name_int)
 
-  END FUNCTION QD_int64_TO_string
-  FUNCTION QD_real128_TO_string(r,Rformat) RESULT(string)
+  END FUNCTION QDUtil_int64_TO_string
+  FUNCTION QDUtil_real128_TO_string(r,Rformat) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : RkQ
     IMPLICIT NONE
 
@@ -256,7 +250,7 @@ CONTAINS
     character(len=Line_len)           :: name_real
     integer :: clen,i
 
-    !$OMP  CRITICAL (QD_real128_TO_string_CRIT)
+    !$OMP  CRITICAL (QDUtil_real128_TO_string_CRIT)
 
     IF (allocated(string)) deallocate(string)
 
@@ -287,10 +281,10 @@ CONTAINS
       string = trim(adjustl(string))
     END IF
 
-    !$OMP  END CRITICAL (QD_real128_TO_string_CRIT)
+    !$OMP  END CRITICAL (QDUtil_real128_TO_string_CRIT)
 
-  END FUNCTION QD_real128_TO_string
-  FUNCTION QD_real64_TO_string(r,Rformat) RESULT(string)
+  END FUNCTION QDUtil_real128_TO_string
+  FUNCTION QDUtil_real64_TO_string(r,Rformat) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : RkD
     IMPLICIT NONE
 
@@ -304,7 +298,7 @@ CONTAINS
     character(len=Line_len)           :: name_real
     integer :: clen,i
 
-    !$OMP  CRITICAL (QD_real64_TO_string_CRIT)
+    !$OMP  CRITICAL (QDUtil_real64_TO_string_CRIT)
 
     IF (allocated(string)) deallocate(string)
 
@@ -335,10 +329,10 @@ CONTAINS
       string = trim(adjustl(string))
     END IF
 
-    !$OMP  END CRITICAL (QD_real64_TO_string_CRIT)
+    !$OMP  END CRITICAL (QDUtil_real64_TO_string_CRIT)
 
-  END FUNCTION QD_real64_TO_string
-  FUNCTION QD_real32_TO_string(r,Rformat) RESULT(string)
+  END FUNCTION QDUtil_real64_TO_string
+  FUNCTION QDUtil_real32_TO_string(r,Rformat) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : RkS
     IMPLICIT NONE
 
@@ -352,7 +346,7 @@ CONTAINS
     character(len=Line_len)           :: name_real
     integer :: clen,i
 
-    !$OMP  CRITICAL (QD_real32_TO_string_CRIT)
+    !$OMP  CRITICAL (QDUtil_real32_TO_string_CRIT)
 
     IF (allocated(string)) deallocate(string)
 
@@ -383,21 +377,21 @@ CONTAINS
       string = trim(adjustl(string))
     END IF
 
-    !$OMP  END CRITICAL (QD_real32_TO_string_CRIT)
+    !$OMP  END CRITICAL (QDUtil_real32_TO_string_CRIT)
 
-  END FUNCTION QD_real32_TO_string
+  END FUNCTION QDUtil_real32_TO_string
 
-  FUNCTION QD_string_IS_empty(String)
+  FUNCTION QDUtil_string_IS_empty(String)
     IMPLICIT NONE
 
-    logical                          :: QD_string_IS_empty
+    logical                          :: QDUtil_string_IS_empty
     character(len=*), intent(in)     :: String
 
-    QD_string_IS_empty = (len_trim(String) == 0)
+    QDUtil_string_IS_empty = (len_trim(String) == 0)
 
-  END FUNCTION QD_string_IS_empty
+  END FUNCTION QDUtil_string_IS_empty
 
-  FUNCTION QD_Read_line(nio,ioerr)  RESULT(string)
+  FUNCTION QDUtil_Read_line(nio,ioerr)  RESULT(string)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : IOSTAT_END,IOSTAT_EOR
     IMPLICIT NONE
     
@@ -423,9 +417,9 @@ CONTAINS
   
     deallocate(line)
   
-  END FUNCTION QD_Read_line
+  END FUNCTION QDUtil_Read_line
 
-  SUBROUTINE Test_String()
+  SUBROUTINE Test_QDUtil_String()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
@@ -437,7 +431,7 @@ CONTAINS
 
 
     !----- for debuging --------------------------------------------------
-    character (len=*), parameter :: name_sub='Test_String'
+    character (len=*), parameter :: name_sub='Test_QDUtil_String'
     !logical, parameter :: debug = .FALSE.
     logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------
@@ -520,5 +514,5 @@ CONTAINS
     ! finalize the tests
     CALL Finalize_Test(test_var)
 
-  END SUBROUTINE Test_String
-END MODULE QDString_m
+  END SUBROUTINE Test_QDUtil_String
+END MODULE QDUtil_String_m

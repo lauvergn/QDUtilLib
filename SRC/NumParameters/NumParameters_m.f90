@@ -80,8 +80,14 @@
       integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
       integer :: out_unit  = OUTPUT_UNIT ! Unit for the input   files, with the ISO_FORTRAN_ENV
 
-  CONTAINS
-  SUBROUTINE Test_NumParameters()
+
+      integer, parameter :: Name_len     = 20
+      integer, parameter :: Name_longlen = 50
+      integer, parameter :: Line_len     = 255
+      integer, parameter :: error_l      = 80
+
+      CONTAINS
+  SUBROUTINE Test_QDUtil_NumParameters()
     USE QDUtil_Test_m
     IMPLICIT NONE
 
@@ -140,5 +146,5 @@
     ! finalize the tests
     CALL Finalize_Test(test_var)
 
-  END SUBROUTINE Test_NumParameters
+  END SUBROUTINE Test_QDUtil_NumParameters
 END MODULE QDUtil_NumParameters_m
