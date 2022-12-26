@@ -36,7 +36,7 @@ QDLIB=QD
 
 MAIN=Test_QDLib
 
-SRCFILES=Test_m.f90 NumParameters_m.f90 String_m.f90 RW_MatVec_m.f90 Matrix_m.f90
+SRCFILES=Test_m.f90 NumParameters_m.f90 String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Diago_m.f90
 OBJ0=${SRCFILES:.f90=.o}
 
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))

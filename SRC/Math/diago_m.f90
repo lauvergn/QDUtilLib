@@ -26,23 +26,24 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE QMLLib_diago_m
-!$ USE omp_lib
+MODULE QDUtil_diago_m
   IMPLICIT NONE
 
-   PRIVATE
-   PUBLIC diagonalization
+  PRIVATE
 
+  PUBLIC diagonalization
   INTERFACE diagonalization
-     MODULE PROCEDURE QML_diagonalization
+    MODULE PROCEDURE QDUtil_diagonalization
   END INTERFACE
 
-   CONTAINS
+  PUBLIC :: Test_QDUtil_Diago
+
+  CONTAINS
 !============================================================
 !
 !   Driver for the diagonalization
-!      Default: tred2+tql2 (type_diag=2)
-!            Other possibilities: Jacobi (type_diag=1) or Lapack (type_diag=3)
+!      Default: tred2+tql2 (diago_type=2)
+!            Other possibilities: Jacobi (diago_type=1) or Lapack (diago_type=3)
 !            Rk: Lapack diago is not possible
 !      Sort: the eigenvalues/eigenvectors:
 !            sort=1:  ascending (default)
@@ -51,9 +52,9 @@ MODULE QMLLib_diago_m
 !     phase:
 !============================================================
 !
-  RECURSIVE SUBROUTINE QML_diagonalization(Mat,REig,Vec,n,type_diag,sort,phase,IEig)
+  RECURSIVE SUBROUTINE QDUtil_diagonalization(Mat,REig,Vec,n,diago_type,sort,phase,IEig)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
-    USE QMLLib_NumParameters_m
+    USE QDUtil_NumParameters_m
     IMPLICIT NONE
 
     integer,          intent(in)              :: n ! when n < size(REig), only n eigenvectors and  eigenvectors are calculated
@@ -61,13 +62,13 @@ MODULE QMLLib_diago_m
     real(kind=Rkind), intent(inout)           :: REig(:),Vec(:,:)
     real(kind=Rkind), intent(inout), optional :: IEig(:)
 
-    integer,          intent(in),    optional :: type_diag,sort
+    integer,          intent(in),    optional :: diago_type,sort
     logical,          intent(in),    optional :: phase
 
 
     !local variables
-    integer            :: type_diag_loc
-    integer            :: type_diag_default = 2 ! tred+tql
+    integer            :: diago_type_loc
+    integer            :: diago_type_default = 2 ! tred+tql
     !                                    Jacobi tred+tql DSYEV  DGEEV Lanczos
     integer, parameter :: list_type(7) = [1,    2,       3,377, 4,477,   5]
 
@@ -83,88 +84,84 @@ MODULE QMLLib_diago_m
 
     real(kind=Rkind) :: dummy(1,1)
 
-
-
-
-
     !----- for debuging --------------------------------------------------
-    character (len=*), parameter :: name_sub='QML_diagonalization'
+    character (len=*), parameter :: name_sub='QDUtil_diagonalization'
     logical, parameter :: debug = .FALSE.
     !logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------
 
     n_size = size(REig)
     IF (n_size /= size(Mat,dim=1) .OR. n_size /= size(Vec,dim=1)) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' The matrix or vector sizes are not consistant'
-      write(out_unitp,*) '   size(REig):     ',size(REig)
-      write(out_unitp,*) '   size(Mat):      ',size(Mat,dim=1)
-      write(out_unitp,*) '   size(Vec):      ',size(Vec,dim=1)
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: The matrix or vector sizes are not consistant.'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The matrix or vector sizes are not consistant'
+      write(out_unit,*) '   size(REig):     ',size(REig)
+      write(out_unit,*) '   size(Mat):      ',size(Mat,dim=1)
+      write(out_unit,*) '   size(Vec):      ',size(Vec,dim=1)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: The matrix or vector sizes are not consistant.'
     END IF
     IF (n < 1) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,"(a,i0,a)") ' n < 1. It MUST be in the range [1,',n_size,']'
-      write(out_unitp,*) '   n:              ',n
-      write(out_unitp,*) '   size(REig):     ',size(REig)
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: The matrix or vector sizes are not consistant.'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,"(a,i0,a)") ' n < 1. It MUST be in the range [1,',n_size,']'
+      write(out_unit,*) '   n:              ',n
+      write(out_unit,*) '   size(REig):     ',size(REig)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: The matrix or vector sizes are not consistant.'
     END IF
     n_vect = min(n,n_size)
 
-    IF (present(type_diag)) THEN
-      type_diag_loc = type_diag
+    IF (present(diago_type)) THEN
+      diago_type_loc = diago_type
     ELSE
-      type_diag_loc = type_diag_default
+      diago_type_loc = diago_type_default
     END IF
 
     !when lapack is used and Rkind /= real64 (not a double)
-    IF (Rkind /= real64 .AND. type_diag_loc == 3) type_diag_loc = type_diag_default
+    IF (Rkind /= real64 .AND. diago_type_loc == 3) diago_type_loc = diago_type_default
 
 #if __LAPACK != 1
-    IF (count([3,377,395] == type_diag_loc) == 1) type_diag_loc = type_diag_default
-    IF (count([4,477] == type_diag_loc) == 1) THEN
-      !type_diag_loc = 0
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' The diagonalization of non-symmetric needs LAPACK.'
-      write(out_unitp,*) '  Try to link LAPACK with the code (use LAPACK=1 in the makfile).'
-      write(out_unitp,*) '   type_diag:      ',type_diag_loc
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: Problem with non-symmetric matrix.'
+    IF (count([3,377,395] == diago_type_loc) == 1) diago_type_loc = diago_type_default
+    IF (count([4,477] == diago_type_loc) == 1) THEN
+      !diago_type_loc = 0
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The diagonalization of non-symmetric needs LAPACK.'
+      write(out_unit,*) '  Try to link LAPACK with the code (use LAPACK=1 in the makfile).'
+      write(out_unit,*) '   diago_type:      ',diago_type_loc
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: Problem with non-symmetric matrix.'
     END IF
 #endif
 
-    IF (count(list_type == type_diag_loc) == 0) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' type_diag is out-of-range.'
-      write(out_unitp,*) '   type_diag:      ',type_diag_loc
-      write(out_unitp,*) '   Possible values:',list_type(:)
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: type_diag is out-of-range.'
+    IF (count(list_type == diago_type_loc) == 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' diago_type is out-of-range.'
+      write(out_unit,*) '   diago_type:      ',diago_type_loc
+      write(out_unit,*) '   Possible values:',list_type(:)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: diago_type is out-of-range.'
     END IF
 
 
-    SELECT CASE (type_diag_loc)
+    SELECT CASE (diago_type_loc)
     CASE(1) ! jacobi
-      IF (debug) write(out_unitp,*) 'Jacobi (symmetric)'
+      IF (debug) write(out_unit,*) 'Jacobi (symmetric)'
       allocate(Mat_save(n,n))
       Mat_save = Mat ! save mat
 
-      CALL QML_JACOBI2(Mat_save,n,REig,Vec)
+      CALL QDUtil_JACOBI2(Mat_save,n,REig,Vec)
 
       deallocate(Mat_save)
     CASE (2) ! tred+tql
-      IF (debug) write(out_unitp,*) 'tred+tql, new version (symmetric)'
+      IF (debug) write(out_unit,*) 'tred+tql, new version (symmetric)'
       allocate(trav(n))
 
       Vec = Mat
-      CALL QML_TRED2_EISPACK(Vec,n,n,REig,trav)
-      CALL QML_TQLI_EISPACK(REig,trav,n,n,Vec)
+      CALL QDUtil_TRED2_EISPACK(Vec,n,n,REig,trav)
+      CALL QDUtil_TQLI_EISPACK(REig,trav,n,n,Vec)
 
       deallocate(trav)
     CASE(3,377) ! lapack77
-      IF (debug) write(out_unitp,*) 'lapack77: DSYEV (symmetric)'
+      IF (debug) write(out_unit,*) 'lapack77: DSYEV (symmetric)'
 
 #if __LAPACK == 1
       lwork = 3*n-1
@@ -177,35 +174,35 @@ MODULE QMLLib_diago_m
       lwork4 = int(lwork,kind=int32)
       CALL DSYEV('V','U',n4,Vec,n4,REig,work,lwork4,ierr4)
 
-      IF (debug) write(out_unitp,*) 'ierr=',ierr4
-      flush(out_unitp)
+      IF (debug) write(out_unit,*) 'ierr=',ierr4
+      flush(out_unit)
 
       IF (ierr4 /= 0_int32) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) ' DSYEV lapack subroutine has FAILED!'
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) ' DSYEV lapack subroutine has FAILED!'
          STOP
       END IF
 
 
       deallocate(work)
 #else
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
-      write(out_unitp,*) '  The program should not reach the LAPACK case.'
-      write(out_unitp,*) '  => Probabely, wrong type_diag_default.'
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: LAPACK case impossible'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
+      write(out_unit,*) '  The program should not reach the LAPACK case.'
+      write(out_unit,*) '  => Probabely, wrong diago_type_default.'
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: LAPACK case impossible'
 #endif
 !      CASE(395) ! lapack95
-!        IF (debug) write(out_unitp,*) 'lapack95: LA_SYEVD'
-!        flush(out_unitp)
+!        IF (debug) write(out_unit,*) 'lapack95: LA_SYEVD'
+!        flush(out_unit)
 !        Vec(:,:) = Mat
 !        CALL LA_SYEVD(Vec,Eig)
 
     CASE(4,477) ! lapack77 (non-symmetric)
 #if __LAPACK == 1
-      IF (debug) write(out_unitp,*) 'lapack77: DGEEV (non-symmetric)'
-      flush(out_unitp)
+      IF (debug) write(out_unit,*) 'lapack77: DGEEV (non-symmetric)'
+      flush(out_unit)
 
       allocate(Mat_save(n,n))
       Mat_save = Mat ! save mat
@@ -225,16 +222,16 @@ MODULE QMLLib_diago_m
       IF (present(IEig)) THEN
         CALL DGEEV('N','V',n4,Mat_save,lda4,REig,IEig,dummy,              &
                    int(1,kind=int32),Vec,ldvr4,work,lwork4,ierr4)
-        IF (debug) write(out_unitp,*)'ierr=',ierr4
+        IF (debug) write(out_unit,*)'ierr=',ierr4
         IF (ierr4 /= 0_int32) THEN
-           write(out_unitp,*) ' ERROR in ',name_sub
-           write(out_unitp,*) ' DGEEV lapack subroutine has FAILED!'
+           write(out_unit,*) ' ERROR in ',name_sub
+           write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
            STOP
         END IF
 
         IF (debug) THEN
           DO i=1,n
-            write(out_unitp,*) 'Eigenvalue(', i, ') = ', REig(i),'+I ',IEig(i)
+            write(out_unit,*) 'Eigenvalue(', i, ') = ', REig(i),'+I ',IEig(i)
           END DO
         END IF
       ELSE
@@ -242,15 +239,15 @@ MODULE QMLLib_diago_m
 
         CALL DGEEV('N','V',n4,Mat_save,lda4,REig,IEig_loc,dummy,        &
                    int(1,kind=int32),Vec,ldvr4,work,lwork4,ierr4)
-        IF (debug) write(out_unitp,*)'ierr=',ierr4
+        IF (debug) write(out_unit,*)'ierr=',ierr4
         IF (ierr4 /= 0_int32) THEN
-           write(out_unitp,*) ' ERROR in ',name_sub
-           write(out_unitp,*) ' DGEEV lapack subroutine has FAILED!'
+           write(out_unit,*) ' ERROR in ',name_sub
+           write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
            STOP
         END IF
 
         DO i=1,n
-          write(out_unitp,*) 'Eigenvalue(', i, ') = ', REig(i),'+I ',IEig_loc(i)
+          write(out_unit,*) 'Eigenvalue(', i, ') = ', REig(i),'+I ',IEig_loc(i)
         END DO
 
         deallocate(IEig_loc)
@@ -259,56 +256,56 @@ MODULE QMLLib_diago_m
       deallocate(work)
       deallocate(Mat_save)
 #else
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
-      write(out_unitp,*) '  The program should not reach the LAPACK case.'
-      write(out_unitp,*) '  => Probabely, wrong type_diag_default.'
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: LAPACK case impossible'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
+      write(out_unit,*) '  The program should not reach the LAPACK case.'
+      write(out_unit,*) '  => Probabely, wrong diago_type_default.'
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: LAPACK case impossible'
 #endif
 
     CASE(5) ! lanczos
 
-      CALL QML_Lanczos(Mat,n_vect,REig,Vec,epsi=ONETENTH**6,max_it=100)
+      CALL QDUtil_Lanczos(Mat,n_vect,REig,Vec,epsi=ONETENTH**6,max_it=100)
 
     CASE DEFAULT
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' The default CASE is not defined.'
-      write(out_unitp,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QML_diagonalization: default case impossible'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The default CASE is not defined.'
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_diagonalization: default case impossible'
     END SELECT
 
 
     IF (present(sort)) THEN
         SELECT CASE (sort)
         CASE(1)
-          CALL QML_sort(REig,Vec)
-          CALL QML_rota_denerated(REig,Vec)
+          CALL QDUtil_sort(REig,Vec)
+          CALL QDUtil_rota_denerated(REig,Vec)
         CASE(-1)
           REig = -REig
-          CALL QML_sort(REig,Vec)
+          CALL QDUtil_sort(REig,Vec)
           REig = -REig
-          CALL QML_rota_denerated(REig,Vec)
+          CALL QDUtil_rota_denerated(REig,Vec)
         CASE(2)
-          CALL QML_sort_abs(REig,Vec)
+          CALL QDUtil_sort_abs(REig,Vec)
         CASE DEFAULT ! no sort
           CONTINUE
         END SELECT
     ELSE
-      CALL QML_sort(REig,Vec)
-      CALL QML_rota_denerated(REig,Vec)
+      CALL QDUtil_sort(REig,Vec)
+      CALL QDUtil_rota_denerated(REig,Vec)
     END IF
 
     IF (present(phase)) THEN
-      IF (phase) CALL QML_Unique_phase(Vec)
+      IF (phase) CALL QDUtil_Unique_phase(Vec)
     ELSE
-      CALL QML_Unique_phase(Vec)
+      CALL QDUtil_Unique_phase(Vec)
     END IF
 
-  END SUBROUTINE QML_diagonalization
+  END SUBROUTINE QDUtil_diagonalization
 
-  SUBROUTINE QML_JACOBI2(A,N,D,V)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_JACOBI2(A,N,D,V)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer            :: N
@@ -346,7 +343,7 @@ MODULE QMLLib_diago_m
             SM = SM+abs(A(IP,IQ))
           END DO
         END DO
-        IF(SM == ZERO)RETURN
+        IF(SM == ZERO) RETURN
 
         ! TRESH value
         IF(I < 4)THEN
@@ -418,10 +415,10 @@ MODULE QMLLib_diago_m
 
       END DO ! end main loop
 
-      write(out_unitp,*) max_it,' iterations should never happen'
+      write(out_unit,*) max_it,' iterations should never happen'
       STOP
 
-  end subroutine QML_JACOBI2
+  end subroutine QDUtil_JACOBI2
 !
 !============================================================
 !
@@ -429,8 +426,8 @@ MODULE QMLLib_diago_m
 !
 !============================================================
 !
-  SUBROUTINE QML_TRED2_EISPACK(A,N,NP,D,E)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_TRED2_EISPACK(A,N,NP,D,E)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer          :: N,NP
@@ -440,16 +437,16 @@ MODULE QMLLib_diago_m
       integer          :: I,J,K,L
       real(kind=Rkind) :: F,G,H,HH,SCALE
 
-      IF(N.GT.1)THEN
+      IF(N > 1)THEN
         DO 18 I=N,2,-1
           L=I-1
           H=ZERO
           SCALE=ZERO
-          IF(L.GT.1)THEN
+          IF(L > 1)THEN
             DO 11 K=1,L
               SCALE=SCALE+ABS(A(I,K))
 11          CONTINUE
-            IF(SCALE .EQ. ZERO)THEN
+            IF(SCALE  ==  ZERO)THEN
               E(I)=A(I,L)
             ELSE
               DO 12 K=1,L
@@ -468,7 +465,7 @@ MODULE QMLLib_diago_m
                 DO 13 K=1,J
                   G=G+A(J,K)*A(I,K)
 13              CONTINUE
-                IF(L.GT.J)THEN
+                IF(L > J)THEN
                   DO 14 K=J+1,L
                     G=G+A(K,J)*A(I,K)
 14                CONTINUE
@@ -496,7 +493,7 @@ MODULE QMLLib_diago_m
       E(1)=ZERO
       DO 23 I=1,N
         L=I-1
-        IF(D(I).NE. ZERO)THEN
+        IF(D(I) /=  ZERO)THEN
           DO 21 J=1,L
             G=ZERO
             DO 19 K=1,L
@@ -509,7 +506,7 @@ MODULE QMLLib_diago_m
         ENDIF
         D(I)=A(I,I)
         A(I,I)=ONE
-        IF(L.GE.1)THEN
+        IF(L >= 1)THEN
           DO 22 J=1,L
             A(I,J)=ZERO
             A(J,I)=ZERO
@@ -517,10 +514,10 @@ MODULE QMLLib_diago_m
         ENDIF
 23    CONTINUE
       RETURN
-  END SUBROUTINE QML_TRED2_EISPACK
+  END SUBROUTINE QDUtil_TRED2_EISPACK
 
-  SUBROUTINE QML_TQLI_EISPACK(D,E,N,NP,Z)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_TQLI_EISPACK(D,E,N,NP,Z)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer          :: N,NP
@@ -530,20 +527,20 @@ MODULE QMLLib_diago_m
       integer          :: I,K,L,M,ITER
       real(kind=Rkind) :: G,R,S,C,P,F,B,DD
 
-      IF (N.GT.1) THEN
-        DO 11 I=2,N
+      IF (N > 1) THEN
+        DO I=2,N
           E(I-1)=E(I)
-11      CONTINUE
+        END DO
         E(N)=ZERO
         DO 15 L=1,N
           ITER=0
 1         DO 12 M=L,N-1
             DD=ABS(D(M))+ABS(D(M+1))
-            IF (ABS(E(M))+DD.EQ.DD) GO TO 2
+            IF (ABS(E(M))+DD == DD) GO TO 2
 12        CONTINUE
           M=N
-2         IF(M.NE.L)THEN
-            IF(ITER.EQ.30) STOP 'too many iterations'
+2         IF(M /= L)THEN
+            IF(ITER == 30) STOP 'too many iterations'
             ITER=ITER+1
             G=(D(L+1)-D(L))/(TWO*E(L))
             R=SQRT(G**2+ONE)
@@ -554,7 +551,7 @@ MODULE QMLLib_diago_m
             DO 14 I=M-1,L,-1
               F=S*E(I)
               B=C*E(I)
-              IF(ABS(F).GE.ABS(G))THEN
+              IF(ABS(F) >= ABS(G))THEN
                 C=G/F
                 R=SQRT(C**2+ONE)
                 E(I+1)=F*R
@@ -586,7 +583,7 @@ MODULE QMLLib_diago_m
 15      CONTINUE
       ENDIF
       RETURN
-  END SUBROUTINE QML_TQLI_EISPACK
+  END SUBROUTINE QDUtil_TQLI_EISPACK
 
 !
 !============================================================
@@ -595,8 +592,8 @@ MODULE QMLLib_diago_m
 !
 !============================================================
 !
-  SUBROUTINE QML_sort_tab(nb_niv,ene,max_niv)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_sort_tab(nb_niv,ene,max_niv)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       integer nb_niv,max_niv
@@ -607,7 +604,7 @@ MODULE QMLLib_diago_m
 
       DO i=1,nb_niv
       DO j=i+1,nb_niv
-       IF (ene(i) .GT. ene(j)) THEN
+       IF (ene(i)  >  ene(j)) THEN
 !             permutation
           a=ene(i)
           ene(i)=ene(j)
@@ -616,10 +613,10 @@ MODULE QMLLib_diago_m
       END DO
       END DO
 
-  end subroutine QML_sort_tab
+  end subroutine QDUtil_sort_tab
 
-  SUBROUTINE QML_sort(ene,psi)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_sort(ene,psi)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
@@ -643,9 +640,9 @@ MODULE QMLLib_diago_m
       END DO
       END DO
 
-  END SUBROUTINE QML_sort
-  SUBROUTINE QML_sort_abs(ene,psi)
-      USE QMLLib_NumParameters_m
+  END SUBROUTINE QDUtil_sort
+  SUBROUTINE QDUtil_sort_abs(ene,psi)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
@@ -670,7 +667,7 @@ MODULE QMLLib_diago_m
           END DO
         END DO
 
-  end subroutine QML_sort_abs
+  end subroutine QDUtil_sort_abs
 !
 !============================================================
 !
@@ -678,8 +675,8 @@ MODULE QMLLib_diago_m
 !
 !============================================================
 !
-  SUBROUTINE QML_Unique_phase(Vec)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_Unique_phase(Vec)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       real(kind=Rkind), intent(inout) :: Vec(:,:)
@@ -692,7 +689,7 @@ MODULE QMLLib_diago_m
         IF (Vec(jloc,i) < ZERO) Vec(:,i) = -Vec(:,i)
       END DO
 
-      END SUBROUTINE QML_Unique_phase
+      END SUBROUTINE QDUtil_Unique_phase
 !=====================================================================
 !
 !   c_new(:,i) =  cos(th) c(:,i) + sin(th) c(:,j)
@@ -703,8 +700,8 @@ MODULE QMLLib_diago_m
 !      it is working only if 2 vectors are degenerated !!!!
 !
 !=====================================================================
-  SUBROUTINE QML_rota_denerated(v,c)
-      USE QMLLib_NumParameters_m
+  SUBROUTINE QDUtil_rota_denerated(v,c)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       real (kind=Rkind), intent(in)    :: v(:)
@@ -720,29 +717,29 @@ MODULE QMLLib_diago_m
       !logical, parameter :: debug = .TRUE.
 !---------------------------------------------------------------------
       IF (debug) THEN
-      write(out_unitp,*) 'BEGINNING QML_rota_denerated'
-      write(out_unitp,*) 'v',v
-      !write(out_unitp,*) 'c',c
+      write(out_unit,*) 'BEGINNING QDUtil_rota_denerated'
+      write(out_unit,*) 'v',v
+      !write(out_unit,*) 'c',c
       END IF
 !---------------------------------------------------------------------
       DO i=1,size(v)-1
 
         j = i+1
         IF ( abs(v(i)-v(j)) < epsi) THEN
-          !write(out_unitp,*) 'i,j',i,j
-          !write(out_unitp,*) 'vec i',c(:,i)
-          !write(out_unitp,*) 'vec j',c(:,j)
+          !write(out_unit,*) 'i,j',i,j
+          !write(out_unit,*) 'vec i',c(:,i)
+          !write(out_unit,*) 'vec j',c(:,j)
 
 
           kloc = maxloc((c(:,i)**2+c(:,j)**2),dim=1)
 
           cc   =  c(kloc,i)
           ss   = -c(kloc,j)
-          !write(out_unitp,*) i,j,'cos sin',kloc,cc,ss
+          !write(out_unit,*) i,j,'cos sin',kloc,cc,ss
           norm = sqrt(cc*cc+ss*ss)
           cc   = cc/norm
           ss   = ss/norm
-          !write(out_unitp,*) i,j,'cos sin',cc,ss
+          !write(out_unit,*) i,j,'cos sin',cc,ss
           IF (abs(cc) < epsi .OR. abs(ss) < epsi) CYCLE
 
           DO k=1,size(c,dim=1)
@@ -759,12 +756,12 @@ MODULE QMLLib_diago_m
 
 !---------------------------------------------------------------------
       IF (debug) THEN
-      write(out_unitp,*) 'new c',c
-      write(out_unitp,*) 'END QML_rota_denerated'
+      write(out_unit,*) 'new c',c
+      write(out_unit,*) 'END QDUtil_rota_denerated'
       END IF
 !---------------------------------------------------------------------
 
-  end subroutine QML_rota_denerated
+  end subroutine QDUtil_rota_denerated
 
 !============================================================
 !
@@ -796,8 +793,8 @@ MODULE QMLLib_diago_m
 !
 !============================================================
 !
-  Subroutine QML_cTql2(nZ,n,D,E,Z,ierr)
-      USE QMLLib_NumParameters_m
+  Subroutine QDUtil_cTql2(nZ,n,D,E,Z,ierr)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       Integer :: i,j,k,l,m,n,ii,Nbiter,nm,mml,nZ,ierr
@@ -805,8 +802,6 @@ MODULE QMLLib_diago_m
       complex(kind=Rkind) :: D(n),E(n),Z(nZ,n)
       real (kind=Rkind) :: machep,norm1,norm2,rsign
       complex(kind=Rkind) :: b,c,f,g,p,r,s
-!     complex(kind=Rkind) :: b,c,f,g,p,r,s,zero,one,two
-!     Data zero/(0.,0.)/,one/(1.,0.)/,two/(2.,0.)/,Nbiter/60/
 
 
       machep=10.d-16
@@ -820,15 +815,15 @@ MODULE QMLLib_diago_m
       j=0
 !     ********** look for small sub-diagonal element **********
   105 do 110 m=l,n
-      if(m.eq.n) goto 120
+      if(m == n) goto 120
       norm1=abs(real(e(m),kind=Rkind))+abs(aimag(e(m)))
       norm2=abs(real(d(m),kind=Rkind))+abs(aimag(d(m))) +               &
             abs(real(d(m+1),kind=Rkind))+abs(aimag(d(m+1)))
       if(norm1.le.machep*norm2) goto 120
   110 continue
   120 p=d(l)
-      if(m.eq.l) goto 240
-      if(j.eq.nbiter) goto 1000
+      if(m == l) goto 240
+      if(j == nbiter) goto 1000
       j=j+1
 !     ********** form shift **********
       g=(d(l+1)-p)/(TWO*e(l))
@@ -882,11 +877,11 @@ MODULE QMLLib_diago_m
       k=i
       p=d(i)
       do 260 j=ii,n
-      if(real(d(j),kind=Rkind).ge.real(p,kind=Rkind)) goto 260
+      if(real(d(j),kind=Rkind) >= real(p,kind=Rkind)) goto 260
       k=j
       p=d(j)
   260 continue
-      if(k.eq.i) goto 300
+      if(k == i) goto 300
       d(k)=d(i)
       d(i)=p
       do m=1,n
@@ -898,14 +893,14 @@ MODULE QMLLib_diago_m
       goto 1001
 !     ********** set error -- no convergence to an
 !                eigenvalue after Nbiter iterations **********
- 1000 write (out_unitp,1010) l
+ 1000 write (out_unit,1010) l
  1010 format(//10x,'$$$ <Cmtql2> return code :',i5,' $$$')
       stop
  1001 Return
-  end subroutine QML_cTql2
+  end subroutine QDUtil_cTql2
 
-  Subroutine QML_cTred2(nm,n,A,d,e,Z)
-      USE QMLLib_NumParameters_m
+  Subroutine QDUtil_cTred2(nm,n,A,d,e,Z)
+      USE QDUtil_NumParameters_m
       IMPLICIT NONE
 
       INTEGER I,II,J,JP1,K,L,N,NM
@@ -931,7 +926,7 @@ MODULE QMLLib_diago_m
 !     SCALE ROW (ALGOL TOL THEN NOT NEEDED)
          DO 120 K=1,L
   120    SCALE=SCALE+ABS(Z(I,K))
-         IF(SCALE.NE.ZERO) GOTO 140
+         IF(SCALE /= ZERO) GOTO 140
   130    E(I)=Z(I,L)
          GOTO 290
   140    DO 150 K=1,L
@@ -978,7 +973,7 @@ MODULE QMLLib_diago_m
 !     ACCUMULATION OF TRANSFORMATION MATRICES
       DO 500 I=1,N
       L=I-1
-      IF(abs(D(I)).EQ.ZERO) GOTO 380
+      IF(abs(D(I)) == ZERO) GOTO 380
       DO 360 J=1,L
       G=ZERO
       DO 340 K=1,L
@@ -995,11 +990,11 @@ MODULE QMLLib_diago_m
   400 CONTINUE
   500 CONTINUE
       RETURN
-  end subroutine QML_cTred2
+  end subroutine QDUtil_cTred2
 
-  SUBROUTINE QML_Lanczos(A,n_vect,D,V,epsi,max_it)
-      USE QMLLib_NumParameters_m
-      USE QMLLib_UtilLib_m
+  SUBROUTINE QDUtil_Lanczos(A,n_vect,D,V,epsi,max_it)
+      USE QDUtil_NumParameters_m
+      USE QDUtil_RW_MatVec_m
       IMPLICIT NONE
 
       integer,          intent(in)    :: n_vect
@@ -1021,20 +1016,20 @@ MODULE QMLLib_diago_m
 
       ! Begin Lanczos scheme
       n_size = size(A,dim=1)
-      write(out_unitp,*) 'shape(A)',shape(A)
-      write(out_unitp,*) 'shape(V)',shape(V)
-      write(out_unitp,*) 'shape(D)',shape(D)
-      write(out_unitp,*) 'n_size',n_size
-      write(out_unitp,*) 'n_vect',n_vect
-      write(out_unitp,*) 'max_it',max_it
-      write(out_unitp,*) 'epsi',epsi
+      write(out_unit,*) 'shape(A)',shape(A)
+      write(out_unit,*) 'shape(V)',shape(V)
+      write(out_unit,*) 'shape(D)',shape(D)
+      write(out_unit,*) 'n_size',n_size
+      write(out_unit,*) 'n_vect',n_vect
+      write(out_unit,*) 'max_it',max_it
+      write(out_unit,*) 'epsi',epsi
 
       allocate(Krylov_vectors(n_size,0:max_it))
       Krylov_vectors(:,:) = ZERO
       CALL random_number(Krylov_vectors(1:n_vect,0))
       Krylov_vectors(:,0) = Krylov_vectors(:,0) /                               &
                       sqrt(dot_product(Krylov_vectors(:,0),Krylov_vectors(:,0)))
-      write(out_unitp,*) 'Krylov_vectors (guess)',Krylov_vectors(:,0)
+      write(out_unit,*) 'Krylov_vectors (guess)',Krylov_vectors(:,0)
 
 
       allocate(M_Krylov(max_it,max_it))
@@ -1051,7 +1046,7 @@ MODULE QMLLib_diago_m
             M_Krylov(i+1, it) = dot_product(Krylov_vectors(:,i),Krylov_vectors(:,it))
             M_Krylov(it, i+1) = M_Krylov(i+1,it)
          END DO
-         CALL Write_RMat(M_Krylov(1:it,1:it),out_unitp,5)
+         CALL Write_Mat(M_Krylov(1:it,1:it),out_unit,5)
 
          ! Orthogonalize vectors
          DO i=0,it-1
@@ -1064,7 +1059,7 @@ MODULE QMLLib_diago_m
 
          IF (it >= n_vect) THEN
             CALL diagonalization(M_Krylov(1:it,1:it),E1_Krylov(1:it),V_Krylov(1:it,1:it),it,3,1,.FALSE.)
-            write(out_unitp,*) 'it eig',it,E1_Krylov(1:n_vect)
+            write(out_unit,*) 'it eig',it,E1_Krylov(1:n_vect)
          END IF
          IF (it > n_vect) THEN
             maxdiff = maxval(abs(E1_Krylov(1:n_vect) - E0_Krylov(1:n_vect)))
@@ -1072,13 +1067,90 @@ MODULE QMLLib_diago_m
          ELSE
             maxdiff = huge(ONE)
          END IF
-         write(out_unitp,*) 'it maxdiff,epsi,exit?',it,maxdiff,epsi,(maxdiff < epsi)
+         write(out_unit,*) 'it maxdiff,epsi,exit?',it,maxdiff,epsi,(maxdiff < epsi)
 
          IF (maxdiff < epsi) EXIT
 
       END DO
 stop
-  end subroutine QML_Lanczos
+  end subroutine QDUtil_Lanczos
 
+  SUBROUTINE Test_QDUtil_Diago()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_String_m
+    USE QDUtil_RW_MatVec_m
+    IMPLICIT NONE
 
-END MODULE QMLLib_diago_m
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+
+    integer                          :: i,n,io,ioerr,diago_type
+    real(kind=Rkind),    allocatable :: RMat(:,:),REig(:),RVec(:,:)
+    real(kind=Rkind),    allocatable :: R2Mat(:,:),Diag(:,:)
+    character (len=:),   allocatable :: info
+
+    !====================================================================
+    ! Tests for the matrix digonalization
+    !
+    ! define the matrices
+    n = 3
+    RMat =  reshape([ONE,HALF,ZERO,                             &
+                     HALF,ONE,HALF,                             &
+                     ZERO,HALF,ONE],shape=[3,3])
+
+    allocate(REig(n))
+    allocate(RVec(n,n))
+    allocate(Diag(n,n))
+
+    ! tests
+    CALL Initialize_Test(test_var,test_name='Diago')
+
+    CALL diagonalization(RMat,REig,RVec,n)
+
+    Diag = ZERO
+    DO i=1,n
+      Diag(i,i) = REig(i)
+    END DO
+
+    R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
+
+    res_test = all(abs(R2Mat-RMat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='diago')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(RMat,out_unit,5,info='RMat')
+      CALL Write_Mat(RVec,out_unit,5,info='RVec')
+      CALL Write_Vec(REig,out_unit,5,info='REig')
+
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+    END IF
+    CALL Flush_Test(test_var)
+
+    DO diago_type=1,4
+      info = 'diago (#' // TO_string(diago_type) // ')'
+
+      CALL diagonalization(RMat,REig,RVec,n,diago_type=diago_type)
+      Diag = ZERO
+      DO i=1,n
+        Diag(i,i) = REig(i)
+      END DO
+      R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
+  
+      res_test = all(abs(R2Mat-RMat) < ZeroTresh)
+      CALL Logical_Test(test_var,test1=res_test,info='diago')
+      IF (.NOT. res_test) THEN
+        CALL Write_Mat(RMat,out_unit,5,info='RMat')
+        CALL Write_Mat(RVec,out_unit,5,info='RVec')
+        CALL Write_Vec(REig,out_unit,5,info='REig')
+  
+        CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      END IF
+      CALL Flush_Test(test_var)
+    END DO
+    !====================================================================
+
+    ! finalize the tests
+    CALL Finalize_Test(test_var)
+  END  SUBROUTINE Test_QDUtil_Diago
+END MODULE QDUtil_diago_m
