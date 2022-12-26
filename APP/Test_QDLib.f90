@@ -2,7 +2,10 @@ PROGRAM Test_QDLib
   USE QDUtil_NumParameters_m
   USE QDUtil_String_m
   USE QDUtil_RW_MatVec_m
+  USE QDUtil_Matrix_m
   IMPLICIT NONE
+
+  CALL Test_QDUtil_Matrix() ; stop
 
   CALL Test_QDUtil_NumParameters()
   CALL Test_QDUtil_String()

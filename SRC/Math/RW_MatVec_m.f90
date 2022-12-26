@@ -1114,7 +1114,7 @@ MODULE QDUtil_RW_MatVec_m
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol1
-    real(kind=real128),           intent(in) :: f(:,:)
+    real(kind=real128),          intent(in) :: f(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info

@@ -31,354 +31,708 @@ MODULE QDUtil_Matrix_m
 
   PRIVATE
 
-  PUBLIC inv_m1_TO_m2
-  INTERFACE inv_m1_TO_m2
-     MODULE PROCEDURE QDUtil_inv_m1_TO_m2
-     MODULE PROCEDURE QDUtil_inv_m1_TO_m2_cplx
+  PUBLIC inv_OF_Mat_TO
+  INTERFACE inv_OF_Mat_TO
+    MODULE PROCEDURE QDUtil_inv_OF_RMat_TO
+    MODULE PROCEDURE QDUtil_inv_OF_CMat_TO
   END INTERFACE
 
-  PUBLIC Linear_Sys
-  INTERFACE Linear_Sys
-     MODULE PROCEDURE QDUtil_Linear_Sys
+  PUBLIC inv_Mat_TO_Mat_inv
+  INTERFACE inv_Mat_TO_Mat_inv
+    MODULE PROCEDURE QDUtil_inv_RMat_TO_RMat_inv
+    MODULE PROCEDURE QDUtil_inv_CMat_TO_CMat_inv
   END INTERFACE
 
+  PUBLIC LinearSys_Solve
+  INTERFACE LinearSys_Solve
+    MODULE PROCEDURE QDUtil_RLinearSystem_Solve
+    MODULE PROCEDURE QDUtil_CLinearSystem_Solve
+      END INTERFACE
+
+  PUBLIC Det_OF
+  INTERFACE Det_OF
+    MODULE PROCEDURE QDUtil_Det_OF_RMat
+    MODULE PROCEDURE QDUtil_Det_OF_CMat
+  END INTERFACE
+
+  PUBLIC Identity_Mat
+  INTERFACE Identity_Mat
+    MODULE PROCEDURE QDUtil_Identity_RMat
+  END INTERFACE
+
+  PUBLIC :: Test_QDUtil_Matrix
   CONTAINS
-!================================================================
-!    inversion de la matrice m1 : m2=m1^-1
-!================================================================
-      SUBROUTINE QDUtil_inv_m1_TO_m2(m1,m2,n,inv_type,epsi)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+  !================================================================
+  !   Inversion of a real matrix Rmat : RMat_inv = Rmat^-1
+  !   Function and subroutine
+  !================================================================
+  FUNCTION QDUtil_inv_OF_RMat_TO(Rmat,inv_type,epsi) RESULT(RMat_inv)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
 
-       integer          :: n
-       real(kind=Rkind) :: m1(n,n)
-       real(kind=Rkind) :: m2(n,n)
-       integer          :: inv_type
-       real(kind=Rkind) :: epsi
+    real(kind=Rkind), allocatable :: RMat_inv(:,:)
 
-       integer          :: indx(n)
-       real(kind=Rkind) :: trav(n),m1w(n,n)
-       real(kind=Rkind) :: vv(n,n)
-       real(kind=Rkind) :: b(n)
+    real(kind=Rkind), intent(in)             :: RMat(:,:)
+    integer,          intent(in), optional   :: inv_type
+    real(kind=Rkind), intent(in), optional   :: epsi
 
-       real(kind=Rkind) :: wmax,wmin
-       real(kind=Rkind) :: d
-       integer          :: j
+    ! local variables
+    integer ,         allocatable :: indx(:)
+    real(kind=Rkind), allocatable :: work(:),m1w(:,:)
+    real(kind=Rkind), allocatable :: vv(:,:)
+    real(kind=Rkind), allocatable :: b(:)
 
+    real(kind=Rkind) :: wmax,wmin
+    real(kind=Rkind) :: d
+    integer          :: j,n
 
-
-       CALL QDUtil_mat_id(m2,n)
-       m1w = m1
-
-       SELECT CASE (inv_type)
-       CASE (0) ! ludcmp ...
-         CALL QDUtil_ludcmp(m1w,n,trav,indx,d)
-         DO j=1,n
-           CALL QDUtil_lubksb(m1w,n,indx,m2(:,j))
-         END DO
-       CASE (1) ! svd
-         CALL QDUtil_SVDCMP(m1w,n,n,trav,vv,n)
-         ! Find maximum singular value
-         !write(out_unit,*) 'SVD : epsi',epsi
-         !write(out_unit,*) 'SVD : trav',trav
-
-         wmax = maxval(trav(:))
-         wmin = wmax * epsi
-         !write(out_unit,*) 'SVD : count non zero',count(trav >= wmin)
-         ! Zero the "small" singular values
-         WHERE (trav < WMIN) trav = ZERO
-
-         DO j=1,n
-           b(:) = m2(:,j)
-           CALL QDUtil_SVBKSB(m1w,trav,vv,n,n,b,m2(:,j),n)
-         END DO
-       CASE Default ! ludcmp ...
-          CALL QDUtil_ludcmp(m1w,n,trav,indx,d)
-          DO j=1,n
-            CALL QDUtil_lubksb(m1w,n,indx,m2(:,j))
-          END DO
-       END SELECT
-
-       END SUBROUTINE QDUtil_inv_m1_TO_m2
-!================================================================
-!    inversion de la matrice m1 : m2=m1^-1
-!================================================================
-      SUBROUTINE QDUtil_inv_m1_TO_m2_cplx(m1,m2,n,inv_type,epsi)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-       integer          :: n
-       complex(kind=Rkind) :: m1(n,n)
-       complex(kind=Rkind) :: m2(n,n)
-       integer          :: inv_type
-       real(kind=Rkind) :: epsi
-
-       integer          :: indx(n)
-       complex(kind=Rkind) :: trav(n),m1w(n,n)
-       complex(kind=Rkind) :: vv(n,n)
-       complex(kind=Rkind) :: b(n)
-
-       complex(kind=Rkind) :: wmax,wmin
-       complex(kind=Rkind) :: d
-       integer          :: j
+    integer            :: inv_type_loc
+    integer, parameter :: inv_type_default = 0
+    real(kind=Rkind)   :: epsi_loc
 
 
+    IF (size(RMat,dim=1) /= size(RMat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_inv_OF_RMat_TO'
+      write(out_unit,*) ' Rmat is not a square matrix.'
+      write(out_unit,*) ' shape(Rmat)',shape(Rmat)
+      STOP 'ERROR in QDUtil_inv_OF_RMat_TO: Rmat is not a square matrix'
+    END IF
 
-       CALL QDUtil_Cplx_mat_id(m2,n)
-       m1w = m1
+    IF (present(inv_type)) THEN
+      inv_type_loc = inv_type
+    ELSE
+      inv_type_loc = inv_type_default
+    END IF
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
 
-       SELECT CASE (inv_type)
-       CASE (0) ! ludcmp ...
-         CALL QDUtil_ludcmp_cplx(m1w,n,trav,indx,d)
-         DO j=1,n
-           CALL QDUtil_lubksb_cplx(m1w,n,indx,m2(:,j))
-         END DO
+    n = size(Rmat,dim=1)
 
-       CASE (1) ! svd
+    RMat_inv = Identity_Mat(n)
+    m1w      = Rmat
 
-          STOP 'SVD not yet in complex'
+    SELECT CASE (inv_type_loc)
+    CASE (0) ! ludcmp ...
+      allocate(work(n))
+      allocate(indx(n))
 
-       CASE Default ! ludcmp ...
-         CALL QDUtil_ludcmp_cplx(m1w,n,trav,indx,d)
-         DO j=1,n
-           CALL QDUtil_lubksb_cplx(m1w,n,indx,m2(:,j))
-         END DO
-       END SELECT
-
-     END SUBROUTINE QDUtil_inv_m1_TO_m2_cplx
-!================================================================
-!    Dertermniant of m1
-!================================================================
-      SUBROUTINE QDUtil_Det_OF_m1(m1,det,n)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-       integer          :: n
-       real(kind=Rkind) :: m1(n,n)
-       real(kind=Rkind) :: det
-
-       integer          :: index(n)
-       real(kind=Rkind) :: trav(n),m1w(n,n)
-
-       real(kind=Rkind) :: d
-       integer          :: j
-
-       m1w = m1
-
-       CALL QDUtil_ludcmp(m1w,n,trav,index,d)
-
-       det = d
-       DO j=1,n
-         det = det * m1w(j,j)
-       END DO
-
-       END SUBROUTINE QDUtil_Det_OF_m1
-!================================================================
-!    Solve,x: a.x=b
-!================================================================
-      SUBROUTINE QDUtil_Linear_Sys(a,b,x,n)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-       integer          :: n
-       real(kind=Rkind) :: a(n,n),vv(n,n)
-       real(kind=Rkind) :: b(n),x(n)
-
-       integer          :: indx(n)
-       real(kind=Rkind) :: trav(n),d
-       real(kind=Rkind) :: aa(n,n)
-       real(kind=Rkind) :: wmax,wmin,epsi=ONETENTH**10
-       integer          :: k
-
-       logical          :: svd = .TRUE.
-       !logical          :: svd = .FALSE.
-
-       x  = b
-       aa = a
-
-       IF (svd) THEN
-           ! une facon.... SVD
-           CALL QDUtil_SVDCMP(aa,n,n,trav,vv,n)
-           ! Find maximum singular value
-           wmax = maxval(trav(:))
-           wmin = wmax * epsi
-           ! Zero the "small" singular values
-           DO k=1,n
-              IF (trav(k) < WMIN) trav(k) = ZERO
-           END DO
-
-           CALL QDUtil_SVBKSB(aa,trav,vv,n,n,b,x,n)
-
-
-           !write(out_unit,*) 'solve?',sum(abs(matmul(a,x)-b))
-           !STOP
-        ELSE
-          ! une autre ...
-          CALL QDUtil_ludcmp(aa,n,trav,indx,d)
-          CALL QDUtil_lubksb(aa,n,indx,x)
-          !IF (mpro) CALL CALL mprove(a,aa,n,indx,b,x)
-
-        END IF
-
-       END SUBROUTINE QDUtil_Linear_Sys
-!================================================================
-!    ameliore la solution d un systeme d equations
-!    par une iteration
-!================================================================
-      SUBROUTINE QDUtil_mprove(A,ALUD,N,INDX,B,X)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-      integer          :: n
-      real(kind=Rkind) :: a(n,n)
-      real(kind=Rkind) :: alud(n,n)
-      real(kind=Rkind) :: b(n),x(n),r(n)
-      integer          :: indx(n)
-      integer          :: i,j
-
-      DO I=1,N
-        R(I) = -B(I) + dot_product(A(I,:),X(:))
+      CALL QDUtil_ludcmp(m1w,n,work,indx,d)
+      DO j=1,n
+        CALL QDUtil_lubksb(m1w,n,indx,RMat_inv(:,j))
       END DO
-      CALL QDUtil_LUBKSB(ALUD,N,INDX,R)
 
-      X(:) = X(:) - R(:)
+      deallocate(work)
+      deallocate(indx)
+    CASE (1) ! svd
 
-      END SUBROUTINE QDUtil_mprove
+      allocate(work(n))
+      allocate(b(n))
+      allocate(vv(n,n))
 
-!
-!================================================================
-!    resolution de a*x=b apres la procedure ludcmp
-!
-!================================================================
+      CALL QDUtil_SVDCMP(m1w,n,n,work,vv,n)
+      ! Find maximum singular value
+      !write(out_unit,*) 'SVD : epsi_loc',epsi_loc
+      !write(out_unit,*) 'SVD : work',work
 
-      SUBROUTINE QDUtil_lubksb(a,n,index,b)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+      wmax = maxval(work(:))
+      wmin = wmax * epsi_loc
+      !write(out_unit,*) 'SVD : count non zero',count(work >= wmin)
+      ! Zero the "small" singular values
+      WHERE (abs(work) < WMIN) work = ZERO
 
-       integer n
-       real(kind=Rkind) a(n,n),b(n)
-       integer index(n)
-       real(kind=Rkind)  sum
+      DO j=1,n
+        b(:) = RMat_inv(:,j)
+        CALL QDUtil_SVBKSB(m1w,work,vv,n,n,b,RMat_inv(:,j),n)
+      END DO
 
-       integer i,j,ii,ll
+      deallocate(work)
+      deallocate(b)
+      deallocate(vv)
+    CASE Default
+      write(out_unit,*) ' ERROR in QDUtil_inv_OF_RMat_TO'
+      write(out_unit,*) ' Problem with inv_type',inv_type_loc
+      write(out_unit,*) ' Check the Fortran code!'
+      STOP 'ERROR in QDUtil_inv_OF_RMat_TO: Problem with inv_type'
+    END SELECT
 
-       ii=0
-       DO 12 i=1,n
-         ll=index(i)
-         sum=b(ll)
-         b(ll)=b(i)
-         IF (II .NE. 0) THEN
-            DO 11 j=ii,i-1
-              sum=sum-a(i,j)*b(j)
- 11         CONTINUE
-         ELSE IF (sum .NE. ZERO) THEN
-                ii=i
-              ENDIF
-         b(i)=sum
- 12    CONTINUE
-       DO 14 i=n,1,-1
-         sum=b(i)
-         DO 13 j=i+1,n
+  END FUNCTION QDUtil_inv_OF_RMat_TO
+  SUBROUTINE QDUtil_inv_RMat_TO_RMat_inv(RMat,RMat_inv,inv_type,epsi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rkind), intent(inout), allocatable :: RMat_inv(:,:)
+    real(kind=Rkind), intent(in)                 :: RMat(:,:)
+    integer,          intent(in),    optional    :: inv_type
+    real(kind=Rkind), intent(in),    optional    :: epsi
+
+    integer            :: inv_type_loc
+    integer, parameter :: inv_type_default = 0
+    real(kind=Rkind)   :: epsi_loc
+
+    IF (present(inv_type)) THEN
+      inv_type_loc = inv_type
+    ELSE
+      inv_type_loc = inv_type_default
+    END IF
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+
+    RMat_inv = inv_OF_Mat_TO(Rmat,inv_type_loc,epsi_loc)
+
+  END SUBROUTINE QDUtil_inv_RMat_TO_RMat_inv
+  !================================================================
+  !   Inversion of a real matrix Cmat : CMat_inv = Cmat^-1
+  !   Function and subroutine
+  !================================================================
+  FUNCTION QDUtil_inv_OF_CMat_TO(CMat,inv_type,epsi) RESULT(CMat_inv)
+    USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
+    IMPLICIT NONE
+
+    complex(kind=Rkind), allocatable            :: CMat_inv(:,:)
+
+    complex(kind=Rkind), intent(in)             :: CMat(:,:)
+    integer,             intent(in), optional   :: inv_type
+    real(kind=Rkind),    intent(in), optional   :: epsi
+
+
+    integer,             allocatable :: indx(:)
+    complex(kind=Rkind), allocatable :: work(:),m1w(:,:)
+
+    complex(kind=Rkind) :: d
+    integer             :: j,n
+
+    integer            :: inv_type_loc
+    integer, parameter :: inv_type_default = 0
+    real(kind=Rkind)   :: epsi_loc
+
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+
+    IF (size(CMat,dim=1) /= size(CMat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_inv_OF_CMat_TO'
+      write(out_unit,*) ' Rmat is not a square matrix.'
+      write(out_unit,*) ' shape(Rmat)',shape(Cmat)
+      STOP 'ERROR in QDUtil_inv_OF_RMat_TO: Cmat is not a square matrix'
+    END IF
+
+
+    IF (present(inv_type)) THEN
+      inv_type_loc = inv_type
+    ELSE
+      inv_type_loc = inv_type_default
+    END IF
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+    n = size(Cmat,dim=1)
+
+    IF (debug) THEN
+      write(out_unit,*) ' BEGINNING QDUtil_inv_OF_CMat_TO'
+      write(out_unit,*) ' n',n
+      flush(out_unit)
+      CALL Write_Mat(CMat,out_unit,5,info='CMat')
+      flush(out_unit)
+    END IF
+
+    CMat_inv = Identity_Mat(n)
+
+    IF (debug) THEN
+      CALL Write_Mat(CMat_inv,out_unit,5,info='Id?')
+    END IF
+
+    m1w      = CMat
+
+
+    SELECT CASE (inv_type_loc)
+    CASE (0) ! ludcmp ...
+      allocate(work(n))
+      allocate(indx(n))
+
+      CALL QDUtil_ludcmp_cplx(m1w,n,work,indx,d)
+      DO j=1,n
+        CALL QDUtil_lubksb_cplx(m1w,n,indx,CMat_inv(:,j))
+      END DO
+
+      deallocate(work)
+      deallocate(indx)
+    CASE (1) ! svd
+        STOP 'SVD not yet in complex'
+    CASE Default ! ludcmp ...
+      write(out_unit,*) ' ERROR in QDUtil_inv_OF_CMat_TO'
+      write(out_unit,*) ' Problem with inv_type',inv_type_loc
+      write(out_unit,*) ' Check the Fortran code!'
+      STOP 'ERROR in QDUtil_inv_OF_CMat_TO: Problem with inv_type'
+    END SELECT
+
+    IF (debug) THEN
+      CALL Write_Mat(CMat_inv,out_unit,5,info='CMat_inv')
+     write(out_unit,*) ' END QDUtil_inv_OF_CMat_TO'
+     flush(out_unit)
+   END IF
+
+  END FUNCTION QDUtil_inv_OF_CMat_TO
+  SUBROUTINE QDUtil_inv_CMat_TO_CMat_inv(CMat,CMat_inv,inv_type,epsi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    complex(kind=Rkind), allocatable            :: CMat_inv(:,:)
+
+    complex(kind=Rkind), intent(in)             :: CMat(:,:)
+    integer,             intent(in), optional   :: inv_type
+    real(kind=Rkind),    intent(in), optional   :: epsi
+
+    integer            :: inv_type_loc
+    integer, parameter :: inv_type_default = 0
+    real(kind=Rkind)   :: epsi_loc
+
+    IF (present(inv_type)) THEN
+      inv_type_loc = inv_type
+    ELSE
+      inv_type_loc = inv_type_default
+    END IF
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+    CMat_inv = inv_OF_Mat_TO(Cmat,inv_type_loc,epsi_loc)
+
+  END SUBROUTINE QDUtil_inv_CMat_TO_CMat_inv
+  !================================================================
+  !    Determinant of a matrix: Function
+  !================================================================
+  FUNCTION QDUtil_Det_OF_RMat(Rmat) RESULT (det)
+    USE QDUtil_NumParameters_m, ONLY : Rkind,out_unit
+    IMPLICIT NONE
+
+    real(kind=Rkind), intent(in)  :: Rmat(:,:)
+    real(kind=Rkind)              :: det
+
+    integer,          allocatable :: Luindex(:)
+    real(kind=Rkind), allocatable :: work(:),m1w(:,:)
+
+    real(kind=Rkind) :: d
+    integer          :: j,n
+
+
+    IF (size(Rmat,dim=1) /= size(Rmat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_Det_OF_RMat'
+      write(out_unit,*) ' Rmat is not a square matrix.'
+      write(out_unit,*) ' shape(Rmat)',shape(Rmat)
+      STOP 'ERROR in QDUtil_Det_OF_RMat: Rmat is not a square matrix'
+    END IF
+
+    m1w = Rmat
+
+    n = size(Rmat,dim=1)
+    allocate(Luindex(n))
+    allocate(work(n))
+
+    CALL QDUtil_ludcmp(m1w,n,work,Luindex,d)
+
+    det = d
+    DO j=1,n
+      det = det * m1w(j,j)
+    END DO
+
+    deallocate(Luindex)
+    deallocate(work)
+    deallocate(m1w)
+
+  END FUNCTION QDUtil_Det_OF_RMat
+  !================================================================
+  !    Determinant of a matrix: Function
+  !================================================================
+  FUNCTION QDUtil_Det_OF_CMat(Cmat) RESULT (det)
+    USE QDUtil_NumParameters_m, ONLY : Rkind,out_unit
+    IMPLICIT NONE
+
+    complex(kind=Rkind), intent(in)  :: Cmat(:,:)
+    complex(kind=Rkind)              :: det
+
+    integer,             allocatable :: indx(:)
+    complex(kind=Rkind), allocatable :: work(:),m1w(:,:)
+
+    complex(kind=Rkind) :: d
+    integer          :: j,n
+
+
+    IF (size(Cmat,dim=1) /= size(Cmat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_Det_OF_CMat'
+      write(out_unit,*) ' Rmat is not a square matrix.'
+      write(out_unit,*) ' shape(Rmat)',shape(Cmat)
+      STOP 'ERROR in QDUtil_Det_OF_CMat: Rmat is not a square matrix'
+    END IF
+
+    m1w = Cmat
+
+    n = size(Cmat,dim=1)
+
+    allocate(work(n))
+    allocate(indx(n))
+
+    CALL QDUtil_ludcmp_cplx(m1w,n,work,indx,d)
+
+    det = d
+    DO j=1,n
+      det = det * m1w(j,j)
+    END DO
+
+    deallocate(work)
+    deallocate(indx)
+
+  END FUNCTION QDUtil_Det_OF_CMat
+  !================================================================
+  !   Solve, RVecL: RMat . RVecL= RVec
+  !   Function 
+  !================================================================
+  !================================================================
+  FUNCTION QDUtil_RLinearSystem_Solve(RMat,RVec,LS_type,epsi) RESULT (RVecL)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rkind), allocatable :: RVecL(:)
+
+    real(kind=Rkind), intent(in)             :: RMat(:,:)
+    real(kind=Rkind), intent(in)             :: RVec(:)
+    integer,          intent(in), optional   :: LS_type
+    real(kind=Rkind), intent(in), optional   :: epsi
+
+    ! local variables
+    integer ,         allocatable :: indx(:)
+    real(kind=Rkind), allocatable :: work(:),m1w(:,:)
+    real(kind=Rkind), allocatable :: vv(:,:)
+    real(kind=Rkind), allocatable :: b(:)
+
+    real(kind=Rkind) :: wmax,wmin
+    real(kind=Rkind) :: d
+    integer          :: j,n
+
+    integer            :: LS_type_loc
+    integer, parameter :: LS_type_default = 0
+    real(kind=Rkind)   :: epsi_loc
+
+
+    IF (size(RMat,dim=1) /= size(RMat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_RLinearSystem_Solve'
+      write(out_unit,*) ' Rmat is not a square matrix.'
+      write(out_unit,*) ' shape(Rmat)',shape(Rmat)
+      STOP 'ERROR in QDUtil_RLinearSystem_Solve: Rmat is not a square matrix'
+    END IF
+    IF (size(RVec) /= size(RMat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_RLinearSystem_Solve'
+      write(out_unit,*) ' Incompatible RVec and RMat shapes'
+      write(out_unit,*) ' shape(Rmat)',shape(Rmat)
+      write(out_unit,*) ' shape(RVec)',shape(RVec)
+      STOP 'ERROR in QDUtil_RLinearSystem_Solve: Incompatible RVec and RMat shapes'
+    END IF
+
+    IF (present(LS_type)) THEN
+      LS_type_loc = LS_type
+    ELSE
+      LS_type_loc = LS_type_default
+    END IF
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+    n = size(Rmat,dim=1)
+
+    RVecL = RVec
+    m1w  = RMat
+
+    SELECT CASE (LS_type_loc)
+    CASE (0) ! ludcmp ...
+      allocate(work(n))
+      allocate(indx(n))
+ 
+      CALL QDUtil_ludcmp(m1w,n,work,indx,d)
+      CALL QDUtil_lubksb(m1w,n,indx,RVecL)
+ 
+      deallocate(work)
+      deallocate(indx)
+    CASE (1) ! svd
+ 
+      allocate(work(n))
+      allocate(b(n))
+      allocate(vv(n,n))
+ 
+      CALL QDUtil_SVDCMP(m1w,n,n,work,vv,n)
+      ! Find maximum singular value
+      !write(out_unit,*) 'SVD : epsi_loc',epsi_loc
+      !write(out_unit,*) 'SVD : work',work
+ 
+      wmax = maxval(work)
+      wmin = wmax * epsi_loc
+      !write(out_unit,*) 'SVD : count non zero',count(work >= wmin)
+      ! Zero the "small" singular values
+      WHERE (abs(work) < WMIN) work = ZERO
+ 
+      b(:) = RVecL
+      CALL QDUtil_SVBKSB(m1w,work,vv,n,n,b,RVecL,n)
+ 
+      deallocate(work)
+      deallocate(b)
+      deallocate(vv)
+    CASE Default
+      write(out_unit,*) ' ERROR in QDUtil_RLinearSystem_Solve'
+      write(out_unit,*) ' Problem with LS_type',LS_type_loc
+      write(out_unit,*) ' Check the Fortran code!'
+      STOP 'ERROR in QDUtil_RLinearSystem_Solve: Problem with LS_type_loc'
+    END SELECT
+
+  END FUNCTION QDUtil_RLinearSystem_Solve
+  FUNCTION QDUtil_CLinearSystem_Solve(CMat,CVec,LS_type,epsi) RESULT (CVecL)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    complex(kind=Rkind), allocatable :: CVecL(:)
+
+    complex(kind=Rkind), intent(in)             :: CMat(:,:)
+    complex(kind=Rkind), intent(in)             :: CVec(:)
+    integer,             intent(in), optional   :: LS_type
+    real(kind=Rkind),    intent(in), optional   :: epsi
+
+    ! local variables
+    integer ,         allocatable :: indx(:)
+    complex(kind=Rkind), allocatable :: work(:),m1w(:,:)
+    complex(kind=Rkind), allocatable :: vv(:,:)
+    complex(kind=Rkind), allocatable :: b(:)
+
+    real(kind=Rkind) :: wmax,wmin
+    complex(kind=Rkind) :: d
+    integer          :: j,n
+
+    integer            :: LS_type_loc
+    integer, parameter :: LS_type_default = 0
+    real(kind=Rkind)   :: epsi_loc
+
+
+    IF (size(CMat,dim=1) /= size(CMat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_CLinearSystem_Solve'
+      write(out_unit,*) ' Rmat is not a square matrix.'
+      write(out_unit,*) ' shape(CMat)',shape(CMat)
+      STOP 'ERROR in QDUtil_CLinearSystem_Solve: CMat is not a square matrix'
+    END IF
+    IF (size(CVec) /= size(CMat,dim=2)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_CLinearSystem_Solve'
+      write(out_unit,*) ' Incompatible CVec and CMat shapes'
+      write(out_unit,*) ' shape(Cmat)',shape(Cmat)
+      write(out_unit,*) ' shape(CVec)',shape(CVec)
+      STOP 'ERROR in QDUtil_CLinearSystem_Solve: Incompatible CVec and CMat shapes'
+    END IF
+
+    IF (present(LS_type)) THEN
+      LS_type_loc = LS_type
+    ELSE
+      LS_type_loc = LS_type_default
+    END IF
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+    n = size(Cmat,dim=1)
+
+    CVecL = CVec
+    m1w  = CMat
+
+    SELECT CASE (LS_type_loc)
+    CASE (0) ! ludcmp ...
+      allocate(indx(n))
+
+      CALL QDUtil_Driver_LU_decomp_cplx(m1w,n,indx,d,type_lu=1)
+      CALL QDUtil_Driver_LU_solve_cplx(m1w,n,indx,CVecL,type_lu=1)
+      !CALL QDUtil_ludcmp_cplx(m1w,n,work,indx,d)
+      !CALL QDUtil_lubksb_cplx(m1w,n,indx,CVecL)
+
+      deallocate(indx)
+    CASE (3) ! ludcmp ...
+      allocate(indx(n))
+
+      CALL QDUtil_Driver_LU_decomp_cplx(m1w,n,indx,d,type_lu=3)
+      CALL QDUtil_Driver_LU_solve_cplx(m1w,n,indx,CVecL,type_lu=3)
+
+      deallocate(indx)
+    CASE (1) ! svd
+        STOP 'SVD not yet in complex'
+    CASE Default ! ludcmp ...
+      write(out_unit,*) ' ERROR in QDUtil_CLinearSystem_Solve'
+      write(out_unit,*) ' Problem with inv_type',LS_type_loc
+      write(out_unit,*) ' Check the Fortran code!'
+      STOP 'ERROR in QDUtil_CLinearSystem_Solve: Problem with LS_type'
+    END SELECT
+
+  END FUNCTION QDUtil_CLinearSystem_Solve
+  !================================================================
+  !    ameliore la solution d un systeme d equations
+  !    par une iteration
+  !================================================================
+  SUBROUTINE QDUtil_mprove(A,ALUD,N,INDX,B,X)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    integer          :: n
+    real(kind=Rkind) :: a(n,n)
+    real(kind=Rkind) :: alud(n,n)
+    real(kind=Rkind) :: b(n),x(n),r(n)
+    integer          :: indx(n)
+    integer          :: i,j
+
+    DO I=1,N
+      R(I) = -B(I) + dot_product(A(I,:),X(:))
+    END DO
+    CALL QDUtil_LUBKSB(ALUD,N,INDX,R)
+
+    X(:) = X(:) - R(:)
+
+  END SUBROUTINE QDUtil_mprove
+  !================================================================
+  !    resolution de a*x=b apres la procedure ludcmp
+  !================================================================
+  SUBROUTINE QDUtil_lubksb(a,n,index,b)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    integer,          intent(in)    :: n
+    real(kind=Rkind), intent(inout) :: b(n)
+    real(kind=Rkind), intent(in)    :: a(n,n)
+    integer,          intent(in)    :: index(n)
+
+
+    real(kind=Rkind)  :: sum
+    integer           :: i,j,ii,ll
+
+    ii=0
+    DO i=1,n
+      ll=index(i)
+      sum=b(ll)
+      b(ll)=b(i)
+      IF (ii /= 0) THEN
+         DO j=ii,i-1
            sum=sum-a(i,j)*b(j)
- 13      CONTINUE
-         b(i)=sum/a(i,i)
- 14    CONTINUE
+         END DO
+      ELSE IF (sum /= ZERO) THEN
+        ii=i
+      ENDIF
+      b(i)=sum
+    END DO
+    DO i=n,1,-1
+      sum=b(i)
+      DO j=i+1,n
+        sum=sum-a(i,j)*b(j)
+      END DO
+      b(i)=sum/a(i,i)
+    END DO
 
-       RETURN
-       end subroutine QDUtil_lubksb
-!================================================================
-!    decomposition de a=l*u (pour la resolution d un systeme d equations
-!     l matrice triangulaire inferieur
-!     u matrice triangulaire superieur
-!
-!    a l u matrices n*n
-!
-!================================================================
+  END SUBROUTINE QDUtil_lubksb
+  !================================================================
+  !    decomposition de a=l*u (pour la resolution d un systeme d equations
+  !     l matrice triangulaire inferieur
+  !     u matrice triangulaire superieur
+  !
+  !    a l u matrices n*n
+  !
+  !================================================================
+  SUBROUTINE QDUtil_ludcmp(a,n,vv,index,d)
+    USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
+    IMPLICIT NONE
 
-      SUBROUTINE QDUtil_ludcmp(a,n,vv,index,d)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+    integer,          intent(in)    :: n
+    real(kind=Rkind), intent(inout) :: a(n,n),vv(n)
+    integer,          intent(inout) :: index(n)
+    real(kind=Rkind), intent(inout) :: d
 
-       integer n
-       real(kind=Rkind)   tiny
-       parameter (tiny=ONETENTH**20)
-       real(kind=Rkind) a(n,n),vv(n)
-       real(kind=Rkind) aamax,sum,dum,d
-       integer index(n)
+    real(kind=Rkind), parameter :: tiny = ONETENTH**20
 
-       integer i,j,k,imax
+    real(kind=Rkind) :: aamax,sum,dum
+    integer           :: i,j,k,imax
 
-       d=ONE
-       DO 12 i=1,n
-        aamax=ZERO
-        DO 11 j=1,n
-          IF (abs(a(i,j)) .GT. aamax) aamax=abs(a(i,j))
- 11     CONTINUE
-        IF (aamax < tiny) STOP "matrice singuliere"
-        vv(i)=ONE/aamax
- 12    CONTINUE
+    d=ONE
+    DO i=1,n
+      aamax=ZERO
+      DO j=1,n
+        IF (abs(a(i,j)) > aamax) aamax=abs(a(i,j))
+      END DO
+      IF (aamax < tiny) STOP "matrice singuliere"
+      vv(i)=ONE/aamax
+    END DO
 
 
-       DO 19 j=1,n
+    DO j=1,n
 
-        DO 14 i=1,j-1
-         sum=a(i,j)
-         DO 13 k=1,i-1
+      DO i=1,j-1
+        sum=a(i,j)
+        DO k=1,i-1
           sum=sum-a(i,k)*a(k,j)
- 13      CONTINUE
-         a(i,j)=sum
- 14     CONTINUE
+        END DO
+        a(i,j)=sum
+      END DO
 
-        aamax=ZERO
-        imax=0
-        DO 16 i=j,n
-         sum=a(i,j)
-         DO 15 k=1,j-1
+      aamax=ZERO
+      imax=0
+      DO i=j,n
+        sum=a(i,j)
+        DO k=1,j-1
           sum=sum-a(i,k)*a(k,j)
- 15      CONTINUE
-         a(i,j)=sum
-         dum=vv(i)*abs(sum)
-         IF (dum .GE. aamax) THEN
-           imax=i
-           aamax=dum
-         ENDIF
- 16     CONTINUE
-        IF (imax ==0) THEN
-          write(out_unit,*) ' ERROR in ludcmp'
-          write(out_unit,*) ' imax = 0 !!!'
-          write(out_unit,*) ' matrix a:'
-          CALL Write_RMat(a,out_unit,4)
-          STOP
-        END IF
-
-        IF (j .NE. imax) THEN
-          DO 17 k=1,n
-           dum=a(imax,k)
-           a(imax,k)=a(j,k)
-           a(j,k)=dum
- 17       CONTINUE
-          d=-d
-          vv(imax)=vv(j)
+        END DO
+        a(i,j)=sum
+        dum=vv(i)*abs(sum)
+        IF (dum >= aamax) THEN
+         imax=i
+         aamax=dum
         ENDIF
+      END DO
+      IF (imax ==0) THEN
+        write(out_unit,*) ' ERROR in ludcmp'
+        write(out_unit,*) ' imax = 0 !!!'
+        write(out_unit,*) ' matrix a:'
+        CALL Write_Mat(a,out_unit,4)
+        STOP
+      END IF
 
-        index(j)=imax
-        IF (a(j,j) .EQ. ZERO) a(j,j)=tiny
-        IF (j .NE. n) THEN
-          dum=ONE/a(j,j)
-          DO 18 i=j+1,n
-            a(i,j)=a(i,j)*dum
- 18       CONTINUE
-        ENDIF
+      IF (j /= imax) THEN
+        DO k=1,n
+          dum=a(imax,k)
+          a(imax,k)=a(j,k)
+          a(j,k)=dum
+        END DO
+        d=-d
+        vv(imax)=vv(j)
+      ENDIF
 
- 19    CONTINUE
+      index(j)=imax
+      IF (a(j,j) == ZERO) a(j,j)=tiny
+      IF (j /= n) THEN
+        dum=ONE/a(j,j)
+        DO i=j+1,n
+          a(i,j)=a(i,j)*dum
+        END DO
+      ENDIF
 
+    END DO
 
-       RETURN
-     END SUBROUTINE QDUtil_ludcmp
+  END SUBROUTINE QDUtil_ludcmp
 
-      SUBROUTINE QDUtil_SVDCMP(A,M,N,W,V,max_n)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+  SUBROUTINE QDUtil_SVDCMP(A,M,N,W,V,max_n)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
 
       integer max_n,N,M
       real (kind=Rkind) :: A(max_n,max_n),V(max_n,max_n)
@@ -391,40 +745,40 @@ MODULE QDUtil_Matrix_m
       G=ZERO
       SCALE=ZERO
       ANORM=ZERO
-      DO 25 I=1,N
+      DO I=1,N
         L=I+1
         RV1(I)=SCALE*G
         G=ZERO
         S=ZERO
         SCALE=ZERO
         IF (I.LE.M) THEN
-          DO 11 K=I,M
+          DO K=I,M
             SCALE=SCALE+ABS(A(K,I))
-11        CONTINUE
+          END DO
           IF (SCALE.NE.ZERO) THEN
-            DO 12 K=I,M
+            DO K=I,M
               A(K,I)=A(K,I)/SCALE
               S=S+A(K,I)*A(K,I)
-12          CONTINUE
+            END DO
             F=A(I,I)
             G=-SIGN(sqrt(S),F)
             H=F*G-S
             A(I,I)=F-G
             IF (I.NE.N) THEN
-              DO 15 J=L,N
+              DO J=L,N
                 S=ZERO
-                DO 13 K=I,M
+                DO K=I,M
                   S=S+A(K,I)*A(K,J)
-13              CONTINUE
+                END DO
                 F=S/H
-                DO 14 K=I,M
+                DO K=I,M
                   A(K,J)=A(K,J)+F*A(K,I)
-14              CONTINUE
-15            CONTINUE
+                END DO
+              END DO
             ENDIF
-            DO 16 K= I,M
+            DO K= I,M
               A(K,I)=SCALE*A(K,I)
-16          CONTINUE
+            END DO
           ENDIF
         ENDIF
         W(I)=SCALE *G
@@ -432,129 +786,129 @@ MODULE QDUtil_Matrix_m
         S=ZERO
         SCALE=ZERO
         IF ((I.LE.M).AND.(I.NE.N)) THEN
-          DO 17 K=L,N
+          DO K=L,N
             SCALE=SCALE+ABS(A(I,K))
-17        CONTINUE
+          END DO
           IF (SCALE.NE.ZERO) THEN
-            DO 18 K=L,N
+            DO K=L,N
               A(I,K)=A(I,K)/SCALE
               S=S+A(I,K)*A(I,K)
-18          CONTINUE
+            END DO
             F=A(I,L)
             G=-SIGN(sqrt(S),F)
             H=F*G-S
             A(I,L)=F-G
-            DO 19 K=L,N
+            DO K=L,N
               RV1(K)=A(I,K)/H
-19          CONTINUE
+            END DO
             IF (I.NE.M) THEN
-              DO 23 J=L,M
+              DO J=L,M
                 S=ZERO
-                DO 21 K=L,N
+                DO K=L,N
                   S=S+A(J,K)*A(I,K)
-21              CONTINUE
-                DO 22 K=L,N
+                END DO
+                DO K=L,N
                   A(J,K)=A(J,K)+S*RV1(K)
-22              CONTINUE
-23            CONTINUE
+                END DO
+              END DO
             ENDIF
-            DO 24 K=L,N
+            DO K=L,N
               A(I,K)=SCALE*A(I,K)
-24          CONTINUE
+            END DO
           ENDIF
         ENDIF
         ANORM=MAX(ANORM,(ABS(W(I))+ABS(RV1(I))))
-25    CONTINUE
-      DO 32 I=N,1,-1
+      END DO
+      DO I=N,1,-1
         IF (I.LT.N) THEN
           IF (G.NE.ZERO) THEN
-            DO 26 J=L,N
+            DO J=L,N
               V(J,I)=(A(I,J)/A(I,L))/G
-26          CONTINUE
-            DO 29 J=L,N
+            END DO
+            DO J=L,N
               S=ZERO
-              DO 27 K=L,N
+              DO K=L,N
                 S=S+A(I,K)*V(K,J)
-27            CONTINUE
-              DO 28 K=L,N
+              END DO
+              DO K=L,N
                 V(K,J)=V(K,J)+S*V(K,I)
-28            CONTINUE
-29          CONTINUE
+              END DO
+            END DO
           ENDIF
-          DO 31 J=L,N
+          DO J=L,N
             V(I,J)=ZERO
             V(J,I)=ZERO
-31        CONTINUE
+          END DO
         ENDIF
         V(I,I)=ONE
         G=RV1(I)
         L=I
-32    CONTINUE
-      DO 39 I=N,1,-1
+      END DO
+      DO I=N,1,-1
         L=I+1
         G=W(I)
         IF (I.LT.N) THEN
-          DO 33 J=L,N
+          DO J=L,N
             A(I,J)=ZERO
-33        CONTINUE
+          END DO
         ENDIF
         IF (G.NE.ZERO) THEN
           G=ONE/G
           IF (I.NE.N) THEN
-            DO 36 J=L,N
+            DO J=L,N
               S=ZERO
-              DO 34 K=L,M
+              DO K=L,M
                 S=S+A(K,I)*A(K,J)
-34            CONTINUE
+              END DO
               F=(S/A(I,I))*G
-              DO 35 K=I,M
+              DO K=I,M
                 A(K,J)=A(K,J)+F*A(K,I)
-35            CONTINUE
-36          CONTINUE
+              END DO
+            END DO
           ENDIF
-          DO 37 J=I,M
+          DO J=I,M
             A(J,I)=A(J,I)*G
-37        CONTINUE
+          END DO
         ELSE
-          DO 38 J= I,M
+          DO J= I,M
             A(J,I)=ZERO
-38        CONTINUE
+          END DO
         ENDIF
         A(I,I)=A(I,I)+ONE
-39    CONTINUE
+      END DO
       DO 49 K=N,1,-1
         DO 48 ITS=1,30
-          DO 41 L=K,1,-1
+          DO L=K,1,-1
             NM=L-1
-            IF ((ABS(RV1(L))+ANORM).EQ.ANORM)  GO TO 2
-            IF ((ABS(W(NM))+ANORM).EQ.ANORM)  GO TO 1
-41        CONTINUE
+            IF ((ABS(RV1(L))+ANORM) == ANORM)  GO TO 2
+            IF ((ABS(W(NM))+ANORM) == ANORM)  GO TO 1
+          END DO
 1         C=ZERO
           S=ONE
-          DO 43 I=L,K
+          DO I=L,K
             F=S*RV1(I)
-            IF ((ABS(F)+ANORM).NE.ANORM) THEN
+            IF ((ABS(F)+ANORM) /= ANORM) THEN
               G=W(I)
               H=sqrt(F*F+G*G)
               W(I)=H
               H=ONE/H
               C= (G*H)
               S=-(F*H)
-              DO 42 J=1,M
+              DO J=1,M
                 Y=A(J,NM)
                 Z=A(J,I)
                 A(J,NM)=(Y*C)+(Z*S)
                 A(J,I)=-(Y*S)+(Z*C)
-42            CONTINUE
+              END DO
             ENDIF
-43        CONTINUE
+          END DO
 2         Z=W(K)
           IF (L.EQ.K) THEN
-            IF (Z.LT.ZERO) THEN
+            IF (Z < ZERO) THEN
               W(K)=-Z
-              DO 44 J=1,N
-                V(J,K)=-V(J,K)
-44            CONTINUE
+              DO J=1,N
+                V(J,K)=-V(J,K) 
+              END DO
             ENDIF
             GO TO 3
           ENDIF
@@ -569,7 +923,7 @@ MODULE QDUtil_Matrix_m
           F=((X-Z)*(X+Z)+H*((Y/(F+SIGN(G,F)))-H))/X
           C=ONE
           S=ONE
-          DO 47 J=L,NM
+          DO J=L,NM
             I=J+1
             G=RV1(I)
             Y=W(I)
@@ -583,12 +937,12 @@ MODULE QDUtil_Matrix_m
             G=-(X*S)+(G*C)
             H=Y*S
             Y=Y*C
-            DO 45 JJ=1,N
+            DO JJ=1,N
               X=V(JJ,J)
               Z=V(JJ,I)
               V(JJ,J)= (X*C)+(Z*S)
               V(JJ,I)=-(X*S)+(Z*C)
-45          CONTINUE
+            END DO
             Z=sqrt(F*F+H*H)
             W(J)=Z
             IF (Z.NE.ZERO) THEN
@@ -598,13 +952,13 @@ MODULE QDUtil_Matrix_m
             ENDIF
             F= (C*G)+(S*Y)
             X=-(S*G)+(C*Y)
-            DO 46 JJ=1,M
+            DO JJ=1,M
               Y=A(JJ,J)
               Z=A(JJ,I)
               A(JJ,J)= (Y*C)+(Z*S)
               A(JJ,I)=-(Y*S)+(Z*C)
-46          CONTINUE
-47        CONTINUE
+            END DO
+          END DO
           RV1(L)=ZERO
           RV1(K)=F
           W(K)=X
@@ -645,38 +999,6 @@ MODULE QDUtil_Matrix_m
       RETURN
 
     END SUBROUTINE QDUtil_SVBKSB
-
-
-!================================================================
-!    inversion de la matrice a : c=1/a
-!================================================================
-      SUBROUTINE QDUtil_inversion_cplx(c,a,trav,index,n)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-       integer n
-       complex(kind=Rkind) a(n,n),d
-       complex(kind=Rkind) c(n,n)
-
-       integer index(n)
-       complex(kind=Rkind) trav(n)
-
-       integer i,j
-
-       DO i=1,n
-         DO j=1,n
-           c(i,j)=CZERO
-         END DO
-         c(i,i)=CONE
-       END DO
-       CALL QDUtil_ludcmp_cplx(a,n,trav,index,d)
-
-       DO j=1,n
-         CALL QDUtil_lubksb_cplx(a,n,index,c(1,j))
-       END DO
-
-       RETURN
-       end subroutine QDUtil_inversion_cplx
 !================================================================
 !    resolution de a*x=b apres la procedure ludcmp
 !================================================================
@@ -737,7 +1059,7 @@ MODULE QDUtil_Matrix_m
 
   integer               :: err,type_lu_loc
   integer, parameter    :: type_lu_default = 1
-  integer(kind=int32)  :: n4,ierr4
+  integer(kind=int32)   :: n4,ierr4
   complex(kind=Rkind), allocatable :: work(:)
 
 
@@ -766,7 +1088,7 @@ MODULE QDUtil_Matrix_m
       write(out_unit,*) ' ERROR in Driver_LU_decomp_cplx'
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
       write(out_unit,*) '  The program should not reach the LAPACK case.'
-      write(out_unit,*) '  => Probabely, wrong type_diag_default.'
+      write(out_unit,*) '  => Probabely, wrong type_lu_default.'
       write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in Driver_LU_decomp_cplx: LAPACK case impossible'
 #endif
@@ -896,40 +1218,256 @@ MODULE QDUtil_Matrix_m
        end subroutine QDUtil_ludcmp_cplx
 
 
-!=====================================================================
-!
-! ++   A = Id =>  A(i,i)=ONE
-!      A : square matrix
-!
-!=====================================================================
-!
-  SUBROUTINE QDUtil_mat_id(a,n)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+  !=====================================================================
+  !
+  ! ++   A = Id =>  A(i,i)=ONE
+  !      A : square matrix
+  !
+  !=====================================================================
+  FUNCTION QDUtil_Identity_RMat(n) RESULT(RMat)
+    USE QDUtil_NumParameters_m, ONLY : Rkind,ZERO,ONE
+    IMPLICIT NONE
 
-       integer          :: i,n
-       real(kind=Rkind) :: a(n,n)
+    integer,          intent(in)  :: n
+    real(kind=Rkind)              :: RMat(n,n)
 
-       a(:,:) = ZERO
+    integer           :: i
 
-       DO i=1,n
-         a(i,i) = ONE
-       END DO
+    RMat(:,:) = ZERO
+    DO i=1,n
+     RMat(i,i) = ONE
+    END DO
 
-  END SUBROUTINE QDUtil_mat_id
-  SUBROUTINE QDUtil_Cplx_mat_id(a,n)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+  END FUNCTION QDUtil_Identity_RMat
+  FUNCTION QDUtil_Identity_CMat(n) RESULT(CMat)
+    USE QDUtil_NumParameters_m, ONLY : Rkind,CZERO,CONE
+    IMPLICIT NONE
 
-       integer          :: i,n
-       complex(kind=Rkind) :: a(n,n)
+    integer,          intent(in)  :: n
+    complex(kind=Rkind)           :: CMat(n,n)
 
-       a(:,:) = CZERO
+    integer           :: i
 
-       DO i=1,n
-         a(i,i) = CONE
-       END DO
+    CMat(:,:) = CZERO
+    DO i=1,n
+      CMat(i,i) = CONE
+    END DO
 
-  END SUBROUTINE QDUtil_Cplx_mat_id
+  END FUNCTION QDUtil_Identity_CMat
 
+  SUBROUTINE Test_QDUtil_Matrix()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+
+    integer                          :: io,ioerr
+    real(kind=Rkind),    allocatable :: R1Mat(:,:),R1Vec(:)
+    complex(kind=Rkind), allocatable :: C1Mat(:,:),C1Vec(:)
+    real(kind=Rkind),    allocatable :: R2Mat(:,:),R2Vec(:)
+    complex(kind=Rkind), allocatable :: C2Mat(:,:),C2Vec(:)
+    real(kind=Rkind),    allocatable :: R3Mat(:,:),R3Vec(:)
+    complex(kind=Rkind), allocatable :: C3Mat(:,:),C3Vec(:)
+
+    !====================================================================
+    ! Tests for the identity matrix
+    !
+    ! define the matrices
+    R1Mat = reshape([ONE,ZERO,ZERO,                              &
+                     ZERO,ONE,ZERO,                              &
+                     ZERO,ZERO,ONE],shape=[3,3])
+    R2Mat = Identity_Mat(3)
+
+    C1Mat = reshape([CONE,CZERO,CZERO,                              &
+                     CZERO,CONE,CZERO,                              &
+                     CZERO,CZERO,CONE],shape=[3,3])
+    C2Mat = Identity_Mat(3)
+
+    ! tests
+    CALL Initialize_Test(test_var,test_name='Matrix')
+
+
+    res_test = all(abs(R1Mat-R2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Identity_RMat')
+
+    res_test = all(abs(C1Mat-C2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Identity_CMat')
+
+    CALL Flush_Test(test_var)
+    !====================================================================
+
+    !====================================================================
+    ! test for the derterminant
+    !
+    ! define the matrices
+    R1Mat = reshape([ONE,HALF,ZERO,                             &
+                     HALF,ONE,HALF,                             &
+                     ZERO,HALF,ONE],shape=[3,3])
+
+    C1Mat = EYE * R1Mat
+
+    res_test = (abs(Det_OF(R1Mat)-HALF) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Determinant of RMat')
+    IF (.NOT. res_test) write(out_unit,*) 'Det',Det_OF(R1Mat),HALF
+
+
+    res_test = (abs(Det_OF(C1Mat)-(-EYE*HALF)) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Determinant of CMat')
+    IF (.NOT. res_test) write(out_unit,*) 'Det',Det_OF(C1Mat),EYE*HALF
+
+    CALL Flush_Test(test_var)
+    !====================================================================
+
+
+    !====================================================================
+    ! test for the inversion
+    !
+    ! define the matrices
+    R1Mat = reshape([ONE,HALF,ZERO,                             &
+                     HALF,ONE,HALF,                             &
+                     ZERO,HALF,ONE],shape=[3,3])
+    R2Mat = reshape([THREE,-TWO,ONE,                            &
+                     -TWO,FOUR,-TWO,                            &
+                     ONE,-TWO,THREE],shape=[3,3]) * HALF
+
+    C1Mat =  EYE * R1Mat
+    C2Mat = -EYE * R2Mat
+
+
+    res_test = all(abs(inv_OF_Mat_TO(R1Mat)-R2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion of R1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
+    END IF
+    CALL Flush_Test(test_var)
+
+    res_test = all(abs(inv_OF_Mat_TO(R1Mat,inv_type=0)-R2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion (#0) of R1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
+    END IF
+    CALL Flush_Test(test_var)
+
+    res_test = all(abs(inv_OF_Mat_TO(R1Mat,inv_type=1)-R2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion (#1) of R1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
+    END IF
+    CALL Flush_Test(test_var)
+
+
+    res_test = all(abs(inv_OF_Mat_TO(C1Mat)-C2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion of CMat')
+    CALL Flush_Test(test_var)
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+      CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
+    END IF
+    res_test = all(abs(inv_OF_Mat_TO(C1Mat,inv_type=0)-C2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion (#0) of CMat')
+    CALL Flush_Test(test_var)
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+      CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
+    END IF
+    !====================================================================
+
+
+    !====================================================================
+    ! test for solving a system of linear equations
+    !
+    ! define the matrices
+    R1Mat = reshape([ONE,HALF,ZERO,                             &
+                     HALF,ONE,HALF,                             &
+                     ZERO,HALF,ONE],shape=[3,3])
+    R2Mat = reshape([THREE,-TWO,ONE,                            &
+                     -TWO,FOUR,-TWO,                            &
+                     ONE,-TWO,THREE],shape=[3,3]) * HALF
+
+    C1Mat =  EYE * R1Mat
+    C2Mat = -EYE * R2Mat
+    R1Vec = [ONE,ONE,ONE]
+    C1Vec = [CONE,CONE,CONE]
+
+    R2Vec = LinearSys_Solve(R1Mat,R1Vec)
+    res_test = all(abs(matmul(R1Mat,R2Vec)-R1Vec) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve of R1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Vec(R1Vec,out_unit,5,info='R1Vec')
+      CALL Write_Vec(R2Vec,out_unit,5,info='R2Vec')
+      CALL Write_Vec(matmul(R1Mat,R2Vec)-R1Vec,out_unit,5,info='Error')
+    END IF
+    CALL Flush_Test(test_var)
+
+    R2Vec = LinearSys_Solve(R1Mat,R1Vec,LS_type=0)
+    res_test = all(abs(matmul(R1Mat,R2Vec)-R1Vec) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#0) of R1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Vec(R1Vec,out_unit,5,info='R1Vec')
+      CALL Write_Vec(R2Vec,out_unit,5,info='R2Vec')
+      CALL Write_Vec(matmul(R1Mat,R2Vec)-R1Vec,out_unit,5,info='Error')
+    END IF
+    CALL Flush_Test(test_var)
+
+    R2Vec = LinearSys_Solve(R1Mat,R1Vec,LS_type=0)
+    res_test = all(abs(matmul(R1Mat,R2Vec)-R1Vec) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#1) of R1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Vec(R1Vec,out_unit,5,info='R1Vec')
+      CALL Write_Vec(R2Vec,out_unit,5,info='R2Vec')
+      CALL Write_Vec(matmul(R1Mat,R2Vec)-R1Vec,out_unit,5,info='Error')
+    END IF
+    CALL Flush_Test(test_var)
+
+    C2Vec = LinearSys_Solve(C1Mat,C1Vec)
+    res_test = all(abs(matmul(C1Mat,C2Vec)-C1Vec) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve of C1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='C1Mat')
+      CALL Write_Vec(R1Vec,out_unit,5,info='C1Vec')
+      CALL Write_Vec(R2Vec,out_unit,5,info='C2Vec')
+      CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
+    END IF
+    CALL Flush_Test(test_var)
+
+    C2Vec = LinearSys_Solve(C1Mat,C1Vec,LS_type=0)
+    res_test = all(abs(matmul(C1Mat,C2Vec)-C1Vec) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#0) of C1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='C1Mat')
+      CALL Write_Vec(R1Vec,out_unit,5,info='C1Vec')
+      CALL Write_Vec(R2Vec,out_unit,5,info='C2Vec')
+      CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
+    END IF
+    CALL Flush_Test(test_var)
+    C2Vec = LinearSys_Solve(C1Mat,C1Vec,LS_type=3)
+    res_test = all(abs(matmul(C1Mat,C2Vec)-C1Vec) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#3) of C1Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='C1Mat')
+      CALL Write_Vec(R1Vec,out_unit,5,info='C1Vec')
+      CALL Write_Vec(R2Vec,out_unit,5,info='C2Vec')
+      CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
+    END IF
+    CALL Flush_Test(test_var)
+    !====================================================================
+
+    ! finalize the tests
+    CALL Finalize_Test(test_var)
+  END SUBROUTINE Test_QDUtil_Matrix
 END MODULE QDUtil_Matrix_m
