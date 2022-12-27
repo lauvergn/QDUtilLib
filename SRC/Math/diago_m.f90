@@ -44,7 +44,6 @@ MODULE QDUtil_diago_m
 !   Driver for the diagonalization
 !      Default: tred2+tql2 (diago_type=2)
 !            Other possibilities: Jacobi (diago_type=1) or Lapack (diago_type=3)
-!            Rk: Lapack diago is not possible
 !      Sort: the eigenvalues/eigenvectors:
 !            sort=1:  ascending (default)
 !            sort=-1: descending
@@ -52,15 +51,15 @@ MODULE QDUtil_diago_m
 !     phase:
 !============================================================
 !
-  RECURSIVE SUBROUTINE QDUtil_diagonalization(Mat,REig,Vec,n,diago_type,sort,phase,IEig)
+  RECURSIVE SUBROUTINE QDUtil_diagonalization(RMat,REigVal,REigVec,nb_diago,diago_type,sort,phase,IEigVec)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
 
-    integer,          intent(in)              :: n ! when n < size(REig), only n eigenvectors and  eigenvectors are calculated
-    real(kind=Rkind), intent(in)              :: Mat(:,:)
-    real(kind=Rkind), intent(inout)           :: REig(:),Vec(:,:)
-    real(kind=Rkind), intent(inout), optional :: IEig(:)
+    real(kind=Rkind), intent(in)              :: RMat(:,:)
+    real(kind=Rkind), intent(inout)           :: REigVal(:),REigVec(:,:)
+    integer,          intent(in),    optional :: nb_diago ! when nb_diago < size(REigVal), only nb_diago eigenvavlues and  eigenREigVectors are calculated
+    real(kind=Rkind), intent(inout), optional :: IEigVec(:)
 
     integer,          intent(in),    optional :: diago_type,sort
     logical,          intent(in),    optional :: phase
@@ -72,15 +71,15 @@ MODULE QDUtil_diago_m
     !                                    Jacobi tred+tql DSYEV  DGEEV Lanczos
     integer, parameter :: list_type(7) = [1,    2,       3,377, 4,477,   5]
 
-    real(kind=Rkind), allocatable :: trav(:),Mat_save(:,:)
-    integer :: n_size,n_vect
+    real(kind=Rkind), allocatable :: RMat_save(:,:)
+    integer :: n_size,n_vect,n
 
     !for lapack
     integer              :: i
     integer              :: lwork ,lda ,ldvr ,ierr
     integer(kind=int32)  :: n4,lwork4,lda4,ldvr4,ierr4
     real(kind=Rkind), allocatable :: work(:)
-    real(kind=Rkind), allocatable :: IEig_loc(:)
+    real(kind=Rkind), allocatable :: IEigVec_loc(:)
 
     real(kind=Rkind) :: dummy(1,1)
 
@@ -90,23 +89,29 @@ MODULE QDUtil_diago_m
     !logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------
 
-    n_size = size(REig)
-    IF (n_size /= size(Mat,dim=1) .OR. n_size /= size(Vec,dim=1)) THEN
+    n_size = size(REigVal)
+    IF (present(nb_diago)) THEN
+      n = nb_diago
+    ELSE
+      n = n_size
+    END IF
+
+    IF (n_size /= size(RMat,dim=1) .OR. n_size /= size(RMat,dim=1)) THEN
       write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' The matrix or vector sizes are not consistant'
-      write(out_unit,*) '   size(REig):     ',size(REig)
-      write(out_unit,*) '   size(Mat):      ',size(Mat,dim=1)
-      write(out_unit,*) '   size(Vec):      ',size(Vec,dim=1)
+      write(out_unit,*) ' The matrix or eigenvector sizes are not consistant'
+      write(out_unit,*) '   size(REigVal):  ',size(REigVal)
+      write(out_unit,*) '   size(RMat):     ',size(RMat,dim=1)
+      write(out_unit,*) '   size(REigVec):  ',size(REigVec,dim=1)
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: The matrix or vector sizes are not consistant.'
+      STOP 'ERROR in QDUtil_diagonalization: The matrix or eigenvector sizes are not consistant.'
     END IF
     IF (n < 1) THEN
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,"(a,i0,a)") ' n < 1. It MUST be in the range [1,',n_size,']'
       write(out_unit,*) '   n:              ',n
-      write(out_unit,*) '   size(REig):     ',size(REig)
+      write(out_unit,*) '   size(REigVal):  ',size(REigVal)
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: The matrix or vector sizes are not consistant.'
+      STOP 'ERROR in QDUtil_diagonalization:  n < 1.'
     END IF
     n_vect = min(n,n_size)
 
@@ -145,34 +150,33 @@ MODULE QDUtil_diago_m
     SELECT CASE (diago_type_loc)
     CASE(1) ! jacobi
       IF (debug) write(out_unit,*) 'Jacobi (symmetric)'
-      allocate(Mat_save(n,n))
-      Mat_save = Mat ! save mat
+      RMat_save = RMat ! save RMat
 
-      CALL QDUtil_JACOBI2(Mat_save,n,REig,Vec)
+      CALL QDUtil_JACOBI2(RMat_save,n,REigVal,REigVec)
 
-      deallocate(Mat_save)
+      deallocate(RMat_save)
     CASE (2) ! tred+tql
       IF (debug) write(out_unit,*) 'tred+tql, new version (symmetric)'
-      allocate(trav(n))
+      allocate(work(n))
 
-      Vec = Mat
-      CALL QDUtil_TRED2_EISPACK(Vec,n,n,REig,trav)
-      CALL QDUtil_TQLI_EISPACK(REig,trav,n,n,Vec)
+      REigVec = RMat
+      CALL QDUtil_TRED2_EISPACK(REigVec,n,n,REigVal,work)
+      CALL QDUtil_TQLI_EISPACK(REigVal,work,n,n,REigVec)
 
-      deallocate(trav)
+      deallocate(work)
     CASE(3,377) ! lapack77
       IF (debug) write(out_unit,*) 'lapack77: DSYEV (symmetric)'
 
 #if __LAPACK == 1
       lwork = 3*n-1
       allocate(work(lwork))
-      Vec(:,:) = Mat(:,:)
+      REigVec(:,:) = RMat(:,:)
 
       ! lapack subroutines need integer (kind=4 or int32), therefore, we add a conversion, otherwise
       ! it fails when integers (kind=8 or int64) are used (at the compilation).
       n4     = int(n,kind=int32)
       lwork4 = int(lwork,kind=int32)
-      CALL DSYEV('V','U',n4,Vec,n4,REig,work,lwork4,ierr4)
+      CALL DSYEV('V','U',n4,REigVec,n4,REigVal,work,lwork4,ierr4)
 
       IF (debug) write(out_unit,*) 'ierr=',ierr4
       flush(out_unit)
@@ -180,9 +184,8 @@ MODULE QDUtil_diago_m
       IF (ierr4 /= 0_int32) THEN
          write(out_unit,*) ' ERROR in ',name_sub
          write(out_unit,*) ' DSYEV lapack subroutine has FAILED!'
-         STOP
+         STOP 'ERROR in QDUtil_diagonalization: DSYEV lapack subroutine has FAILED!'
       END IF
-
 
       deallocate(work)
 #else
@@ -196,65 +199,46 @@ MODULE QDUtil_diago_m
 !      CASE(395) ! lapack95
 !        IF (debug) write(out_unit,*) 'lapack95: LA_SYEVD'
 !        flush(out_unit)
-!        Vec(:,:) = Mat
-!        CALL LA_SYEVD(Vec,Eig)
+!        REigVec(:,:) = RMat
+!        CALL LA_SYEVD(REigVec,REigVal)
 
     CASE(4,477) ! lapack77 (non-symmetric)
 #if __LAPACK == 1
       IF (debug) write(out_unit,*) 'lapack77: DGEEV (non-symmetric)'
       flush(out_unit)
 
-      allocate(Mat_save(n,n))
-      Mat_save = Mat ! save mat
+      RMat_save = RMat ! save RMat
 
 
       lwork = (2+64)*n
       ldvr  = n
       lda   = n
-      allocate(work(lwork))
 
+      allocate(work(lwork))
+      allocate(IEigVec_loc(n))
 
       n4     = int(n,kind=int32)
       lwork4 = int(lwork,kind=int32)
       lda4   = int(lda,kind=int32)
       ldvr4  = int(ldvr,kind=int32)
 
-      IF (present(IEig)) THEN
-        CALL DGEEV('N','V',n4,Mat_save,lda4,REig,IEig,dummy,              &
-                   int(1,kind=int32),Vec,ldvr4,work,lwork4,ierr4)
-        IF (debug) write(out_unit,*)'ierr=',ierr4
-        IF (ierr4 /= 0_int32) THEN
-           write(out_unit,*) ' ERROR in ',name_sub
-           write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
-           STOP
-        END IF
-
-        IF (debug) THEN
-          DO i=1,n
-            write(out_unit,*) 'Eigenvalue(', i, ') = ', REig(i),'+I ',IEig(i)
-          END DO
-        END IF
-      ELSE
-        allocate(IEig_loc(n))
-
-        CALL DGEEV('N','V',n4,Mat_save,lda4,REig,IEig_loc,dummy,        &
-                   int(1,kind=int32),Vec,ldvr4,work,lwork4,ierr4)
-        IF (debug) write(out_unit,*)'ierr=',ierr4
-        IF (ierr4 /= 0_int32) THEN
-           write(out_unit,*) ' ERROR in ',name_sub
-           write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
-           STOP
-        END IF
-
-        DO i=1,n
-          write(out_unit,*) 'Eigenvalue(', i, ') = ', REig(i),'+I ',IEig_loc(i)
-        END DO
-
-        deallocate(IEig_loc)
+      CALL DGEEV('N','V',n4,RMat_save,lda4,REigVal,IEigVec_loc,dummy,          &
+                 int(1,kind=int32),REigVec,ldvr4,work,lwork4,ierr4)
+      IF (debug) write(out_unit,*)'ierr=',ierr4
+      IF (ierr4 /= 0_int32) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
+        STOP 'ERROR in QDUtil_diagonalization: DGEEV lapack subroutine has FAILED!'
       END IF
 
+      DO i=1,n
+        write(out_unit,*) 'Eigenvalue(', i, ') = ', REigVal(i),'+I ',IEigVec_loc(i)
+      END DO
+      IF (present(IEigVec)) IEigVec = IEigVec_loc
+
+      deallocate(IEigVec_loc)
       deallocate(work)
-      deallocate(Mat_save)
+      deallocate(RMat_save)
 #else
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
@@ -266,7 +250,7 @@ MODULE QDUtil_diago_m
 
     CASE(5) ! lanczos
 
-      CALL QDUtil_Lanczos(Mat,n_vect,REig,Vec,epsi=ONETENTH**6,max_it=100)
+      CALL QDUtil_Lanczos(RMat,n_vect,REigVal,REigVec,epsi=ONETENTH**6,max_it=100)
 
     CASE DEFAULT
       write(out_unit,*) ' ERROR in ',name_sub
@@ -279,27 +263,27 @@ MODULE QDUtil_diago_m
     IF (present(sort)) THEN
         SELECT CASE (sort)
         CASE(1)
-          CALL QDUtil_sort(REig,Vec)
-          CALL QDUtil_rota_denerated(REig,Vec)
+          CALL QDUtil_sort(REigVal,REigVec)
+          CALL QDUtil_rota_denerated(REigVal,REigVec)
         CASE(-1)
-          REig = -REig
-          CALL QDUtil_sort(REig,Vec)
-          REig = -REig
-          CALL QDUtil_rota_denerated(REig,Vec)
+          REigVal = -REigVal
+          CALL QDUtil_sort(REigVal,REigVec)
+          REigVal = -REigVal
+          CALL QDUtil_rota_denerated(REigVal,REigVec)
         CASE(2)
-          CALL QDUtil_sort_abs(REig,Vec)
+          CALL QDUtil_sort_abs(REigVal,REigVec)
         CASE DEFAULT ! no sort
           CONTINUE
         END SELECT
     ELSE
-      CALL QDUtil_sort(REig,Vec)
-      CALL QDUtil_rota_denerated(REig,Vec)
+      CALL QDUtil_sort(REigVal,REigVec)
+      CALL QDUtil_rota_denerated(REigVal,REigVec)
     END IF
 
     IF (present(phase)) THEN
-      IF (phase) CALL QDUtil_Unique_phase(Vec)
+      IF (phase) CALL QDUtil_Unique_phase(REigVec)
     ELSE
-      CALL QDUtil_Unique_phase(Vec)
+      CALL QDUtil_Unique_phase(REigVec)
     END IF
 
   END SUBROUTINE QDUtil_diagonalization
@@ -1087,7 +1071,7 @@ stop
     real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
 
     integer                          :: i,n,io,ioerr,diago_type
-    real(kind=Rkind),    allocatable :: RMat(:,:),REig(:),RVec(:,:)
+    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:)
     real(kind=Rkind),    allocatable :: R2Mat(:,:),Diag(:,:)
     character (len=:),   allocatable :: info
 
@@ -1100,18 +1084,18 @@ stop
                      HALF,ONE,HALF,                             &
                      ZERO,HALF,ONE],shape=[3,3])
 
-    allocate(REig(n))
+    allocate(REigVal(n))
     allocate(RVec(n,n))
     allocate(Diag(n,n))
 
     ! tests
     CALL Initialize_Test(test_var,test_name='Diago')
 
-    CALL diagonalization(RMat,REig,RVec,n)
+    CALL diagonalization(RMat,REigVal,RVec,n)
 
     Diag = ZERO
     DO i=1,n
-      Diag(i,i) = REig(i)
+      Diag(i,i) = REigVal(i)
     END DO
 
     R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
@@ -1121,7 +1105,7 @@ stop
     IF (.NOT. res_test) THEN
       CALL Write_Mat(RMat,out_unit,5,info='RMat')
       CALL Write_Mat(RVec,out_unit,5,info='RVec')
-      CALL Write_Vec(REig,out_unit,5,info='REig')
+      CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
 
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
     END IF
@@ -1130,10 +1114,10 @@ stop
     DO diago_type=1,4
       info = 'diago (#' // TO_string(diago_type) // ')'
 
-      CALL diagonalization(RMat,REig,RVec,n,diago_type=diago_type)
+      CALL diagonalization(RMat,REigVal,RVec,n,diago_type=diago_type)
       Diag = ZERO
       DO i=1,n
-        Diag(i,i) = REig(i)
+        Diag(i,i) = REigVal(i)
       END DO
       R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
   
@@ -1142,7 +1126,7 @@ stop
       IF (.NOT. res_test) THEN
         CALL Write_Mat(RMat,out_unit,5,info='RMat')
         CALL Write_Mat(RVec,out_unit,5,info='RVec')
-        CALL Write_Vec(REig,out_unit,5,info='REig')
+        CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
   
         CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
       END IF

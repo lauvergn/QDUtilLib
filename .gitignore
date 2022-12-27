@@ -4,3 +4,4 @@ OBJ/*
 *.a 
 *.log
 res
+test_io_file.txt
