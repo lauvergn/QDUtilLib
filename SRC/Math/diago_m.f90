@@ -1114,6 +1114,14 @@ stop
     DO diago_type=1,4
       info = 'diago (#' // TO_string(diago_type) // ')'
 
+#if __LAPACK != 1
+      IF (diago_type == 4) THEN
+        write(out_unit,*) 'WARNING: LAPACK and BLAS are not linked'
+        write(out_unit,*) '=> diago with type=4 is not possible'
+        CYCLE
+      END IF
+#endif
+
       CALL diagonalization(RMat,REigVal,RVec,n,diago_type=diago_type)
       Diag = ZERO
       DO i=1,n

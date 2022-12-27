@@ -5,3 +5,5 @@ OBJ/*
 *.log
 res
 test_io_file.txt
+TESTS/*log
+TESTS/res*

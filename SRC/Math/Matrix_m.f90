@@ -1455,6 +1455,7 @@ MODULE QDUtil_Matrix_m
       CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
+#if __LAPACK == 1
     C2Vec = LinearSys_Solve(C1Mat,C1Vec,LS_type=3)
     res_test = all(abs(matmul(C1Mat,C2Vec)-C1Vec) < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#3) of C1Mat')
@@ -1465,6 +1466,7 @@ MODULE QDUtil_Matrix_m
       CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
+#endif
     !====================================================================
 
     ! finalize the tests
