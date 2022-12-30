@@ -1,9 +1,5 @@
 PROGRAM App_QDLib
-  USE QDUtil_NumParameters_m
-  USE QDUtil_String_m
-  USE QDUtil_RW_MatVec_m
-  USE QDUtil_Matrix_m
-  USE QDUtil_diago_m
+  USE QDUtil_m
   IMPLICIT NONE
 
   integer                          :: i,n

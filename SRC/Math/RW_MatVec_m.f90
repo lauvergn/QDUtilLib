@@ -62,6 +62,7 @@ MODULE QDUtil_RW_MatVec_m
 
   PUBLIC :: Write_VecMat, Write_Mat, Write_Vec, Read_Mat, Read_Vec
   PUBLIC :: Test_QDUtil_RW_MatVec
+  PUBLIC :: RMatIO_format, CMatIO_format
 
   character (len=Name_longlen) :: RMatIO_format = "f18.10"
   character (len=Name_longlen) :: CMatIO_format = "'(',f15.7,',',f15.7,')'"

@@ -103,7 +103,9 @@ QDLIB=QD
 MAIN=App_QDLib
 TESTS=Test_QDLib
 
-SRCFILES=Test_m.f90 NumParameters_m.f90 String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Diago_m.f90
+SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 \
+         String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Diago_m.f90 \
+         QDUtil_m.f90
 
 OBJ0=${SRCFILES:.f90=.o}
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
@@ -166,12 +168,15 @@ cleanall : clean
 #===============================================
 $(OBJ_DIR)/NumParameters_m.o:       $(OBJ_DIR)/Test_m.o
 
+$(OBJ_DIR)/MathUtil_m.o:            $(OBJ_DIR)/NumParameters_m.o
 $(OBJ_DIR)/String_m.o:              $(OBJ_DIR)/NumParameters_m.o
 $(OBJ_DIR)/RW_MatVec_m.o:           $(OBJ_DIR)/NumParameters_m.o
 
 $(OBJ_DIR)/Matrix_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
 $(OBJ_DIR)/Diago_m.o:               $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o
 
+
+$(OBJ_DIR)/QDUtil_m.o:              $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o $(OBJ_DIR)/String_m.o
 
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
