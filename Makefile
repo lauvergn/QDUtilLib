@@ -20,7 +20,7 @@ LAPACK = 1
 OS=$(shell uname)
 
 # Extension for the object directory and the library
-ext_obj=_$(FC)_OPT$(OPT)_omp$(OMP)
+ext_obj=_$(FC)_opt$(OPT)_omp$(OMP)
 
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
@@ -141,6 +141,7 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
+	rm -f $(OBJ_DIR)/*.o
 	@echo "  done Library: "$(QDLIBA)
 
 #===============================================
@@ -153,13 +154,13 @@ $(OBJ_DIR)/%.o: %.f90
 #================ cleaning =====================
 .PHONY: clean cleanall
 clean:
-	rm -f $(OBJ_DIR)/*/*.o
+	rm -f $(OBJ_DIR)/*/*.o $(OBJ_DIR)/*.o
 	rm -f *.log test*.txt
 	rm -f Test*.x App*.x
 	@echo "  done cleaning"
 
 cleanall : clean
-	rm -fr OBJ/obj*
+	rm -fr OBJ/obj* OBJ/*mod
 	rm -f libQD*.a
 	rm -f TESTS/res* TESTS/*log
 	@echo "  done all cleaning"

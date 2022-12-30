@@ -153,81 +153,81 @@ MODULE QDUtil_RW_MatVec_m
     !write(out_unit,*) 'format?: ',trim(wformat)
   END SUBROUTINE QDUtil_Format_OF_Line
 
-  !!@description:  write a rectangular real or complex matrix, f(nl,nc),
+  !!@description:  write a rectangular real or complex matrix, mat(nl,nc),
   !!   with a specific format selected with Format_OF_Line
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real64Mat(f,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real64Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    real(kind=real64),           intent(in) :: f(:,:)
+    integer,                     intent(in) :: nio,nbcol
+    real(kind=real64),           intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
     integer         :: nl,nc
-    integer         :: i,j,nb,nbblocs,nfin,nbcol
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-    nc = size(f,dim=2)
-    !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
-    nbcol = nbcol1
-    IF (nbcol > 10) nbcol=10
-    nbblocs=int(nc/nbcol)
-    IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
+    !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
     IF (present(Rformat)) THEN
       IF (present(info)) THEN
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,Rformat,info)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,Rformat,info)
       ELSE
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,Rformat=Rformat)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,Rformat=Rformat)
       END IF
     ELSE
       IF (present(info)) THEN
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,info=info)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,info=info)
       ELSE
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.)
       END IF
     END IF
 
       DO nb=0,nbblocs-1
         DO j=1,nl
-          write(nio,wformat) j,(f(j,i+nb*nbcol),i=1,nbcol)
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
         END DO
         IF (nl > 1 ) write(nio,*)
       END DO
       DO j=1,nl
-        nfin=nc-nbcol*nbblocs
-        write(nio,wformat) j,(f(j,i+nbcol*nbblocs),i=1,nfin)
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
       END DO
 
     deallocate(wformat)
 
   END SUBROUTINE QDUtil_Write_real64Mat
-  SUBROUTINE QDUtil_Write_real64Mat_string(f,string,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real64Mat_string(Mat,string,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     USE QDUtil_String_m,        ONLY : TO_string
     IMPLICIT NONE
 
-    integer,                        intent(in)    :: nbcol1
+    integer,                        intent(in)    :: nbcol
     character (len=:), allocatable, intent(inout) :: string
-    real(kind=real64),              intent(in)    :: f(:,:)
+    real(kind=real64),              intent(in)    :: Mat(:,:)
 
     character (len=*), optional,    intent(in)    :: Rformat
     character (len=*), optional,    intent(in)    :: info
     integer,           optional,    intent(in)    :: iprint
 
     integer         :: nl,nc
-    integer         :: i,j,nb,nbblocs,nfin,nbcol
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable :: BeginString
     character (len=:), allocatable :: Rf
 
@@ -237,15 +237,15 @@ MODULE QDUtil_RW_MatVec_m
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-    nc = size(f,dim=2)
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
  
-    nbcol = nbcol1
-    IF (nbcol > 10) nbcol=10
-    nbblocs=int(nc/nbcol)
-    IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
-    !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+    !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
     !write(out_unit,*) 'string: ',string ; flush(out_unit)
 
     IF (present(info)) THEN
@@ -263,8 +263,8 @@ MODULE QDUtil_RW_MatVec_m
     DO nb=0,nbblocs-1
       DO j=1,nl
         string = string // BeginString // TO_string(j)
-        DO i=1,nbcol
-          string = string // ' ' // TO_string(f(j,i+nb*nbcol),rformat=Rf)
+        DO i=1,nbcol_loc
+          string = string // ' ' // TO_string(Mat(j,i+nb*nbcol_loc),rformat=Rf)
         END DO
         string = string // new_line('a')
       END DO
@@ -273,10 +273,10 @@ MODULE QDUtil_RW_MatVec_m
     END DO
 
     DO j=1,nl
-      nfin=nc-nbcol*nbblocs
+      nfin=nc-nbcol_loc*nbblocs
       string = string // BeginString // TO_string(j)
       DO i=1,nfin
-        string = string // ' ' // TO_string(f(j,i+nbcol*nbblocs),rformat=Rf)
+        string = string // ' ' // TO_string(Mat(j,i+nbcol_loc*nbblocs),rformat=Rf)
       END DO
       string = string // new_line('a')
     END DO
@@ -284,13 +284,13 @@ MODULE QDUtil_RW_MatVec_m
   END SUBROUTINE QDUtil_Write_real64Mat_string
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx64Mat(f,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_cplx64Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    complex(kind=real64),        intent(in) :: f(:,:)
+    integer,                     intent(in) :: nio,nbcol
+    complex(kind=real64),        intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -298,45 +298,45 @@ MODULE QDUtil_RW_MatVec_m
 
 
     integer         :: nl,nc
-    integer i,j,nb,nbblocs,nfin,nbcol
+    integer i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-      nc = size(f,dim=2)
-      !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
-      nbcol = nbcol1
-      IF (nbcol > 10) nbcol=10
-      nbblocs=int(nc/nbcol)
-      IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nl = size(Mat,dim=1)
+      nc = size(Mat,dim=2)
+      !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+      nbcol_loc = nbcol
+      IF (nbcol_loc > 10) nbcol_loc=10
+      nbblocs=int(nc/nbcol_loc)
+      IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
       IF (present(Rformat)) THEN
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,Rformat,info)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,Rformat,info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,Rformat=Rformat)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,Rformat=Rformat)
         END IF
       ELSE
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,info=info)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,info=info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.)
         END IF
       END IF
 
 
       DO nb=0,nbblocs-1
         DO j=1,nl
-          write(nio,wformat) j,(f(j,i+nb*nbcol),i=1,nbcol)
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
         END DO
         IF (nl > 1 ) write(nio,*)
       END DO
       DO j=1,nl
-        nfin=nc-nbcol*nbblocs
-        write(nio,wformat) j,(f(j,i+nbcol*nbblocs),i=1,nfin)
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
       END DO
 
       deallocate(wformat)
@@ -345,136 +345,136 @@ MODULE QDUtil_RW_MatVec_m
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real64Vec(l,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real64Vec(Vec,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    real(kind=real64),            intent(in) :: l(:)
+    integer,                     intent(in) :: nio,nbcol
+    real(kind=real64),            intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
 
-    integer           :: n,i,nb,nbblocs,nfin,nbcol
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    n = size(l)
-       !write(out_unit,*) 'n,nbcol',n,nbcol
-       nbcol = nbcol1
-       IF (nbcol > 10) nbcol=10
-       nbblocs=int(n/nbcol)
-       IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+    n = size(Vec)
+       !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+       nbcol_loc = nbcol
+       IF (nbcol_loc > 10) nbcol_loc=10
+       nbblocs=int(n/nbcol_loc)
+       IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
 
        IF (present(Rformat)) THEN
          IF (present(info)) THEN
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,Rformat,info)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,Rformat,info)
          ELSE
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,Rformat=Rformat)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,Rformat=Rformat)
          END IF
        ELSE
          IF (present(info)) THEN
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,info=info)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,info=info)
          ELSE
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.)
          END IF
        END IF
 
        DO nb=0,nbblocs-1
-         write(nio,wformat) (l(i+nb*nbcol),i=1,nbcol)
+         write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        END DO
-       nfin=n-nbcol*nbblocs
-       write(nio,wformat) (l(i+nbcol*nbblocs),i=1,nfin)
+       nfin=n-nbcol_loc*nbblocs
+       write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
        deallocate(wformat)
   END SUBROUTINE QDUtil_Write_real64Vec
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx64Vec(l,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_cplx64Vec(Vec,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    complex(kind=real64),         intent(in) :: l(:)
+    integer,                     intent(in) :: nio,nbcol
+    complex(kind=real64),         intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
-    integer           :: n,i,nb,nbblocs,nfin,nbcol
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-      n = size(l)
-      !write(out_unit,*) 'n,nbcol',n,nbcol
-      nbcol = nbcol1
-      IF (nbcol > 10) nbcol=10
-      nbblocs=int(n/nbcol)
-      IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+      n = size(Vec)
+      !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+      nbcol_loc = nbcol
+      IF (nbcol_loc > 10) nbcol_loc=10
+      nbblocs=int(n/nbcol_loc)
+      IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
       IF (present(Rformat)) THEN
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,Rformat,info)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,Rformat,info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,Rformat=Rformat)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,Rformat=Rformat)
         END IF
       ELSE
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,info=info)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,info=info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.)
         END IF
       END IF
 
       DO nb=0,nbblocs-1
-        write(nio,wformat) (l(i+nb*nbcol),i=1,nbcol)
+        write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
       END DO
-      nfin=n-nbcol*nbblocs
-      write(nio,wformat) (l(i+nbcol*nbblocs),i=1,nfin)
+      nfin=n-nbcol_loc*nbblocs
+      write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
       deallocate(wformat)
   END SUBROUTINE QDUtil_Write_cplx64Vec
 
-  SUBROUTINE QDUtil_Read_real64Mat(f,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_real64Mat(Mat,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,          intent(in)    :: nio,nbcol
-     integer,          intent(inout) :: err
-     real(kind=real64), intent(inout) :: f(:,:)
+    integer,            intent(in)    :: nio,nbcol_loc
+     integer,           intent(inout) :: err
+     real(kind=real64), intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
-     nl = size(f,dim=1)
-     nc = size(f,dim=2)
-     !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
 
 
-     nbblocs=int(nc/nbcol)
+     nbblocs=int(nc/nbcol_loc)
 
-     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
      err = 0
 
-     !write(out_unit,*) 'nl,nc,nbcol,nbblocs',nl,nc,nbcol,nbblocs
+     !write(out_unit,*) 'nl,nc,nbcol_loc,nbblocs',nl,nc,nbcol_loc,nbblocs
 
 
      DO nb=0,nbblocs-1
 
          DO j=1,nl
-           read(nio,*,IOSTAT=err) jj,(f(j,i+nb*nbcol),i=1,nbcol)
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
            IF (err /= 0) EXIT
          END DO
 
@@ -485,50 +485,50 @@ MODULE QDUtil_RW_MatVec_m
 
      END DO
 
-     nfin=nc-nbcol*nbblocs
+     nfin=nc-nbcol_loc*nbblocs
      IF (err == 0) THEN
        DO j=1,nl
-         read(nio,*,IOSTAT=err) jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
-         !write(out_unit,*) err,jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
+         !write(out_unit,*) err,jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
          IF (err /= 0) EXIT
        END DO
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_real64Mat(f,out_unit,nbcol)
+       CALL QDUtil_Write_real64Mat(Mat,out_unit,nbcol_loc)
        write(out_unit,*) ' ERROR in QDUtil_Read_real64Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol',nl,nc,nbcol
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) '  Internal paramters: nbblocs,nfin',nbblocs,nfin
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_real64Mat
-  SUBROUTINE QDUtil_Read_cplx64Mat(f,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_cplx64Mat(Mat,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,             intent(in)    :: nio,nbcol
-    complex(kind=real64), intent(inout) :: f(:,:)
-    integer,             intent(inout) :: err
+    integer,              intent(in)    :: nio,nbcol_loc
+    complex(kind=real64), intent(inout) :: Mat(:,:)
+    integer,              intent(inout) :: err
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
-     nl = size(f,dim=1)
-     nc = size(f,dim=2)
-     !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
 
 
-     nbblocs=int(nc/nbcol)
+     nbblocs=int(nc/nbcol_loc)
      err = 0
-     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
 
          DO j=1,nl
-           read(nio,*,IOSTAT=err) jj,(f(j,i+nb*nbcol),i=1,nbcol)
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
            IF (err /= 0) EXIT
          END DO
 
@@ -541,18 +541,18 @@ MODULE QDUtil_RW_MatVec_m
 
      IF (err == 0) THEN
        DO j=1,nl
-         nfin=nc-nbcol*nbblocs
-         read(nio,*,IOSTAT=err) jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
+         nfin=nc-nbcol_loc*nbblocs
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
          IF (err /= 0) EXIT
        END DO
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_cplx64Mat(f,out_unit,nbcol)
+       CALL QDUtil_Write_cplx64Mat(Mat,out_unit,nbcol_loc)
        write(out_unit,*) ' ERROR in QDUtil_Read_cplx64Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol',nl,nc,nbcol
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
@@ -561,149 +561,149 @@ MODULE QDUtil_RW_MatVec_m
   !================================================================
   ! ++    read a vector in line
   !================================================================
-  SUBROUTINE QDUtil_Read_real64Vec(l,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_real64Vec(Vec,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer, intent(in)                :: nio,nbcol
-     real(kind=real64), intent(inout)    :: l(:)
-     integer, intent(inout)             :: err
+    integer, intent(in)                :: nio,nbcol_loc
+     real(kind=real64), intent(inout)  :: Vec(:)
+     integer, intent(inout)            :: err
 
      integer :: n,i,nb,nbblocs,nfin
 
-     n = size(l,dim=1)
-     nbblocs=int(n/nbcol)
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
      err = 0
 
 
-     IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
-       read(nio,*,IOSTAT=err) (l(i+nb*nbcol),i=1,nbcol)
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        IF (err /= 0) EXIT
      END DO
 
-     nfin=n-nbcol*nbblocs
-     read(nio,*,IOSTAT=err) (l(i+nbcol*nbblocs),i=1,nfin)
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
        write(out_unit,*) ' ERROR in QDUtil_Read_real64Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The vector paramters: n,nbcol',n,nbcol
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_real64Vec
-  SUBROUTINE QDUtil_Read_cplx64Vec(l,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_cplx64Vec(Vec,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer, intent(in)                 :: nio,nbcol
-    complex(kind=real64), intent(inout) :: l(:)
+    integer, intent(in)                 :: nio,nbcol_loc
+    complex(kind=real64), intent(inout) :: Vec(:)
     integer, intent(inout)              :: err
 
      integer :: n,i,nb,nbblocs,nfin
 
-     n = size(l,dim=1)
-     nbblocs=int(n/nbcol)
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
      err = 0
 
-     IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
-       read(nio,*,IOSTAT=err) (l(i+nb*nbcol),i=1,nbcol)
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        IF (err /= 0) EXIT
      END DO
 
-     nfin=n-nbcol*nbblocs
-     read(nio,*,IOSTAT=err) (l(i+nbcol*nbblocs),i=1,nfin)
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
        write(out_unit,*) ' ERROR in QDUtil_Read_cplx64Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The vector paramters: n,nbcol',n,nbcol
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_cplx64Vec
 
 
-  SUBROUTINE QDUtil_Write_real32Mat(f,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real32Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    real(kind=real32),           intent(in) :: f(:,:)
+    integer,                     intent(in) :: nio,nbcol
+    real(kind=real32),           intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
     integer         :: nl,nc
-    integer         :: i,j,nb,nbblocs,nfin,nbcol
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-    nc = size(f,dim=2)
-    !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
-    nbcol = nbcol1
-    IF (nbcol > 10) nbcol=10
-    nbblocs=int(nc/nbcol)
-    IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
+    !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
     IF (present(Rformat)) THEN
       IF (present(info)) THEN
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,Rformat,info)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,Rformat,info)
       ELSE
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,Rformat=Rformat)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,Rformat=Rformat)
       END IF
     ELSE
       IF (present(info)) THEN
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,info=info)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,info=info)
       ELSE
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.)
       END IF
     END IF
 
       DO nb=0,nbblocs-1
         DO j=1,nl
-          write(nio,wformat) j,(f(j,i+nb*nbcol),i=1,nbcol)
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
         END DO
         IF (nl > 1 ) write(nio,*)
       END DO
       DO j=1,nl
-        nfin=nc-nbcol*nbblocs
-        write(nio,wformat) j,(f(j,i+nbcol*nbblocs),i=1,nfin)
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
       END DO
 
     deallocate(wformat)
 
   END SUBROUTINE QDUtil_Write_real32Mat
-  SUBROUTINE QDUtil_Write_real32Mat_string(f,string,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real32Mat_string(Mat,string,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     USE QDUtil_String_m,        ONLY : TO_string
     IMPLICIT NONE
 
-    integer,                        intent(in)    :: nbcol1
+    integer,                        intent(in)    :: nbcol
     character (len=:), allocatable, intent(inout) :: string
-    real(kind=real32),              intent(in)    :: f(:,:)
+    real(kind=real32),              intent(in)    :: Mat(:,:)
 
     character (len=*), optional,    intent(in)    :: Rformat
     character (len=*), optional,    intent(in)    :: info
     integer,           optional,    intent(in)    :: iprint
 
     integer         :: nl,nc
-    integer         :: i,j,nb,nbblocs,nfin,nbcol
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable :: BeginString
     character (len=:), allocatable :: Rf
 
@@ -713,15 +713,15 @@ MODULE QDUtil_RW_MatVec_m
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-    nc = size(f,dim=2)
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
  
-    nbcol = nbcol1
-    IF (nbcol > 10) nbcol=10
-    nbblocs=int(nc/nbcol)
-    IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
-    !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+    !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
     !write(out_unit,*) 'string: ',string ; flush(out_unit)
 
     IF (present(info)) THEN
@@ -739,8 +739,8 @@ MODULE QDUtil_RW_MatVec_m
     DO nb=0,nbblocs-1
       DO j=1,nl
         string = string // BeginString // TO_string(j)
-        DO i=1,nbcol
-          string = string // ' ' // TO_string(f(j,i+nb*nbcol),rformat=Rf)
+        DO i=1,nbcol_loc
+          string = string // ' ' // TO_string(Mat(j,i+nb*nbcol_loc),rformat=Rf)
         END DO
         string = string // new_line('a')
       END DO
@@ -749,10 +749,10 @@ MODULE QDUtil_RW_MatVec_m
     END DO
 
     DO j=1,nl
-      nfin=nc-nbcol*nbblocs
+      nfin=nc-nbcol_loc*nbblocs
       string = string // BeginString // TO_string(j)
       DO i=1,nfin
-        string = string // ' ' // TO_string(f(j,i+nbcol*nbblocs),rformat=Rf)
+        string = string // ' ' // TO_string(Mat(j,i+nbcol_loc*nbblocs),rformat=Rf)
       END DO
       string = string // new_line('a')
     END DO
@@ -760,13 +760,13 @@ MODULE QDUtil_RW_MatVec_m
   END SUBROUTINE QDUtil_Write_real32Mat_string
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx32Mat(f,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_cplx32Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    complex(kind=real32),        intent(in) :: f(:,:)
+    integer,                     intent(in) :: nio,nbcol
+    complex(kind=real32),        intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -774,45 +774,45 @@ MODULE QDUtil_RW_MatVec_m
 
 
     integer         :: nl,nc
-    integer i,j,nb,nbblocs,nfin,nbcol
+    integer i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-      nc = size(f,dim=2)
-      !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
-      nbcol = nbcol1
-      IF (nbcol > 10) nbcol=10
-      nbblocs=int(nc/nbcol)
-      IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nl = size(Mat,dim=1)
+      nc = size(Mat,dim=2)
+      !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+      nbcol_loc = nbcol
+      IF (nbcol_loc > 10) nbcol_loc=10
+      nbblocs=int(nc/nbcol_loc)
+      IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
       IF (present(Rformat)) THEN
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,Rformat,info)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,Rformat,info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,Rformat=Rformat)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,Rformat=Rformat)
         END IF
       ELSE
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,info=info)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,info=info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.)
         END IF
       END IF
 
 
       DO nb=0,nbblocs-1
         DO j=1,nl
-          write(nio,wformat) j,(f(j,i+nb*nbcol),i=1,nbcol)
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
         END DO
         IF (nl > 1 ) write(nio,*)
       END DO
       DO j=1,nl
-        nfin=nc-nbcol*nbblocs
-        write(nio,wformat) j,(f(j,i+nbcol*nbblocs),i=1,nfin)
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
       END DO
 
       deallocate(wformat)
@@ -821,136 +821,136 @@ MODULE QDUtil_RW_MatVec_m
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real32Vec(l,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real32Vec(Vec,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    real(kind=real32),            intent(in) :: l(:)
+    integer,                     intent(in) :: nio,nbcol
+    real(kind=real32),           intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
 
-    integer           :: n,i,nb,nbblocs,nfin,nbcol
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    n = size(l)
-       !write(out_unit,*) 'n,nbcol',n,nbcol
-       nbcol = nbcol1
-       IF (nbcol > 10) nbcol=10
-       nbblocs=int(n/nbcol)
-       IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+    n = size(Vec)
+       !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+       nbcol_loc = nbcol
+       IF (nbcol_loc > 10) nbcol_loc=10
+       nbblocs=int(n/nbcol_loc)
+       IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
 
        IF (present(Rformat)) THEN
          IF (present(info)) THEN
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,Rformat,info)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,Rformat,info)
          ELSE
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,Rformat=Rformat)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,Rformat=Rformat)
          END IF
        ELSE
          IF (present(info)) THEN
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,info=info)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,info=info)
          ELSE
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.)
          END IF
        END IF
 
        DO nb=0,nbblocs-1
-         write(nio,wformat) (l(i+nb*nbcol),i=1,nbcol)
+         write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        END DO
-       nfin=n-nbcol*nbblocs
-       write(nio,wformat) (l(i+nbcol*nbblocs),i=1,nfin)
+       nfin=n-nbcol_loc*nbblocs
+       write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
        deallocate(wformat)
   END SUBROUTINE QDUtil_Write_real32Vec
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx32Vec(l,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_cplx32Vec(Vec,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    complex(kind=real32),         intent(in) :: l(:)
+    integer,                     intent(in) :: nio,nbcol
+    complex(kind=real32),         intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
-    integer           :: n,i,nb,nbblocs,nfin,nbcol
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-      n = size(l)
-      !write(out_unit,*) 'n,nbcol',n,nbcol
-      nbcol = nbcol1
-      IF (nbcol > 10) nbcol=10
-      nbblocs=int(n/nbcol)
-      IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+      n = size(Vec)
+      !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+      nbcol_loc = nbcol
+      IF (nbcol_loc > 10) nbcol_loc=10
+      nbblocs=int(n/nbcol_loc)
+      IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
       IF (present(Rformat)) THEN
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,Rformat,info)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,Rformat,info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,Rformat=Rformat)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,Rformat=Rformat)
         END IF
       ELSE
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,info=info)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,info=info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.)
         END IF
       END IF
 
       DO nb=0,nbblocs-1
-        write(nio,wformat) (l(i+nb*nbcol),i=1,nbcol)
+        write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
       END DO
-      nfin=n-nbcol*nbblocs
-      write(nio,wformat) (l(i+nbcol*nbblocs),i=1,nfin)
+      nfin=n-nbcol_loc*nbblocs
+      write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
       deallocate(wformat)
   END SUBROUTINE QDUtil_Write_cplx32Vec
 
-  SUBROUTINE QDUtil_Read_real32Mat(f,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_real32Mat(Mat,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,          intent(in)    :: nio,nbcol
-     integer,          intent(inout) :: err
-     real(kind=real32), intent(inout) :: f(:,:)
+    integer,            intent(in)    :: nio,nbcol_loc
+     integer,           intent(inout) :: err
+     real(kind=real32), intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
-     nl = size(f,dim=1)
-     nc = size(f,dim=2)
-     !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
 
 
-     nbblocs=int(nc/nbcol)
+     nbblocs=int(nc/nbcol_loc)
 
-     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
      err = 0
 
-     !write(out_unit,*) 'nl,nc,nbcol,nbblocs',nl,nc,nbcol,nbblocs
+     !write(out_unit,*) 'nl,nc,nbcol_loc,nbblocs',nl,nc,nbcol_loc,nbblocs
 
 
      DO nb=0,nbblocs-1
 
          DO j=1,nl
-           read(nio,*,IOSTAT=err) jj,(f(j,i+nb*nbcol),i=1,nbcol)
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
            IF (err /= 0) EXIT
          END DO
 
@@ -961,50 +961,50 @@ MODULE QDUtil_RW_MatVec_m
 
      END DO
 
-     nfin=nc-nbcol*nbblocs
+     nfin=nc-nbcol_loc*nbblocs
      IF (err == 0) THEN
        DO j=1,nl
-         read(nio,*,IOSTAT=err) jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
-         !write(out_unit,*) err,jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
+         !write(out_unit,*) err,jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
          IF (err /= 0) EXIT
        END DO
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_real32Mat(f,out_unit,nbcol)
+       CALL QDUtil_Write_real32Mat(Mat,out_unit,nbcol_loc)
        write(out_unit,*) ' ERROR in QDUtil_Read_real32Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol',nl,nc,nbcol
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) '  Internal paramters: nbblocs,nfin',nbblocs,nfin
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_real32Mat
-  SUBROUTINE QDUtil_Read_cplx32Mat(f,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_cplx32Mat(Mat,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,             intent(in)    :: nio,nbcol
-    complex(kind=real32), intent(inout) :: f(:,:)
+    integer,             intent(in)    :: nio,nbcol_loc
+    complex(kind=real32), intent(inout) :: Mat(:,:)
     integer,             intent(inout) :: err
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
-     nl = size(f,dim=1)
-     nc = size(f,dim=2)
-     !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
 
 
-     nbblocs=int(nc/nbcol)
+     nbblocs=int(nc/nbcol_loc)
      err = 0
-     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
 
          DO j=1,nl
-           read(nio,*,IOSTAT=err) jj,(f(j,i+nb*nbcol),i=1,nbcol)
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
            IF (err /= 0) EXIT
          END DO
 
@@ -1017,18 +1017,18 @@ MODULE QDUtil_RW_MatVec_m
 
      IF (err == 0) THEN
        DO j=1,nl
-         nfin=nc-nbcol*nbblocs
-         read(nio,*,IOSTAT=err) jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
+         nfin=nc-nbcol_loc*nbblocs
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
          IF (err /= 0) EXIT
        END DO
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_cplx32Mat(f,out_unit,nbcol)
+       CALL QDUtil_Write_cplx32Mat(Mat,out_unit,nbcol_loc)
        write(out_unit,*) ' ERROR in QDUtil_Read_cplx32Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol',nl,nc,nbcol
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
@@ -1037,71 +1037,71 @@ MODULE QDUtil_RW_MatVec_m
   !================================================================
   ! ++    read a vector in line
   !================================================================
-  SUBROUTINE QDUtil_Read_real32Vec(l,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_real32Vec(Vec,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer, intent(in)                :: nio,nbcol
-     real(kind=real32), intent(inout)    :: l(:)
-     integer, intent(inout)             :: err
+    integer, intent(in)                :: nio,nbcol_loc
+     real(kind=real32), intent(inout)  :: Vec(:)
+     integer, intent(inout)            :: err
 
      integer :: n,i,nb,nbblocs,nfin
 
-     n = size(l,dim=1)
-     nbblocs=int(n/nbcol)
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
      err = 0
 
 
-     IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
-       read(nio,*,IOSTAT=err) (l(i+nb*nbcol),i=1,nbcol)
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        IF (err /= 0) EXIT
      END DO
 
-     nfin=n-nbcol*nbblocs
-     read(nio,*,IOSTAT=err) (l(i+nbcol*nbblocs),i=1,nfin)
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
        write(out_unit,*) ' ERROR in QDUtil_Read_real32Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The vector paramters: n,nbcol',n,nbcol
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_real32Vec
-  SUBROUTINE QDUtil_Read_cplx32Vec(l,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_cplx32Vec(Vec,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer, intent(in)                 :: nio,nbcol
-    complex(kind=real32), intent(inout) :: l(:)
+    integer, intent(in)                 :: nio,nbcol_loc
+    complex(kind=real32), intent(inout) :: Vec(:)
     integer, intent(inout)              :: err
 
      integer :: n,i,nb,nbblocs,nfin
 
-     n = size(l,dim=1)
-     nbblocs=int(n/nbcol)
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
      err = 0
 
-     IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
-       read(nio,*,IOSTAT=err) (l(i+nb*nbcol),i=1,nbcol)
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        IF (err /= 0) EXIT
      END DO
 
-     nfin=n-nbcol*nbblocs
-     read(nio,*,IOSTAT=err) (l(i+nbcol*nbblocs),i=1,nfin)
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
        write(out_unit,*) ' ERROR in QDUtil_Read_cplx32Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The vector paramters: n,nbcol',n,nbcol
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
@@ -1109,78 +1109,78 @@ MODULE QDUtil_RW_MatVec_m
 
 
 
-  SUBROUTINE QDUtil_Write_real128Mat(f,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real128Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    real(kind=real128),          intent(in) :: f(:,:)
+    integer,                     intent(in) :: nio,nbcol
+    real(kind=real128),          intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
     integer         :: nl,nc
-    integer         :: i,j,nb,nbblocs,nfin,nbcol
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-    nc = size(f,dim=2)
-    !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
-    nbcol = nbcol1
-    IF (nbcol > 10) nbcol=10
-    nbblocs=int(nc/nbcol)
-    IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
+    !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
     IF (present(Rformat)) THEN
       IF (present(info)) THEN
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,Rformat,info)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,Rformat,info)
       ELSE
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,Rformat=Rformat)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,Rformat=Rformat)
       END IF
     ELSE
       IF (present(info)) THEN
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.,info=info)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.,info=info)
       ELSE
-        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.FALSE.)
+        CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.FALSE.)
       END IF
     END IF
 
       DO nb=0,nbblocs-1
         DO j=1,nl
-          write(nio,wformat) j,(f(j,i+nb*nbcol),i=1,nbcol)
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
         END DO
         IF (nl > 1 ) write(nio,*)
       END DO
       DO j=1,nl
-        nfin=nc-nbcol*nbblocs
-        write(nio,wformat) j,(f(j,i+nbcol*nbblocs),i=1,nfin)
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
       END DO
 
     deallocate(wformat)
 
   END SUBROUTINE QDUtil_Write_real128Mat
-  SUBROUTINE QDUtil_Write_real128Mat_string(f,string,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real128Mat_string(Mat,string,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     USE QDUtil_String_m,        ONLY : TO_string
     IMPLICIT NONE
 
-    integer,                        intent(in)    :: nbcol1
+    integer,                        intent(in)    :: nbcol
     character (len=:), allocatable, intent(inout) :: string
-    real(kind=real128),              intent(in)    :: f(:,:)
+    real(kind=real128),              intent(in)    :: Mat(:,:)
 
     character (len=*), optional,    intent(in)    :: Rformat
     character (len=*), optional,    intent(in)    :: info
     integer,           optional,    intent(in)    :: iprint
 
     integer         :: nl,nc
-    integer         :: i,j,nb,nbblocs,nfin,nbcol
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable :: BeginString
     character (len=:), allocatable :: Rf
 
@@ -1190,15 +1190,15 @@ MODULE QDUtil_RW_MatVec_m
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-    nc = size(f,dim=2)
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
  
-    nbcol = nbcol1
-    IF (nbcol > 10) nbcol=10
-    nbblocs=int(nc/nbcol)
-    IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
-    !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+    !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
     !write(out_unit,*) 'string: ',string ; flush(out_unit)
 
     IF (present(info)) THEN
@@ -1216,8 +1216,8 @@ MODULE QDUtil_RW_MatVec_m
     DO nb=0,nbblocs-1
       DO j=1,nl
         string = string // BeginString // TO_string(j)
-        DO i=1,nbcol
-          string = string // ' ' // TO_string(f(j,i+nb*nbcol),rformat=Rf)
+        DO i=1,nbcol_loc
+          string = string // ' ' // TO_string(Mat(j,i+nb*nbcol_loc),rformat=Rf)
         END DO
         string = string // new_line('a')
       END DO
@@ -1226,10 +1226,10 @@ MODULE QDUtil_RW_MatVec_m
     END DO
 
     DO j=1,nl
-      nfin=nc-nbcol*nbblocs
+      nfin=nc-nbcol_loc*nbblocs
       string = string // BeginString // TO_string(j)
       DO i=1,nfin
-        string = string // ' ' // TO_string(f(j,i+nbcol*nbblocs),rformat=Rf)
+        string = string // ' ' // TO_string(Mat(j,i+nbcol_loc*nbblocs),rformat=Rf)
       END DO
       string = string // new_line('a')
     END DO
@@ -1237,13 +1237,13 @@ MODULE QDUtil_RW_MatVec_m
   END SUBROUTINE QDUtil_Write_real128Mat_string
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx128Mat(f,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_cplx128Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    complex(kind=real128),        intent(in) :: f(:,:)
+    integer,                      intent(in) :: nio,nbcol
+    complex(kind=real128),        intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -1251,45 +1251,45 @@ MODULE QDUtil_RW_MatVec_m
 
 
     integer         :: nl,nc
-    integer i,j,nb,nbblocs,nfin,nbcol
+    integer i,j,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    nl = size(f,dim=1)
-      nc = size(f,dim=2)
-      !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
-      nbcol = nbcol1
-      IF (nbcol > 10) nbcol=10
-      nbblocs=int(nc/nbcol)
-      IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+    nl = size(Mat,dim=1)
+      nc = size(Mat,dim=2)
+      !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+      nbcol_loc = nbcol
+      IF (nbcol_loc > 10) nbcol_loc=10
+      nbblocs=int(nc/nbcol_loc)
+      IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
       IF (present(Rformat)) THEN
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,Rformat,info)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,Rformat,info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,Rformat=Rformat)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,Rformat=Rformat)
         END IF
       ELSE
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.,info=info)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.,info=info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol,.TRUE.)
+          CALL QDUtil_Format_OF_Line(wformat,nl,nbcol_loc,.TRUE.)
         END IF
       END IF
 
 
       DO nb=0,nbblocs-1
         DO j=1,nl
-          write(nio,wformat) j,(f(j,i+nb*nbcol),i=1,nbcol)
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
         END DO
         IF (nl > 1 ) write(nio,*)
       END DO
       DO j=1,nl
-        nfin=nc-nbcol*nbblocs
-        write(nio,wformat) j,(f(j,i+nbcol*nbblocs),i=1,nfin)
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
       END DO
 
       deallocate(wformat)
@@ -1298,136 +1298,136 @@ MODULE QDUtil_RW_MatVec_m
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real128Vec(l,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_real128Vec(Vec,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    real(kind=real128),            intent(in) :: l(:)
+    integer,                     intent(in) :: nio,nbcol
+    real(kind=real128),            intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
 
-    integer           :: n,i,nb,nbblocs,nfin,nbcol
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-    n = size(l)
-       !write(out_unit,*) 'n,nbcol',n,nbcol
-       nbcol = nbcol1
-       IF (nbcol > 10) nbcol=10
-       nbblocs=int(n/nbcol)
-       IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+    n = size(Vec)
+       !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+       nbcol_loc = nbcol
+       IF (nbcol_loc > 10) nbcol_loc=10
+       nbblocs=int(n/nbcol_loc)
+       IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
 
        IF (present(Rformat)) THEN
          IF (present(info)) THEN
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,Rformat,info)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,Rformat,info)
          ELSE
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,Rformat=Rformat)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,Rformat=Rformat)
          END IF
        ELSE
          IF (present(info)) THEN
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.,info=info)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.,info=info)
          ELSE
-           CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.FALSE.)
+           CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.FALSE.)
          END IF
        END IF
 
        DO nb=0,nbblocs-1
-         write(nio,wformat) (l(i+nb*nbcol),i=1,nbcol)
+         write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        END DO
-       nfin=n-nbcol*nbblocs
-       write(nio,wformat) (l(i+nbcol*nbblocs),i=1,nfin)
+       nfin=n-nbcol_loc*nbblocs
+       write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
        deallocate(wformat)
   END SUBROUTINE QDUtil_Write_real128Vec
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx128Vec(l,nio,nbcol1,Rformat,info,iprint)
+  SUBROUTINE QDUtil_Write_cplx128Vec(Vec,nio,nbcol,Rformat,info,iprint)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol1
-    complex(kind=real128),         intent(in) :: l(:)
+    integer,                     intent(in) :: nio,nbcol
+    complex(kind=real128),       intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
     integer,           optional, intent(in) :: iprint
 
-    integer           :: n,i,nb,nbblocs,nfin,nbcol
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc
     character (len=:), allocatable  :: wformat
 
     IF (present(iprint)) THEN
       IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
     END IF
 
-      n = size(l)
-      !write(out_unit,*) 'n,nbcol',n,nbcol
-      nbcol = nbcol1
-      IF (nbcol > 10) nbcol=10
-      nbblocs=int(n/nbcol)
-      IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+      n = size(Vec)
+      !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+      nbcol_loc = nbcol
+      IF (nbcol_loc > 10) nbcol_loc=10
+      nbblocs=int(n/nbcol_loc)
+      IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
       IF (present(Rformat)) THEN
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,Rformat,info)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,Rformat,info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,Rformat=Rformat)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,Rformat=Rformat)
         END IF
       ELSE
         IF (present(info)) THEN
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.,info=info)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.,info=info)
         ELSE
-          CALL QDUtil_Format_OF_Line(wformat,0,nbcol,.TRUE.)
+          CALL QDUtil_Format_OF_Line(wformat,0,nbcol_loc,.TRUE.)
         END IF
       END IF
 
       DO nb=0,nbblocs-1
-        write(nio,wformat) (l(i+nb*nbcol),i=1,nbcol)
+        write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
       END DO
-      nfin=n-nbcol*nbblocs
-      write(nio,wformat) (l(i+nbcol*nbblocs),i=1,nfin)
+      nfin=n-nbcol_loc*nbblocs
+      write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
       deallocate(wformat)
   END SUBROUTINE QDUtil_Write_cplx128Vec
 
-  SUBROUTINE QDUtil_Read_real128Mat(f,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_real128Mat(Mat,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,          intent(in)    :: nio,nbcol
-     integer,          intent(inout) :: err
-     real(kind=real128), intent(inout) :: f(:,:)
+    integer,             intent(in)    :: nio,nbcol_loc
+     integer,            intent(inout) :: err
+     real(kind=real128), intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
-     nl = size(f,dim=1)
-     nc = size(f,dim=2)
-     !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
 
 
-     nbblocs=int(nc/nbcol)
+     nbblocs=int(nc/nbcol_loc)
 
-     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
      err = 0
 
-     !write(out_unit,*) 'nl,nc,nbcol,nbblocs',nl,nc,nbcol,nbblocs
+     !write(out_unit,*) 'nl,nc,nbcol_loc,nbblocs',nl,nc,nbcol_loc,nbblocs
 
 
      DO nb=0,nbblocs-1
 
          DO j=1,nl
-           read(nio,*,IOSTAT=err) jj,(f(j,i+nb*nbcol),i=1,nbcol)
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
            IF (err /= 0) EXIT
          END DO
 
@@ -1438,50 +1438,50 @@ MODULE QDUtil_RW_MatVec_m
 
      END DO
 
-     nfin=nc-nbcol*nbblocs
+     nfin=nc-nbcol_loc*nbblocs
      IF (err == 0) THEN
        DO j=1,nl
-         read(nio,*,IOSTAT=err) jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
-         !write(out_unit,*) err,jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
+         !write(out_unit,*) err,jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
          IF (err /= 0) EXIT
        END DO
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_real128Mat(f,out_unit,nbcol)
+       CALL QDUtil_Write_real128Mat(Mat,out_unit,nbcol_loc)
        write(out_unit,*) ' ERROR in QDUtil_Read_real128Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol',nl,nc,nbcol
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) '  Internal paramters: nbblocs,nfin',nbblocs,nfin
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_real128Mat
-  SUBROUTINE QDUtil_Read_cplx128Mat(f,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_cplx128Mat(Mat,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer,             intent(in)    :: nio,nbcol
-    complex(kind=real128), intent(inout) :: f(:,:)
-    integer,             intent(inout) :: err
+    integer,               intent(in)    :: nio,nbcol_loc
+    complex(kind=real128), intent(inout) :: Mat(:,:)
+    integer,               intent(inout) :: err
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
-     nl = size(f,dim=1)
-     nc = size(f,dim=2)
-     !write(out_unit,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
 
 
-     nbblocs=int(nc/nbcol)
+     nbblocs=int(nc/nbcol_loc)
      err = 0
-     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
 
          DO j=1,nl
-           read(nio,*,IOSTAT=err) jj,(f(j,i+nb*nbcol),i=1,nbcol)
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
            IF (err /= 0) EXIT
          END DO
 
@@ -1494,18 +1494,18 @@ MODULE QDUtil_RW_MatVec_m
 
      IF (err == 0) THEN
        DO j=1,nl
-         nfin=nc-nbcol*nbblocs
-         read(nio,*,IOSTAT=err) jj,(f(j,i+nbcol*nbblocs),i=1,nfin)
+         nfin=nc-nbcol_loc*nbblocs
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
          IF (err /= 0) EXIT
        END DO
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_cplx128Mat(f,out_unit,nbcol)
+       CALL QDUtil_Write_cplx128Mat(Mat,out_unit,nbcol_loc)
        write(out_unit,*) ' ERROR in QDUtil_Read_cplx128Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol',nl,nc,nbcol
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
@@ -1514,71 +1514,71 @@ MODULE QDUtil_RW_MatVec_m
   !================================================================
   ! ++    read a vector in line
   !================================================================
-  SUBROUTINE QDUtil_Read_real128Vec(l,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_real128Vec(Vec,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer, intent(in)                :: nio,nbcol
-     real(kind=real128), intent(inout)    :: l(:)
+    integer, intent(in)                 :: nio,nbcol_loc
+     real(kind=real128), intent(inout)  :: Vec(:)
      integer, intent(inout)             :: err
 
      integer :: n,i,nb,nbblocs,nfin
 
-     n = size(l,dim=1)
-     nbblocs=int(n/nbcol)
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
      err = 0
 
 
-     IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
-       read(nio,*,IOSTAT=err) (l(i+nb*nbcol),i=1,nbcol)
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        IF (err /= 0) EXIT
      END DO
 
-     nfin=n-nbcol*nbblocs
-     read(nio,*,IOSTAT=err) (l(i+nbcol*nbblocs),i=1,nfin)
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
        write(out_unit,*) ' ERROR in QDUtil_Read_real128Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The vector paramters: n,nbcol',n,nbcol
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
   END SUBROUTINE QDUtil_Read_real128Vec
-  SUBROUTINE QDUtil_Read_cplx128Vec(l,nio,nbcol,err)
+  SUBROUTINE QDUtil_Read_cplx128Vec(Vec,nio,nbcol_loc,err)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
     USE QDUtil_NumParameters_m, ONLY : out_unit
     IMPLICIT NONE
 
-    integer, intent(in)                 :: nio,nbcol
-    complex(kind=real128), intent(inout) :: l(:)
-    integer, intent(inout)              :: err
+    integer, intent(in)                  :: nio,nbcol_loc
+    complex(kind=real128), intent(inout) :: Vec(:)
+    integer, intent(inout)               :: err
 
      integer :: n,i,nb,nbblocs,nfin
 
-     n = size(l,dim=1)
-     nbblocs=int(n/nbcol)
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
      err = 0
 
-     IF (nbblocs*nbcol == n) nbblocs=nbblocs-1
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
 
      DO nb=0,nbblocs-1
-       read(nio,*,IOSTAT=err) (l(i+nb*nbcol),i=1,nbcol)
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
        IF (err /= 0) EXIT
      END DO
 
-     nfin=n-nbcol*nbblocs
-     read(nio,*,IOSTAT=err) (l(i+nbcol*nbblocs),i=1,nfin)
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
        write(out_unit,*) ' ERROR in QDUtil_Read_cplx128Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
-       write(out_unit,*) '  The vector paramters: n,nbcol',n,nbcol
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
