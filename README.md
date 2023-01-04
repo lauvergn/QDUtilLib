@@ -5,11 +5,11 @@ All modules contain a testing unit.
 
 ## 1) Installation and testing
 
-with a **makefile**:
+### a) with a makefile:
 
-To build the library, ****, with the default options (OPt=1, OMP=1, LAPACK=1)
+To build the library, **libQD_gfortran_opt1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1)
 ```bash
-make 
+make lib
 ```
 It creates a library with the folowing name: **libQD_XXX_optY_ompZ.a**
 with XXX, the compiler name (like gfortran), Y or Z the value O or 1
@@ -42,6 +42,40 @@ The tests are running with gfortran and several option combinations:
 - LAPACK=1 or 0: with or without blas and lapack libraries
 
 The file, **ALL_Tests.log**, contains a summary of all the tests.
+
+### b) with fpm:
+
+To build the library, **libQDUtilLib.a**, with the Lapack (LAPACK=1)
+```bash
+fpm build
+```
+The library is in **build/gfortran_xxxx/QDUtilLib** directory.
+To remove Lapack library, the **fpm.tom** file must be edited.
+
+Two options to clean:
+```bash
+fpm clean
+```
+
+Remove the build directory.
+
+Remove some files, but keep the libraries, **libQDUtilLib.a**
+
+```bash
+fpm cleanall
+```
+
+To test the module:
+
+```bash
+fpm test | grep TESTING | grep Number
+```
+
+To run an example:
+
+```bash
+fpm run AppQDLib 
+```
 
 ## 2) List of modules
 

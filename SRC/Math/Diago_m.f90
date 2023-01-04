@@ -125,6 +125,7 @@ MODULE QDUtil_diago_m
     IF (Rkind /= real64 .AND. diago_type_loc == 3) diago_type_loc = diago_type_default
 
 #if __LAPACK != 1
+    IF (debug) write(out_unit,*) '  Lapack library is not linked'
     IF (count([3,377,395] == diago_type_loc) == 1) diago_type_loc = diago_type_default
     IF (count([4,477] == diago_type_loc) == 1) THEN
       !diago_type_loc = 0
@@ -135,6 +136,8 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in QDUtil_diagonalization: Problem with non-symmetric matrix.'
     END IF
+#else
+    IF (debug) write(out_unit,*) '  Lapack library is linked'
 #endif
 
     IF (count(list_type == diago_type_loc) == 0) THEN

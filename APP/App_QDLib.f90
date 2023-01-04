@@ -5,6 +5,12 @@ PROGRAM App_QDLib
   integer                          :: i,n
   real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),REigVec(:,:)
 
+  !  #if __LAPACK != 1
+  !    write(out_unit,*) '  Lapack library is linked'
+  !  #else
+  !    write(out_unit,*) '  Lapack library is not linked'
+  !  #endif
+
   !====================================================================
   ! Tests for the matrix digonalization
   !

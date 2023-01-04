@@ -160,7 +160,7 @@ clean:
 	@echo "  done cleaning"
 
 cleanall : clean
-	rm -fr OBJ/obj* OBJ/*mod
+	rm -fr OBJ/obj* OBJ/*mod build
 	rm -f libQD*.a
 	rm -f TESTS/res* TESTS/*log
 	@echo "  done all cleaning"
