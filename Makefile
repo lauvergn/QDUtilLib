@@ -40,8 +40,6 @@ TESTS_DIR=TESTS
 #=================================================================================
 ifeq ($(FC),gfortran)
 
-  CPPpre  = -cpp
-
   ifeq ($(OPT),1)
     FFLAGS = -O5 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
   else
@@ -57,6 +55,7 @@ ifeq ($(FC),gfortran)
   endif
 
   # lapack management with cpreprocessing
+  CPPpre  = -cpp
   FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
 
   # OS management
@@ -181,3 +180,44 @@ $(OBJ_DIR)/QDUtil_m.o:              $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/Matrix_m.o $
 
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
+
+
+#=================================================================================
+#=================================================================================
+# ifort compillation v17 v18 with mkl
+#=================================================================================
+ifeq ($(FC),ifort)
+
+
+  # opt management
+  ifeq ($(OPT),1)
+      #F90FLAGS = -O -parallel -g -traceback
+      FFLAGS = -O  -g -traceback
+  else
+      FFLAGS = -O0 -check all -g -traceback
+  endif
+
+  # where to store the modules
+  FFLAGS +=-module $(MOD_DIR)
+
+  # omp management
+  ifeq ($(OMP),1)
+    FFLAGS += -qopenmp
+  endif
+
+  # lapack management with cpreprocessing
+  CPPpre  = -cpp
+  FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
+
+  ifeq ($(LAPACK),1)
+    #F90LIB += -qmkl -lpthread
+    FLIB += -qmkl -lpthread
+  else
+    FLIB += -lpthread
+  endif
+
+  FC_VER = $(shell $(F90) --version | head -1 )
+
+endif
+#=================================================================================
+#=================================================================================
