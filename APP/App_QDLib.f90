@@ -38,5 +38,6 @@ PROGRAM App_QDLib
     write(out_unit,*) i,matmul(Rmat,REigVec(:,i))-REigVal(i)*REigVec(:,i)
   END DO
 
+  write(out_unit,*) 'print_level',print_level
 
 END PROGRAM App_QDLib

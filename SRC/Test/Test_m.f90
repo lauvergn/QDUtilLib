@@ -220,12 +220,12 @@ CONTAINS
     TYPE (test_t),      intent(inout)         :: test_var
 
     IF (allocated(test_var%test_log)) THEN
-      write(test_var%test_log_file_unit,*) test_var%test_log
+      write(test_var%test_log_file_unit,'(a)') test_var%test_log
       deallocate(test_var%test_log)
     END IF
   
     IF (allocated(test_var%test_res)) THEN
-      write(OUTPUT_UNIT,*) test_var%test_res
+      write(OUTPUT_UNIT,'(a)') test_var%test_res
       deallocate(test_var%test_res)
     END IF
 

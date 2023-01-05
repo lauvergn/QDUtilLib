@@ -26,67 +26,80 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-  MODULE QDUtil_NumParameters_m
-!$ USE omp_lib
-      USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : INPUT_UNIT,OUTPUT_UNIT,real32,real64,real128,int32,int64
-      IMPLICIT NONE
+MODULE QDUtil_NumParameters_m
+  !$ USE omp_lib
+  USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : INPUT_UNIT,OUTPUT_UNIT,real32,real64,real128,int32,int64
+  IMPLICIT NONE
 
-      PUBLIC
-      PRIVATE :: INPUT_UNIT,OUTPUT_UNIT,real32,real64,real128,int32,int64
+  PUBLIC
+  PRIVATE :: INPUT_UNIT,OUTPUT_UNIT,real32,real64,real128,int32,int64
 
-      integer, parameter :: RkS        = real32 ! 4
-      integer, parameter :: RkD        = real64 ! 8
-      integer, parameter :: RkQ        = real128 ! 16
+  integer, parameter :: RkS        = real32 ! 4
+  integer, parameter :: RkD        = real64 ! 8
+  integer, parameter :: RkQ        = real128 ! 16
 
-      integer, parameter :: IkS        = int32  ! 4
-      integer, parameter :: IkD        = int64  ! 8
+  integer, parameter :: IkS        = int32  ! 4
+  integer, parameter :: IkD        = int64  ! 8
 
-      integer, parameter :: Rkind      = RkD ! 8
-      integer, parameter :: Ikind      = int32  ! 4
-      integer, parameter :: ILkind     = int64  ! 8
+  integer, parameter :: Rkind      = RkD ! 8
+  integer, parameter :: Ikind      = int32  ! 4
+  integer, parameter :: ILkind     = int64  ! 8
 
-      real (kind=Rkind), parameter :: ZERO    = 0._Rkind
-      real (kind=Rkind), parameter :: ONE     = 1._Rkind
-      real (kind=Rkind), parameter :: TWO     = 2._Rkind
-      real (kind=Rkind), parameter :: THREE   = 3._Rkind
-      real (kind=Rkind), parameter :: FOUR    = 4._Rkind
-      real (kind=Rkind), parameter :: FIVE    = 5._Rkind
-      real (kind=Rkind), parameter :: SIX     = 6._Rkind
-      real (kind=Rkind), parameter :: SEVEN   = 7._Rkind
-      real (kind=Rkind), parameter :: EIGHT   = 8._Rkind
-      real (kind=Rkind), parameter :: NINE    = 9._Rkind
-      real (kind=Rkind), parameter :: TEN     = 10._Rkind
-      real (kind=Rkind), parameter :: ELEVEN  = 11._Rkind
-      real (kind=Rkind), parameter :: TWELVE  = 12._Rkind
-      real (kind=Rkind), parameter :: HUNDRED = 100._Rkind
+  real (kind=Rkind), parameter :: ZERO    = 0._Rkind
+  real (kind=Rkind), parameter :: ONE     = 1._Rkind
+  real (kind=Rkind), parameter :: TWO     = 2._Rkind
+  real (kind=Rkind), parameter :: THREE   = 3._Rkind
+  real (kind=Rkind), parameter :: FOUR    = 4._Rkind
+  real (kind=Rkind), parameter :: FIVE    = 5._Rkind
+  real (kind=Rkind), parameter :: SIX     = 6._Rkind
+  real (kind=Rkind), parameter :: SEVEN   = 7._Rkind
+  real (kind=Rkind), parameter :: EIGHT   = 8._Rkind
+  real (kind=Rkind), parameter :: NINE    = 9._Rkind
+  real (kind=Rkind), parameter :: TEN     = 10._Rkind
+  real (kind=Rkind), parameter :: ELEVEN  = 11._Rkind
+  real (kind=Rkind), parameter :: TWELVE  = 12._Rkind
+  real (kind=Rkind), parameter :: HUNDRED = 100._Rkind
 
-      real (kind=Rkind), parameter :: HALF      = ONE/TWO
-      real (kind=Rkind), parameter :: THIRD     = ONE/THREE
-      real (kind=Rkind), parameter :: FOURTH    = ONE/FOUR
-      real (kind=Rkind), parameter :: QUARTER   = ONE/FOUR
-      real (kind=Rkind), parameter :: FIFTH     = ONE/FIVE
-      real (kind=Rkind), parameter :: SIXTH     = ONE/SIX
-      real (kind=Rkind), parameter :: ONETENTH  = ONE/TEN
-      real (kind=Rkind), parameter :: TWOTENTHS = TWO/TEN
+  real (kind=Rkind), parameter :: HALF      = ONE/TWO
+  real (kind=Rkind), parameter :: THIRD     = ONE/THREE
+  real (kind=Rkind), parameter :: FOURTH    = ONE/FOUR
+  real (kind=Rkind), parameter :: QUARTER   = ONE/FOUR
+  real (kind=Rkind), parameter :: FIFTH     = ONE/FIVE
+  real (kind=Rkind), parameter :: SIXTH     = ONE/SIX
+  real (kind=Rkind), parameter :: ONETENTH  = ONE/TEN
+  real (kind=Rkind), parameter :: TWOTENTHS = TWO/TEN
 
-      real (kind=Rkind), parameter ::                                   &
-       pi = 3.14159265358979323846264338327950288419716939937511_Rkind
+  real (kind=Rkind), parameter ::                                              &
+                pi = 3.14159265358979323846264338327950288419716939937511_Rkind
 
-      complex (kind=Rkind), parameter :: EYE      = (ZERO,ONE)
-      complex (kind=Rkind), parameter :: CZERO    = (ZERO,ZERO)
-      complex (kind=Rkind), parameter :: CONE     = (ONE,ZERO)
-      complex (kind=Rkind), parameter :: CHALF    = (HALF,ZERO)
+  complex (kind=Rkind), parameter :: EYE      = (ZERO,ONE)
+  complex (kind=Rkind), parameter :: CZERO    = (ZERO,ZERO)
+  complex (kind=Rkind), parameter :: CONE     = (ONE,ZERO)
+  complex (kind=Rkind), parameter :: CHALF    = (HALF,ZERO)
 
-      integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
-      integer :: out_unit  = OUTPUT_UNIT ! Unit for the input   files, with the ISO_FORTRAN_ENV
+  integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
+  integer :: out_unit  = OUTPUT_UNIT ! Unit for the input   files, with the ISO_FORTRAN_ENV
 
+  integer, protected :: print_level = 1        ! 0 minimal, 1 default, 2 large, -1 nothing
 
-      integer, parameter :: Name_len     = 20
-      integer, parameter :: Name_longlen = 50
-      integer, parameter :: Line_len     = 255
-      integer, parameter :: error_l      = 80
+  integer, parameter :: Name_len     = 20
+  integer, parameter :: Name_longlen = 50
+  integer, parameter :: Line_len     = 255
+  integer, parameter :: error_l      = 80
 
-      CONTAINS
+  PRIVATE :: QDUtil_set_print_level
+  INTERFACE set_print_level
+    MODULE PROCEDURE QDUtil_set_print_level
+  END INTERFACE
+
+CONTAINS
+  SUBROUTINE QDUtil_set_print_level(prtlev)
+    IMPLICIT NONE
+    integer, intent(in) :: prtlev
+
+    print_level = prtlev
+
+  END SUBROUTINE QDUtil_set_print_level
   SUBROUTINE Test_QDUtil_NumParameters()
     USE QDUtil_Test_m
     IMPLICIT NONE
@@ -142,6 +155,17 @@
       END DO
     END IF
     CALL Flush_Test(test_var)
+
+
+    ! print_level
+    res_test = (print_level == 1)
+    CALL Logical_Test(test_var,test1=res_test,info='print_level=1')
+
+    CALL set_print_level(0)
+    res_test = (print_level == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='set_print_level(0)')
+    CALL Flush_Test(test_var)
+
 
     ! finalize the tests
     CALL Finalize_Test(test_var)

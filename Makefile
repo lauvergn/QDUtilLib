@@ -114,8 +114,7 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 #===============================================
 .PHONY: ut UT
 UT ut: $(TESTS).x
-	./$(TESTS).x > Tests.log
-	grep "Number of error(s)" Tests.log
+	./$(TESTS).x |	grep "Number of error(s)"
 	@echo "  done Tests"
 
 
@@ -140,7 +139,6 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
-	rm -f $(OBJ_DIR)/*.o
 	@echo "  done Library: "$(QDLIBA)
 
 #===============================================
@@ -187,7 +185,6 @@ $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
 # ifort compillation v17 v18 with mkl
 #=================================================================================
 ifeq ($(FC),ifort)
-
 
   # opt management
   ifeq ($(OPT),1)
