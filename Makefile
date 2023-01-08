@@ -5,13 +5,33 @@
 #                gfortran (version: 9.0 linux and osx)
  FC = gfortran
 #
-# Optimize? Empty: default No optimization; 0: No Optimization; 1 Optimzation
+# Optimize? Empty: default Optimization; 1: No Optimization; 1 Optimzation
 OPT = 1
 ## OpenMP? Empty: default with OpenMP; 0: No OpenMP; 1 with OpenMP
 OMP = 1
 ## Lapack/blas/mkl? Empty: default with Lapack; 0: without Lapack; 1 with Lapack
 LAPACK = 1
 #=================================================================================
+ifeq ($(FC),)
+  FFC      := gfortran
+else
+  FFC      := $(FC)
+endif
+ifeq ($(OPT),)
+  OOPT      := 1
+else
+  OOPT      := $(OPT)
+endif
+ifeq ($(OMP),)
+  OOMP      := 1
+else
+  OOMP      := $(OMP)
+endif
+ifeq ($(LAPACK),)
+  LLAPACK      := 1
+else
+  LLAPACK      := $(LAPACK)
+endif
 #=================================================================================
 
 #=================================================================================
@@ -20,7 +40,7 @@ LAPACK = 1
 OS=$(shell uname)
 
 # Extension for the object directory and the library
-ext_obj=_$(FC)_opt$(OPT)_omp$(OMP)
+ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)
 
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
@@ -38,9 +58,10 @@ TESTS_DIR=TESTS
 #=================================================================================
 # gfortran (osx and linux)
 #=================================================================================
-ifeq ($(FC),gfortran)
+ifeq ($(FFC),gfortran)
 
-  ifeq ($(OPT),1)
+  # optimization management (default without optimization)
+  ifeq ($(OOPT),1)
     FFLAGS = -O5 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
   else
     FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
@@ -49,17 +70,17 @@ ifeq ($(FC),gfortran)
 
   FFLAGS +=-J$(MOD_DIR)
 
-  # omp management
-  ifeq ($(OMP),1)
+  # omp management (default with openmp)
+  ifeq ($(OOMP),1)
     FFLAGS += -fopenmp
   endif
 
-  # lapack management with cpreprocessing
-  CPPpre  = -cpp
-  FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
 
-  # OS management
-  ifeq ($(LAPACK),1)
+  # lapack management with cpreprocessing
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
+
+  # lapact management (default with openmp), with cpreprocessing
+  ifeq ($(LLAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
@@ -74,7 +95,7 @@ ifeq ($(FC),gfortran)
     endif
   endif
 
-   FC_VER = $(shell $(FC) --version | head -1 )
+   FC_VER = $(shell $(FFC) --version | head -1 )
 
 endif
 #=================================================================================
@@ -82,11 +103,11 @@ endif
 
 $(info ***********************************************************************)
 $(info ***********OS:           $(OS))
-$(info ***********COMPILER:     $(FC))
+$(info ***********COMPILER:     $(FFC))
 $(info ***********COMPILER_VER: $(FC_VER))
-$(info ***********OPTIMIZATION: $(OPT))
-$(info ***********OpenMP:       $(OMP))
-$(info ***********LAPACK:       $(LAPACK))
+$(info ***********OPTIMIZATION: $(OOPT))
+$(info ***********OpenMP:       $(OOMP))
+$(info ***********LAPACK:       $(LLAPACK))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
 $(info ***********ext_obj:      $(ext_obj))
@@ -127,10 +148,10 @@ all: $(QDLIBA) $(MAIN).x $(TESTS).x
 #============= Main executable and tests  ======
 #===============================================
 $(MAIN).x: $(OBJ_DIR)/$(MAIN).o $(QDLIBA)
-	$(FC) $(FFLAGS) -o $(MAIN).x  $(OBJ_DIR)/$(MAIN).o $(FLIB) $(QDLIBA)
+	$(FFC) $(FFLAGS) -o $(MAIN).x  $(OBJ_DIR)/$(MAIN).o $(FLIB) $(QDLIBA)
 
 $(TESTS).x: $(OBJ_DIR)/$(TESTS).o $(QDLIBA)
-	$(FC) $(FFLAGS) -o $(TESTS).x  $(OBJ_DIR)/$(TESTS).o $(FLIB) $(QDLIBA)
+	$(FFC) $(FFLAGS) -o $(TESTS).x  $(OBJ_DIR)/$(TESTS).o $(FLIB) $(QDLIBA)
 #===============================================
 #============= Library: libQD.a  ===============
 #===============================================
@@ -145,7 +166,7 @@ $(QDLIBA): $(OBJ)
 #============= compilation =====================
 #===============================================
 $(OBJ_DIR)/%.o: %.f90
-	$(FC) $(FFLAGS) -o $@ -c $<
+	$(FFC) $(FFLAGS) -o $@ -c $<
 
 #===============================================
 #================ cleaning =====================
@@ -184,10 +205,10 @@ $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
 #=================================================================================
 # ifort compillation v17 v18 with mkl
 #=================================================================================
-ifeq ($(FC),ifort)
+ifeq ($(FFC),ifort)
 
   # opt management
-  ifeq ($(OPT),1)
+  ifeq ($(OOPT),1)
       #F90FLAGS = -O -parallel -g -traceback
       FFLAGS = -O  -g -traceback
   else
@@ -198,15 +219,14 @@ ifeq ($(FC),ifort)
   FFLAGS +=-module $(MOD_DIR)
 
   # omp management
-  ifeq ($(OMP),1)
+  ifeq ($(OOMP),1)
     FFLAGS += -qopenmp
   endif
 
   # lapack management with cpreprocessing
-  CPPpre  = -cpp
-  FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
-  ifeq ($(LAPACK),1)
+  ifeq ($(LLAPACK),1)
     #F90LIB += -qmkl -lpthread
     FLIB += -qmkl -lpthread
   else
