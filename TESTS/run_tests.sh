@@ -27,9 +27,8 @@ do
      ext=$F90"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK
      RES="res_QDLib_"$ext
      LOG="comp_"$ext".log"
-     make clean > $here/$LOG 2>&1
-     make FC=$FC OPT=$OPT OMP=$OMP > $here/$LOG 2>&1
-     #make ut > $here/$RES
+     #make clean > $here/$LOG 2>&1
+     make FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK > $here/$LOG 2>&1
      ./Test_QDLib.x > $here/$RES
   cd  $here
   grep "Number of error(s)" $RES >> ALL_Tests.log

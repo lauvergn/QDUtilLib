@@ -40,7 +40,7 @@ endif
 OS=$(shell uname)
 
 # Extension for the object directory and the library
-ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)
+ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)
 
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
