@@ -1638,7 +1638,7 @@ MODULE QDUtil_RW_MatVec_m
    ! Test1bis for the real matrix (in a string)
     open(newunit=io,file='test_io_file.txt')
     CALL Write_Mat(R1Mat,string,4)
-    write(io,*) string  ; close(io)
+    write(io,'(a)') string  ; close(io)
 
     open(newunit=io,file='test_io_file.txt')
     CALL Read_Mat(R2Mat,io,4,ioerr) ; close(io)

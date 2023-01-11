@@ -3,6 +3,11 @@
 List of Fortran modules which contain utilities for codes.
 All modules contain a testing unit.
 
+It has been tested with:
+
+- gfortran (9.1.0 on linux, 12.1.0 on macos)
+- ifort (19.1.3.304 on linux)
+
 ## 1) Installation and testing
 
 ### a) with a makefile:

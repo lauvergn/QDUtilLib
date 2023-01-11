@@ -279,6 +279,24 @@ CONTAINS
         END IF
       END DO
       string = trim(adjustl(string))
+
+      !this is add for ifort because ZERO is written as 0.000..0E+000
+      i = len(string)
+      IF (string(i:i) == '+' .OR. string(i:i) == '-') string = string(1:i-1)
+      i = len(string)
+      IF (string(i:i) == 'E' .OR. string(i:i) == 'e') string = string(1:i-1)
+      i = len(string)
+      IF (string(i:i) == 'D' .OR. string(i:i) == 'd') string = string(1:i-1) ! just in case we have 0.000...D+000
+
+      !then, the 0 at the end are removed
+      DO i=len(string),2,-1
+        IF (string(i:i) == '0') THEN
+          string(i:i) = ' '
+        ELSE
+          EXIT
+        END IF
+      END DO
+      string = trim(adjustl(string))
     END IF
 
     !$OMP  END CRITICAL (QDUtil_real128_TO_string_CRIT)
@@ -290,7 +308,7 @@ CONTAINS
 
     character (len=:), allocatable           :: string
 
-    real (kind=RkD), intent(in)              :: r
+    real (kind=RkD),   intent(in)            :: r
     character (len=*), intent(in), optional  :: Rformat
 
 
@@ -327,6 +345,25 @@ CONTAINS
         END IF
       END DO
       string = trim(adjustl(string))
+
+      !this is add for ifort because ZERO is written as 0.000..0E+000
+      i = len(string)
+      IF (string(i:i) == '+' .OR. string(i:i) == '-') string = string(1:i-1)
+      i = len(string)
+      IF (string(i:i) == 'E' .OR. string(i:i) == 'e') string = string(1:i-1)
+      i = len(string)
+      IF (string(i:i) == 'D' .OR. string(i:i) == 'd') string = string(1:i-1) ! just in case we have 0.000...D+000
+
+      !then, the 0 at the end are removed
+      DO i=len(string),2,-1
+        IF (string(i:i) == '0') THEN
+          string(i:i) = ' '
+        ELSE
+          EXIT
+        END IF
+      END DO
+      string = trim(adjustl(string))
+
     END IF
 
     !$OMP  END CRITICAL (QDUtil_real64_TO_string_CRIT)
@@ -367,6 +404,24 @@ CONTAINS
 
       string = trim(adjustl(name_real))
 
+      DO i=len(string),2,-1
+        IF (string(i:i) == '0') THEN
+          string(i:i) = ' '
+        ELSE
+          EXIT
+        END IF
+      END DO
+      string = trim(adjustl(string))
+
+      !this is add for ifort because ZERO is written as 0.000..0E+000
+      i = len(string)
+      IF (string(i:i) == '+' .OR. string(i:i) == '-') string = string(1:i-1)
+      i = len(string)
+      IF (string(i:i) == 'E' .OR. string(i:i) == 'e') string = string(1:i-1)
+      i = len(string)
+      IF (string(i:i) == 'D' .OR. string(i:i) == 'd') string = string(1:i-1) ! just in case we have 0.000...D+000
+
+      !then, the 0 at the end are removed
       DO i=len(string),2,-1
         IF (string(i:i) == '0') THEN
           string(i:i) = ' '
