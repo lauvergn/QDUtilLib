@@ -148,10 +148,10 @@ all: $(QDLIBA) $(MAIN).x $(TESTS).x
 #============= Main executable and tests  ======
 #===============================================
 $(MAIN).x: $(OBJ_DIR)/$(MAIN).o $(QDLIBA)
-	$(FFC) $(FFLAGS) -o $(MAIN).x  $(OBJ_DIR)/$(MAIN).o $(FLIB) $(QDLIBA)
+	$(FFC) $(FFLAGS) -o $(MAIN).x  $(OBJ_DIR)/$(MAIN).o  $(QDLIBA) $(FLIB)
 
 $(TESTS).x: $(OBJ_DIR)/$(TESTS).o $(QDLIBA)
-	$(FFC) $(FFLAGS) -o $(TESTS).x  $(OBJ_DIR)/$(TESTS).o $(FLIB) $(QDLIBA)
+	$(FFC) $(FFLAGS) -o $(TESTS).x  $(OBJ_DIR)/$(TESTS).o $(QDLIBA) $(FLIB)
 #===============================================
 #============= Library: libQD.a  ===============
 #===============================================
