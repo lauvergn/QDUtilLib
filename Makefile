@@ -227,8 +227,8 @@ ifeq ($(FFC),ifort)
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   ifeq ($(LLAPACK),1)
-    #F90LIB += -qmkl -lpthread
-    FLIB += -qmkl -lpthread
+    FLIB += -mkl -lpthread
+    #FLIB += -qmkl -lpthread
   else
     FLIB += -lpthread
   endif
