@@ -115,6 +115,8 @@ CONTAINS
       test_var%nb_Err = test_var%nb_Err + 1
     END IF
 
+    CALL Flush_Test(test_var)
+
     IF (debug) THEN
       write(OUTPUT_UNIT,*) 'test OK',(test1 .eqv. test2_loc)
       write(OUTPUT_UNIT,*) 'END in QD_Logical_Test'
@@ -180,6 +182,8 @@ CONTAINS
     open(newunit=test_var%test_log_file_unit,file=test_var%test_log_file_name)
   
     CALL Append_Test(test_var,'== TESTING ' // test_var%test_name // ' module ====')
+
+    CALL Flush_Test(test_var)
 
   END SUBROUTINE QD_Initialize_Test
 

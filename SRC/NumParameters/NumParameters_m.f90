@@ -120,7 +120,7 @@ CONTAINS
     complex (kind=Rkind), parameter     :: tab_ParaCplx(4) = [EYE,CZERO,CONE,CHALF]
 
     !----- for debuging --------------------------------------------------
-    character (len=*), parameter :: name_sub='Test_NumParameters'
+    character (len=*), parameter :: name_sub='Test_QDUtil_NumParameters'
     logical, parameter :: debug = .FALSE.
     !logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------

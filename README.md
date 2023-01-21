@@ -97,6 +97,9 @@ This module contains:
 - Some real (kind=Rkind) numbers : ZERO to TWELVE, HALF, HUNDRED,ONETENTH ..., PI
 - Some complexe (kind=Rkind) numbers : EYE (i), CZERO, CONE, CHALF
 - out_unit and in_unit: the standard output and input units from the intrinsinc ISO_FORTRAN_ENV module
+- print_level: level of printing:     0 minimal, 1 default, 2 large, -1 nothing
+To change print_level:
+CALL set_print_level(prtlev), where **prtlev** is an integer.
 
 ### String
 
@@ -108,6 +111,41 @@ This module contains functions and subroutines to manipulate character string (c
   For real convertion, an optional format (Rformat) can be given.
 - Function to read a line from a file define with its unit: **Read_line**
 - Function to check is a string is empty: **string_IS_empty**
+
+### Frac
+
+This module contains functions and subroutines to manipulate fractions. 
+All functions **elemental** (except the ones with a string). Therefore, one can use those functions with table.
+
+- A type: **Frac_t**, which contains the numerator and denominator
+  When the fraction is negative, the numerator has the minus sign.
+  When the denominator is **0**, the fraction is simplified as 1/0.
+- The operators (+, -, *, /, **, ==, >, <, <=, >=, /=) and the affectation (=) are orverloaded.
+- When Frac_t is used for initialization and after numerical operations, the fraction is always reduced  (with the Greatest common divisor).
+- One can test if a fraction is an integer with: frac_IS_integer(Frac)
+- A fraction can be exported to:
+  - to string: **TO_string(frac)**
+  - to real (with the default kind=Rkind): **TO_real(frac)**
+- The affectation can be done as follows:
+  - Frac2 = Frac_t(3,-6) ! stored as -1/2
+  - Frac2 = Frac1
+  - Frac2 = Int1
+  - Frac2 = '1/4' ! using a string of characters
+  - where Frac1, Frac2 are fraction, Int1 is an integer
+- Examples:
+```Fortran
+  TYPE(Frac_t) :: Frac1, Frac2
+  TYPE(Frac_t), allocatable :: tab_Frac(:)
+
+  Frac1 = '1/-2' ! use the conversion from string to Frac_t
+  write(*,*) 'Frac1: ',TO_String(Frac1) ! it give "Frac1: -1/2"
+  Frac2 = -2*Frac1 ! here the result is one and it is simplified
+  write(*,*) 'Frac2: ',TO_String(Frac2) ! it give "Frac2: 1"
+  Frac2 = Frac1**3
+  write(*,*) 'Frac2: ',TO_String(Frac2) ! it give "Frac2: -1/8"
+  tab_Frac = Frac_t(1,[2,3,4])
+  write(*,*) 'tab_Frac: ',(TO_String(tab_Frac(i)) // ' ',i=1,size(tab_Frac)) ! it give "tab_Frac: 1/2 1/3 1/4 "
+```
 
 ### RW_MatVec
 

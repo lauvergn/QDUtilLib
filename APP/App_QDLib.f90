@@ -4,12 +4,24 @@ PROGRAM App_QDLib
 
   integer                          :: i,n
   real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),REigVec(:,:)
+  TYPE(Frac_t)                     :: Frac1, Frac2
+  TYPE(Frac_t),        allocatable :: tab_Frac(:)
 
   !  #if __LAPACK != 1
   !    write(out_unit,*) '  Lapack library is linked'
   !  #else
   !    write(out_unit,*) '  Lapack library is not linked'
   !  #endif
+ !====================================================================
+  ! Tests on fractions
+  Frac1 = '1/-2' ! use the conversion from string to Frac_t
+  write(*,*) 'Frac1: ',TO_String(Frac1) ! it give "Frac1: -1/2"
+  Frac2 = -2*Frac1 ! here the result is one and it is simplified
+  write(*,*) 'Frac2: ',TO_String(Frac2) ! it give "Frac2: 1"
+  Frac2 = Frac1**3
+  write(*,*) 'Frac2: ',TO_String(Frac2) ! it give "Frac2: -1/8"
+  tab_Frac = Frac_t(1,[2,3,4])
+  write(*,*) 'tab_Frac: ',(TO_String(tab_Frac(i)) // ' ',i=1,size(tab_Frac)) ! it give "tab_Frac: 1/2 1/3 1/4 "
 
   !====================================================================
   ! Tests for the matrix digonalization
