@@ -7,3 +7,4 @@ res
 test_io_file.txt
 TESTS/*log
 TESTS/res*
+file.*

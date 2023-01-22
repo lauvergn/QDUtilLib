@@ -55,13 +55,17 @@ MODULE QDUtil_File_m
     GENERIC,   PUBLIC  :: assignment(=) => QDUtil_file2TOfile1
   END TYPE File_t
 
-  PUBLIC :: File_t,file_GetUnit, file_open, file_open2
+  PUBLIC :: File_t,file_GetUnit, file_set, file_open, file_open2
   PUBLIC :: file_close, file_delete, file_dealloc, file_write, make_FileName
-  PUBLIC :: err_file_name,check_file_exist_WITH_file_name
+  PUBLIC :: err_FileName,check_file_exist_WITH_FileName
   PUBLIC :: flush_perso
+  PUBLIC :: Test_QDUtil_File
 
   INTERFACE file_GetUnit
     MODULE PROCEDURE QDUtil_file_GetUnit
+  END INTERFACE
+  INTERFACE file_set
+    MODULE PROCEDURE QDUtil_file_set
   END INTERFACE
   INTERFACE file_open
     MODULE PROCEDURE QDUtil_file_open
@@ -85,11 +89,11 @@ MODULE QDUtil_File_m
     MODULE PROCEDURE QDUtil_make_FileName
   END INTERFACE
 
-  INTERFACE err_file_name
-    MODULE PROCEDURE QDUtil_err_file_name
+  INTERFACE err_FileName
+    MODULE PROCEDURE QDUtil_err_FileName
   END INTERFACE
-  INTERFACE check_file_exist_WITH_file_name
-    MODULE PROCEDURE QDUtil_check_file_exist_WITH_file_name
+  INTERFACE check_file_exist_WITH_FileName
+    MODULE PROCEDURE QDUtil_check_file_exist_WITH_FileName
   END INTERFACE
 
   INTERFACE flush_perso
@@ -121,56 +125,53 @@ CONTAINS
 
   END SUBROUTINE QDUtil_file2TOfile1
 
-  FUNCTION QDUtil_err_file_name(file_name,name_sub) RESULT(err_file_name)
+  FUNCTION QDUtil_err_FileName(FileName,name_sub) RESULT(err_FileName)
     USE QDUtil_String_m, ONLY : string_IS_empty
     IMPLICIT NONE
 
-    integer                                 :: err_file_name
-    character (len=*), intent(in)           :: file_name
-    character (len=*), intent(in), optional :: name_sub
+    integer                                    :: err_FileName
+    character (len=*),    intent(in)           :: FileName
+    character (len=*),    intent(in), optional :: name_sub
 
-    IF (string_IS_empty(file_name) ) THEN
+
+    IF (string_IS_empty(FileName) ) THEN
       IF (present(name_sub)) THEN
-        write(out_unit,*) ' ERROR in err_file_name, called from: ',name_sub
+        write(out_unit,*) ' ERROR in err_FileName, called from: ',name_sub
       ELSE
-        write(out_unit,*) ' ERROR in err_file_name'
+        write(out_unit,*) ' ERROR in err_FileName'
       END IF
-      write(out_unit,*) '   The file name is empty'
-      err_file_name = 1
+      write(out_unit,*) '   FileName is empty'
+      err_FileName = 1
     ELSE
-      err_file_name = 0
+      err_FileName = 0
     END IF
 
-  END FUNCTION QDUtil_err_file_name
-
-  FUNCTION QDUtil_check_file_exist_WITH_file_name(file_name,err_file,name_sub) &
-                                                            RESULT(check_file_exist_WITH_file_name)
-    USE QDUtil_String_m, ONLY : string_IS_empty
+  END FUNCTION QDUtil_err_FileName
+  FUNCTION QDUtil_check_file_exist_WITH_FileName(FileName,err_file,name_sub) RESULT(file_exist)
     IMPLICIT NONE
 
-    logical                                    :: check_file_exist_WITH_file_name
-    character (len=*), intent(in)              :: file_name
+    logical                                    :: file_exist
+    character (len=*), intent(in)              :: FileName
     character (len=*), intent(in)   , optional :: name_sub
     integer,           intent(inout), optional :: err_file
 
-    logical                          :: file_exist
+    integer :: err_file_loc
 
-    IF (string_IS_empty(file_name) ) THEN
-      IF (present(name_sub)) THEN
-        write(out_unit,*) ' ERROR in check_file_exist_WITH_file_name, called from: ',name_sub
-      ELSE
-        write(out_unit,*) ' ERROR in check_file_exist_WITH_file_name'
-      END IF
-      write(out_unit,*) '   The file name is empty'
-      IF (present(err_file)) err_file = 1
-      file_exist = .FALSE.
+    IF (present(name_sub)) THEN
+      err_file_loc = err_FileName(FileName,name_sub)
     ELSE
-      IF (present(err_file)) err_file = 0
-      INQUIRE(FILE=trim(file_name), EXIST=file_exist)
+      err_file_loc = err_FileName(FileName)
     END IF
-    check_file_exist_WITH_file_name = file_exist
 
-  END FUNCTION QDUtil_check_file_exist_WITH_file_name
+    IF (present(err_file)) err_file = err_file_loc
+
+    IF (err_file_loc == 0) THEN
+      INQUIRE(FILE=trim(FileName),EXIST=file_exist)
+    ELSE ! err_file_loc = 1
+      file_exist = .FALSE.
+    END IF
+
+  END FUNCTION QDUtil_check_file_exist_WITH_FileName
 
   FUNCTION QDUtil_file_GetUnit(ffile,err_file) RESULT(file_GetUnit)
       !$ USE omp_lib, only : OMP_GET_THREAD_NUM
@@ -194,7 +195,7 @@ CONTAINS
       ithread         = 0
       !$ ithread      = OMP_GET_THREAD_NUM()
 
-      err_file_loc = err_file_name(ffile%tab_name_th(ithread),'file_GetUnit')
+      err_file_loc = err_FileName(ffile%tab_name_th(ithread),'file_GetUnit')
       IF (.NOT. present(err_file) .AND. err_file_loc /= 0) THEN
         write(out_unit,*) 'ERROR in file_GetUnit'
         CALL file_Write(ffile)
@@ -213,7 +214,11 @@ CONTAINS
 
     ELSE
 
-      err_file_loc = err_file_name(ffile%name,'file_GetUnit')
+      IF (.NOT. allocated(ffile%name)) THEN
+        err_file_loc = 1
+      ELSE
+        err_file_loc = err_FileName(ffile%name,'file_GetUnit')
+      END IF
       IF (.NOT. present(err_file) .AND. err_file_loc /= 0) THEN
         write(out_unit,*) 'ERROR in file_GetUnit'
         CALL file_Write(ffile)
@@ -232,11 +237,11 @@ CONTAINS
 
   END FUNCTION QDUtil_file_GetUnit
 
-  FUNCTION QDUtil_GetUnit_NewFile(file_name,err_file) RESULT(GetUnit_NewFile)
+  FUNCTION QDUtil_GetUnit_NewFile(FileName,err_file) RESULT(GetUnit_NewFile)
     IMPLICIT NONE
 
     integer                                    :: GetUnit_NewFile
-    character (len=*), intent(in)              :: file_name
+    character (len=*), intent(in)              :: FileName
     integer,           intent(inout), optional :: err_file
 
 
@@ -245,21 +250,21 @@ CONTAINS
 
     !write(out_unit,*) 'BEGINNING GetUnit_NewFile'
 
-    err_file_loc = err_file_name(file_name,'GetUnit_NewFile')
+    err_file_loc = err_FileName(FileName,'GetUnit_NewFile')
     IF (.NOT. present(err_file) .AND. err_file_loc /= 0) THEN
       write(out_unit,*) 'ERROR in GetUnit_NewFile'
-      write(out_unit,*) 'The file name is empty "',file_name,'"'
+      write(out_unit,*) 'The file name is empty "',FileName,'"'
       STOP ' ERROR, the file name is empty!'
     END IF
     IF (present(err_file)) err_file = err_file_loc
 
 
     !- check if the file is already open ------------------
-    inquire(FILE=file_name,NUMBER=iunit,OPENED=unit_opened)
+    inquire(FILE=FileName,NUMBER=iunit,OPENED=unit_opened)
     IF (.NOT. unit_opened) THEN ! the file is not open
 
       !- the file is not open, find an unused UNIT ---------
-      open(newunit=GetUnit_NewFile,file=file_name)
+      open(newunit=GetUnit_NewFile,file=FileName)
 
     ELSE
       GetUnit_NewFile = 0
@@ -267,6 +272,110 @@ CONTAINS
 
   END FUNCTION QDUtil_GetUnit_NewFile
 
+  SUBROUTINE QDUtil_file_set(ffile,FileName,lformatted,append,old,seq,lrecl,nb_thread,err_file)
+    USE QDUtil_String_m, ONLY : TO_String
+    IMPLICIT NONE
+
+    TYPE(File_t),     intent(inout)           :: ffile
+    character(len=*), intent(in),    optional :: FileName
+    integer,          intent(in),    optional :: nb_thread
+    integer,          intent(in),    optional :: lrecl
+    logical,          intent(in),    optional :: lformatted,append,old,seq
+    integer,          intent(inout), optional :: err_file
+
+
+    character (len=:), allocatable :: fform,fstatus,fposition,faccess
+    logical                        :: unit_opened
+    integer                        :: ith,err_file_loc,clen
+
+    integer :: err_mem,memory
+
+    !write(out_unit,*) 'BEGINNING QDUtil_file_set'
+
+    !- test if optional arguments are present ---------
+    IF (ffile%init) THEN ! file is init, optional arguments are just here for modification
+      ! only append can be changed
+      IF (present(append)) ffile%append = append
+    ELSE
+      IF (present(nb_thread)) THEN
+        ffile%nb_thread = nb_thread
+      ELSE
+        ffile%nb_thread = 0
+      END IF
+  
+      IF (present(lformatted)) THEN
+        ffile%formatted = lformatted
+      ELSE
+        ffile%formatted = .TRUE.
+      END IF
+  
+      IF (present(old)) THEN
+        ffile%old = old
+      ELSE
+        ffile%old = .FALSE.
+      END IF
+  
+      IF (present(append)) THEN
+        ffile%append = append
+      ELSE
+        ffile%append = .FALSE.
+      END IF
+  
+      IF (present(seq)) THEN
+        IF (seq) THEN
+          ffile%seq = .TRUE.
+        ELSE
+          ffile%seq = .FALSE.
+          IF (present(lrecl)) THEN
+            ffile%frecl = lrecl
+          ELSE
+            write(out_unit,*) 'ERROR in file_open'
+            write(out_unit,*) 'The file access is DIRECT but lrecl is not present!'
+            STOP 'ERROR in file_set: The file access is DIRECT but lrecl is not present'
+          END IF
+        END IF
+      ELSE
+        ffile%seq = .TRUE.
+      END IF
+      IF (.NOT. ffile%seq) ffile%nb_thread = 0
+
+      IF (.NOT. present(FileName)) THEN
+        err_file_loc = 1
+      ELSE
+        err_file_loc = err_FileName(FileName,'file_set')
+      END IF
+      IF (.NOT. present(err_file) .AND. err_file_loc /= 0) THEN
+        write(out_unit,*) 'ERROR in file_set'
+        CALL file_Write(ffile)
+        write(out_unit,*) 'The FileName is empty or not present'
+        STOP ' ERROR in file_set, the FileName is empty!'
+      END IF
+      IF (present(err_file)) err_file = err_file_loc
+      IF (err_file_loc == 0) ffile%name = FileName
+  
+      IF (ffile%nb_thread > 1 .AND. err_file_loc == 0) THEN
+  
+        IF (allocated(ffile%tab_unit)) deallocate(ffile%tab_unit,stat=err_mem)
+        allocate(ffile%tab_unit(0:ffile%nb_thread-1),stat=err_mem)
+  
+        IF (allocated(ffile%tab_name_th)) deallocate(ffile%tab_name_th,stat=err_mem)
+        clen = len(ffile%name // "." // TO_String(ffile%nb_thread-1))
+        allocate(character(len=clen) :: ffile%tab_name_th(0:ffile%nb_thread-1),stat=err_mem)
+  
+        DO ith=0,ffile%nb_thread-1
+  
+          ffile%tab_name_th(ith) = ffile%name // "." // TO_String(ith)
+  
+        END DO
+      END IF
+      ffile%init  = (err_file_loc == 0)
+
+    END IF
+    !CALL file_Write(ffile)
+    !write(out_unit,*) 'END GetUnit_file_set'
+    !flush(out_unit)
+
+  END SUBROUTINE QDUtil_file_set
 
   !!@description: TODO
   !!@param: TODO
@@ -362,7 +471,13 @@ CONTAINS
 
     IF (.NOT. ffile%seq) ffile%nb_thread = 0
 
-    err_file_loc = err_file_name(ffile%name,'file_open')
+    IF (.NOT. allocated(ffile%name)) THEN
+      err_file_loc = 1
+    ELSE
+      err_file_loc = err_FileName(ffile%name,'file_open')
+    END IF
+    ffile%init  = (err_file_loc == 0)
+
     IF (.NOT. present(err_file) .AND. err_file_loc /= 0) THEN
       write(out_unit,*) 'ERROR in file_open'
       CALL file_Write(ffile)
@@ -498,8 +613,12 @@ CONTAINS
         fstatus = 'unknown'
     END IF
 
-    err_file_loc = err_file_name(name_file,'file_open2')
-    IF (.NOT. present(err_file) .AND. err_file_loc /= 0) STOP ' ERROR, the file name is empty!'
+    err_file_loc = err_FileName(name_file,'file_open2')
+    IF (.NOT. present(err_file) .AND. err_file_loc /= 0) THEN
+      write(out_unit,*) 'ERROR in file_open2'
+      write(out_unit,*) 'The FileName is empty'
+      STOP ' ERROR in file_open2, the FileName is empty!'
+    END IF
     IF (present(err_file)) err_file = err_file_loc
 
     !- check if the file is already open ------------------
@@ -585,6 +704,8 @@ CONTAINS
     write(out_unit,*) 'name:    ',trim(adjustl(ffile%name))
     write(out_unit,*) 'unit     ',ffile%unit
     write(out_unit,*) 'formatted',ffile%formatted
+    write(out_unit,*) 'append   ',ffile%append
+
     write(out_unit,*) 'old      ',ffile%old
     write(out_unit,*) 'seq      ',ffile%seq
     write(out_unit,*) 'frecl    ',ffile%frecl
@@ -637,5 +758,75 @@ CONTAINS
     flush(nio)
 
   END  SUBROUTINE QDUtil_flush_perso
+  SUBROUTINE Test_QDUtil_File
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m, only : Rkind, out_unit
+    IMPLICIT NONE
 
+    TYPE(File_t)              :: file1,file2
+    integer                   :: i,iunit,err_file,frecl
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+    character (len=:), allocatable   :: FileName
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QDUtil_File'
+    !logical, parameter :: debug = .FALSE.
+    logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL Initialize_Test(test_var,test_name='File')
+
+    !--------------------------------------------------------------
+    ! test 1: wrong file name
+    CALL file_open(file1, iunit, err_file=err_file) ! here an error occurs because file1%name does not exist
+    res_test = (err_file == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='file1%name is not allocated',test2=.FALSE.)
+    !CALL file_Write(file1)
+    !--------------------------------------------------------------
+
+    !--------------------------------------------------------------
+    ! test 2: sequential + formatted file
+    CALL file_set(file1,FileName='file.txt', err_file=err_file)
+    CALL file_open(file1, iunit, err_file=err_file)
+    res_test = (err_file == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='Seq+Formatted file',test2=.TRUE.)
+    write(iunit,*) 'test'
+    CALL flush_perso(iunit)
+    CALL file_delete(file1) ! the file is deleted
+    !CALL file_Write(file1)
+    !--------------------------------------------------------------
+
+    !--------------------------------------------------------------
+    ! test 3: sequential + unformatted file
+    CALL file_set(file1,FileName='file.txt',lformatted=.FALSE.,err_file=err_file)
+    CALL file_open(file1, iunit, err_file=err_file) ! here an error occurs because file1%name does not exist
+    res_test = (err_file == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='Seq+UnFormatted file',test2=.TRUE.)
+    write(iunit) 'test'
+    CALL file_close(file1) ! the file is closed
+
+    CALL file_set(file1,FileName='file.txt',lformatted=.FALSE.,append=.TRUE.,err_file=err_file)
+    CALL file_open(file1, iunit, err_file=err_file)
+    write(iunit) 'test2'
+
+    CALL file_close(file1) ! the file is closed
+    !--------------------------------------------------------------
+
+    !--------------------------------------------------------------
+    ! test 4: direct acces + unformatted file
+    INQUIRE(iolength=frecl) i
+    CALL file_set(file1,FileName='file.bin',lformatted=.FALSE.,seq=.FALSE.,lrecl=frecl,err_file=err_file)
+    CALL file_open(file1, iunit, err_file=err_file)
+    res_test = (err_file == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='direct+UnFormatted file',test2=.TRUE.)
+    write(iunit,rec=1) 1
+    write(iunit,rec=1) 2
+    CALL file_close(file1) ! the file is deleted
+    !--------------------------------------------------------------
+
+    ! finalize the tests
+    CALL Finalize_Test(test_var)
+  END SUBROUTINE Test_QDUtil_File
 END MODULE QDUtil_File_m

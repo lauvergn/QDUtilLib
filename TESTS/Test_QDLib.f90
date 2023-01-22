@@ -14,6 +14,7 @@ PROGRAM Test_QDLib
   CALL Test_QDUtil_RW_MatVec()
   CALL Test_QDUtil_Matrix()
   CALL Test_QDUtil_Diago()
-  CALL Test_QDUtil_Frac
+  CALL Test_QDUtil_Frac()
+  CALL Test_QDUtil_File()
 
 END PROGRAM Test_QDLib
