@@ -114,10 +114,10 @@ $(info ***********ext_obj:      $(ext_obj))
 $(info ***********************************************************************)
 
 
-VPATH = $(MAIN_DIR):$(TESTS_DIR):$(SRC_DIR): \
-        $(SRC_DIR)/Test: \
-        $(SRC_DIR)/NumParameters:$(SRC_DIR)/String:$(SRC_DIR)/File:$(SRC_DIR)/Math: \
-        $(SRC_DIR)/Frac $(SRC_DIR)/File
+VPATH = $(MAIN_DIR) $(TESTS_DIR) $(SRC_DIR)  \
+        $(SRC_DIR)/Test  \
+        $(SRC_DIR)/NumParameters $(SRC_DIR)/String $(SRC_DIR)/File $(SRC_DIR)/Math \
+        $(SRC_DIR)/Frac $(SRC_DIR)/File $(SRC_DIR)/Time
 
 QDLIB=QD
 
@@ -126,7 +126,7 @@ TESTS=Test_QDLib
 
 SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 \
          String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Diago_m.f90 \
-         Frac_m.f90 File_m.f90 \
+         Frac_m.f90 File_m.f90 Time_m.f90 \
          QDUtil_m.f90
 
 OBJ0=${SRCFILES:.f90=.o}
@@ -195,6 +195,8 @@ $(OBJ_DIR)/Frac_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Stri
 $(OBJ_DIR)/File_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
 $(OBJ_DIR)/Matrix_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
 $(OBJ_DIR)/Diago_m.o:               $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o
+
+$(OBJ_DIR)/Time_m.o:                $(OBJ_DIR)/NumParameters_m.o
 
 
 $(OBJ_DIR)/QDUtil_m.o:              $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o \
