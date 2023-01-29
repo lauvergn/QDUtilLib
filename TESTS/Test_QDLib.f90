@@ -16,5 +16,6 @@ PROGRAM Test_QDLib
   CALL Test_QDUtil_Diago()
   CALL Test_QDUtil_Frac()
   CALL Test_QDUtil_File()
+  CALL Test_QDUtil_Memory()
 
 END PROGRAM Test_QDLib

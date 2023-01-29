@@ -37,9 +37,14 @@ MODULE QDUtil_NumParameters_m
   integer, parameter :: RkS        = real32 ! 4
   integer, parameter :: RkD        = real64 ! 8
   integer, parameter :: RkQ        = real128 ! 16
+  integer, parameter :: Rk4        = real32 ! 4
+  integer, parameter :: Rk8        = real64 ! 8
+  integer, parameter :: Rk16       = real128 ! 16
 
   integer, parameter :: IkS        = int32  ! 4
   integer, parameter :: IkD        = int64  ! 8
+  integer, parameter :: Ik4        = int32  ! 4
+  integer, parameter :: Ik8        = int64  ! 8
 
   integer, parameter :: Rkind      = RkD ! 8
   integer, parameter :: Ikind      = int32  ! 4
@@ -75,6 +80,7 @@ MODULE QDUtil_NumParameters_m
   complex (kind=Rkind), parameter :: EYE      = (ZERO,ONE)
   complex (kind=Rkind), parameter :: CZERO    = (ZERO,ZERO)
   complex (kind=Rkind), parameter :: CONE     = (ONE,ZERO)
+  complex (kind=Rkind), parameter :: CTWO     = (TWO,ZERO)
   complex (kind=Rkind), parameter :: CHALF    = (HALF,ZERO)
 
   integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
@@ -109,7 +115,7 @@ CONTAINS
     real (kind=Rkind), parameter     :: ZeroTresh    = 10._Rkind**(-10)
     integer                          :: i
 
-    real (kind=Rkind), parameter   :: tab_ParaReal(22) = [                      &
+    real (kind=Rkind), parameter   :: tab_ParaReal(*) = [                      &
           0._Rkind,  1._Rkind,2._Rkind, 3._Rkind, 4._Rkind, 5._Rkind,  6._Rkind,&
           7._Rkind,  8._Rkind,9._Rkind,10._Rkind,11._Rkind,12._Rkind,100._Rkind,&
           0.5_Rkind,1._Rkind/3._Rkind,0.25_Rkind,0.25_Rkind,0.2_Rkind,          &
@@ -117,7 +123,9 @@ CONTAINS
 
     real (kind=Rkind),    allocatable   :: tab_Real(:)
     complex (kind=Rkind), allocatable   :: tab_Cplx(:)
-    complex (kind=Rkind), parameter     :: tab_ParaCplx(4) = [EYE,CZERO,CONE,CHALF]
+    complex (kind=Rkind), parameter     :: tab_ParaCplx(*) = [          &
+           (0._Rkind,1._Rkind),(0._Rkind,0._Rkind),(1._Rkind,0._Rkind), &
+           (2._Rkind,0._Rkind),(0.5_Rkind,0._Rkind)]
 
     !----- for debuging --------------------------------------------------
     character (len=*), parameter :: name_sub='Test_QDUtil_NumParameters'
@@ -145,10 +153,9 @@ CONTAINS
     IF (.NOT. res_test .OR. debug) write(out_unit,*) 'Val,Paramter,Diff',FOUR*atan(ONE),PI,FOUR*atan(ONE)-PI
 
     CALL Flush_Test(test_var)
-    
-    tab_Cplx = [(ZERO,ONE),(ZERO,ZERO),(ONE,ZERO),(HALF,ZERO)]
+    tab_Cplx = [EYE,CZERO,CONE,CTWO,CHALF]
     res_test = all(abs(tab_ParaCplx-tab_Cplx) < ZeroTresh)
-    CALL Logical_Test(test_var,test1=res_test,info='4 complex parameters ')
+    CALL Logical_Test(test_var,test1=res_test,info='5 complex parameters ')
     IF (.NOT. res_test .OR. debug) THEN
       DO i=1,size(tab_Cplx)
         write(out_unit,*) 'Val,Paramter,Diff',tab_Cplx(i),tab_ParaCplx(i),tab_Cplx(i)-tab_ParaCplx(i)

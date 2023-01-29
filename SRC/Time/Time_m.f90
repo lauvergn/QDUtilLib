@@ -48,7 +48,9 @@ MODULE QDUtil_Time_m
   INTERFACE Delta_RealTime
     MODULE PROCEDURE QDUtil_Delta_RealTime
   END INTERFACE
-
+  INTERFACE DeltaTime_withParam_time
+    MODULE PROCEDURE QDUtil_DeltaTime_withParam_time
+  END INTERFACE
   
   CONTAINS
 
@@ -68,6 +70,19 @@ MODULE QDUtil_Time_m
     real              :: dt_cpu,t_cpu
     integer           :: seconds,minutes,hours,days
 
+    logical           :: openmpi_loc
+    integer           :: MPI_id_loc
+
+    IF (present(openmpi)) THEN
+      openmpi_loc = openmpi
+    ELSE
+      openmpi_loc = .FALSE.
+    END IF
+    IF (present(MPI_id)) THEN
+      MPI_id_loc = MPI_id
+    ELSE
+      MPI_id_loc = -1
+    END IF
 
     CALL date_and_time(values=tab_time)
     write(out_unit,21) name_sub,tab_time(5:8),tab_time(3:1:-1)
@@ -86,8 +101,8 @@ MODULE QDUtil_Time_m
     days    = hours/24
     hours   = mod(hours,24)
 
-    IF(openmpi) THEN
-      write(out_unit,30) dt_real,name_sub,MPI_id
+    IF(openmpi_loc) THEN
+      write(out_unit,30) dt_real,name_sub,MPI_id_loc
 30        format('        real (s): ',f18.3,' in ',a, ' from MPI id ',i4)
     ELSE
       write(out_unit,31) dt_real,name_sub
@@ -111,8 +126,8 @@ MODULE QDUtil_Time_m
     days    = hours/24
     hours   = mod(hours,24)
 
-    IF(openmpi) THEN
-      write(out_unit,40) t_real,MPI_id
+    IF(openmpi_loc) THEN
+      write(out_unit,40) t_real,MPI_id_loc
 40        format('  Total real (s): ',f18.3,' from MPI id ',i4)
     ELSE
       write(out_unit,41) t_real

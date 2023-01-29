@@ -32,32 +32,32 @@ MODULE QDUtil_RW_MatVec_m
   PRIVATE
 
   INTERFACE Write_VecMat
-    MODULE PROCEDURE QDUtil_Write_real32Mat,QDUtil_Write_cplx32Mat,QDUtil_Write_real32Mat_string
-    MODULE PROCEDURE QDUtil_Write_real64Mat,QDUtil_Write_cplx64Mat,QDUtil_Write_real64Mat_string
-    MODULE PROCEDURE QDUtil_Write_real128Mat,QDUtil_Write_cplx128Mat,QDUtil_Write_real128Mat_string
-    MODULE PROCEDURE QDUtil_Write_real32Vec,QDUtil_Write_cplx32Vec
-    MODULE PROCEDURE QDUtil_Write_real64Vec,QDUtil_Write_cplx64Vec
-    MODULE PROCEDURE QDUtil_Write_real128Vec,QDUtil_Write_cplx128Vec
+    MODULE PROCEDURE QDUtil_Write_Rk4Mat,QDUtil_Write_Ck4Mat,QDUtil_Write_Rk4Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk8Mat,QDUtil_Write_Ck8Mat,QDUtil_Write_Rk8Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk4Vec,QDUtil_Write_Ck4Vec
+    MODULE PROCEDURE QDUtil_Write_Rk8Vec,QDUtil_Write_Ck8Vec
+    MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
   END INTERFACE
   INTERFACE Write_Mat
-    MODULE PROCEDURE QDUtil_Write_real32Mat,QDUtil_Write_cplx32Mat,QDUtil_Write_real32Mat_string
-    MODULE PROCEDURE QDUtil_Write_real64Mat,QDUtil_Write_cplx64Mat,QDUtil_Write_real64Mat_string
-    MODULE PROCEDURE QDUtil_Write_real128Mat,QDUtil_Write_cplx128Mat,QDUtil_Write_real128Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk4Mat,QDUtil_Write_Ck4Mat,QDUtil_Write_Rk4Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk8Mat,QDUtil_Write_Ck8Mat,QDUtil_Write_Rk8Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
   END INTERFACE
   INTERFACE Write_Vec
-    MODULE PROCEDURE QDUtil_Write_real32Vec,QDUtil_Write_cplx32Vec
-    MODULE PROCEDURE QDUtil_Write_real64Vec,QDUtil_Write_cplx64Vec
-    MODULE PROCEDURE QDUtil_Write_real128Vec,QDUtil_Write_cplx128Vec
+    MODULE PROCEDURE QDUtil_Write_Rk4Vec,QDUtil_Write_Ck4Vec
+    MODULE PROCEDURE QDUtil_Write_Rk8Vec,QDUtil_Write_Ck8Vec
+    MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
   END INTERFACE
   INTERFACE Read_Mat
-    MODULE PROCEDURE QDUtil_Read_real32Mat,QDUtil_Read_cplx32Mat
-    MODULE PROCEDURE QDUtil_Read_real64Mat,QDUtil_Read_cplx64Mat
-    MODULE PROCEDURE QDUtil_Read_real128Mat,QDUtil_Read_cplx128Mat
+    MODULE PROCEDURE QDUtil_Read_Rk4Mat,QDUtil_Read_Ck4Mat
+    MODULE PROCEDURE QDUtil_Read_Rk8Mat,QDUtil_Read_Ck8Mat
+    MODULE PROCEDURE QDUtil_Read_Rk16Mat,QDUtil_Read_Ck16Mat
   END INTERFACE
   INTERFACE Read_Vec
-    MODULE PROCEDURE QDUtil_Read_real32Vec,QDUtil_Read_cplx32Vec
-    MODULE PROCEDURE QDUtil_Read_real64Vec,QDUtil_Read_cplx64Vec
-    MODULE PROCEDURE QDUtil_Read_real128Vec,QDUtil_Read_cplx128Vec
+    MODULE PROCEDURE QDUtil_Read_Rk4Vec,QDUtil_Read_Ck4Vec
+    MODULE PROCEDURE QDUtil_Read_Rk8Vec,QDUtil_Read_Ck8Vec
+    MODULE PROCEDURE QDUtil_Read_Rk16Vec,QDUtil_Read_Ck16Vec
   END INTERFACE
 
   PUBLIC :: Write_VecMat, Write_Mat, Write_Vec, Read_Mat, Read_Vec
@@ -66,7 +66,6 @@ MODULE QDUtil_RW_MatVec_m
 
   character (len=Name_longlen) :: RMatIO_format = "f18.10"
   character (len=Name_longlen) :: CMatIO_format = "'(',f15.7,',',f15.7,')'"
-  !character (len=Name_longlen) :: CMatIO_format = "'(',f15.7,' +i',f15.7,')'" ! this format does not work while reading
 
   CONTAINS
 
@@ -74,7 +73,7 @@ MODULE QDUtil_RW_MatVec_m
   !!@param: TODO
   SUBROUTINE QDUtil_Format_OF_Line(wformat,nb_line,max_col,cplx,Rformat,info)
     USE QDUtil_String_m
-    USE QDUtil_NumParameters_m, ONLY : RkD,out_unit
+    USE QDUtil_NumParameters_m, ONLY : Rk8,out_unit
     IMPLICIT NONE
 
     character (len=:), allocatable, intent(inout)  :: wformat
@@ -121,9 +120,9 @@ MODULE QDUtil_RW_MatVec_m
 
     IF (nb_line > 0) THEN
 
-        !ilen = int(log10(real(nb_line,kind=RkD)))+1
+        !ilen = int(log10(real(nb_line,kind=Rk8)))+1
         ! ensure compatible with very small system in test
-        ilen = MAX(int(log10(real(nb_line,kind=RkD)))+1,2)
+        ilen = MAX(int(log10(real(nb_line,kind=Rk8)))+1,2)
 
         !write(*,*) 'max_col check:',max_col,ilen
 
@@ -156,13 +155,12 @@ MODULE QDUtil_RW_MatVec_m
   !!@description:  write a rectangular real or complex matrix, mat(nl,nc),
   !!   with a specific format selected with Format_OF_Line
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real64Mat(Mat,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Rk8Mat(Mat,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=real64),           intent(in) :: Mat(:,:)
+    real(kind=Rk8),           intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -211,16 +209,15 @@ MODULE QDUtil_RW_MatVec_m
 
     deallocate(wformat)
 
-  END SUBROUTINE QDUtil_Write_real64Mat
-  SUBROUTINE QDUtil_Write_real64Mat_string(Mat,string,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Write_Rk8Mat
+  SUBROUTINE QDUtil_Write_Rk8Mat_string(Mat,string,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     USE QDUtil_String_m,        ONLY : TO_string
     IMPLICIT NONE
 
     integer,                        intent(in)    :: nbcol
     character (len=:), allocatable, intent(inout) :: string
-    real(kind=real64),              intent(in)    :: Mat(:,:)
+    real(kind=Rk8),              intent(in)    :: Mat(:,:)
 
     character (len=*), optional,    intent(in)    :: Rformat
     character (len=*), optional,    intent(in)    :: info
@@ -281,16 +278,15 @@ MODULE QDUtil_RW_MatVec_m
       string = string // new_line('a')
     END DO
 
-  END SUBROUTINE QDUtil_Write_real64Mat_string
+  END SUBROUTINE QDUtil_Write_Rk8Mat_string
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx64Mat(Mat,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Ck8Mat(Mat,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    complex(kind=real64),        intent(in) :: Mat(:,:)
+    complex(kind=Rk8),        intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -341,17 +337,16 @@ MODULE QDUtil_RW_MatVec_m
 
       deallocate(wformat)
 
-  END SUBROUTINE QDUtil_Write_cplx64Mat
+  END SUBROUTINE QDUtil_Write_Ck8Mat
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real64Vec(Vec,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Rk8Vec(Vec,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=real64),            intent(in) :: Vec(:)
+    real(kind=Rk8),            intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -394,17 +389,16 @@ MODULE QDUtil_RW_MatVec_m
        write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
        deallocate(wformat)
-  END SUBROUTINE QDUtil_Write_real64Vec
+  END SUBROUTINE QDUtil_Write_Rk8Vec
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx64Vec(Vec,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Ck8Vec(Vec,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    complex(kind=real64),         intent(in) :: Vec(:)
+    complex(kind=Rk8),         intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -445,16 +439,15 @@ MODULE QDUtil_RW_MatVec_m
       write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
       deallocate(wformat)
-  END SUBROUTINE QDUtil_Write_cplx64Vec
+  END SUBROUTINE QDUtil_Write_Ck8Vec
 
-  SUBROUTINE QDUtil_Read_real64Mat(Mat,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Read_Rk8Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer,            intent(in)    :: nio,nbcol_loc
      integer,           intent(inout) :: err
-     real(kind=real64), intent(inout) :: Mat(:,:)
+     real(kind=Rk8), intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
@@ -495,8 +488,8 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_real64Mat(Mat,out_unit,nbcol_loc)
-       write(out_unit,*) ' ERROR in QDUtil_Read_real64Mat'
+       CALL QDUtil_Write_Rk8Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Rk8Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
@@ -504,14 +497,13 @@ MODULE QDUtil_RW_MatVec_m
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_real64Mat
-  SUBROUTINE QDUtil_Read_cplx64Mat(Mat,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Read_Rk8Mat
+  SUBROUTINE QDUtil_Read_Ck8Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer,              intent(in)    :: nio,nbcol_loc
-    complex(kind=real64), intent(inout) :: Mat(:,:)
+    complex(kind=Rk8), intent(inout) :: Mat(:,:)
     integer,              intent(inout) :: err
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
@@ -548,26 +540,25 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_cplx64Mat(Mat,out_unit,nbcol_loc)
-       write(out_unit,*) ' ERROR in QDUtil_Read_cplx64Mat'
+       CALL QDUtil_Write_Ck8Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ck8Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_cplx64Mat
+  END SUBROUTINE QDUtil_Read_Ck8Mat
 
   !================================================================
   ! ++    read a vector in line
   !================================================================
-  SUBROUTINE QDUtil_Read_real64Vec(Vec,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Read_Rk8Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer, intent(in)                :: nio,nbcol_loc
-     real(kind=real64), intent(inout)  :: Vec(:)
+     real(kind=Rk8), intent(inout)  :: Vec(:)
      integer, intent(inout)            :: err
 
      integer :: n,i,nb,nbblocs,nfin
@@ -588,21 +579,20 @@ MODULE QDUtil_RW_MatVec_m
      read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
-       write(out_unit,*) ' ERROR in QDUtil_Read_real64Vec'
+       write(out_unit,*) ' ERROR in QDUtil_Read_Rk8Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_real64Vec
-  SUBROUTINE QDUtil_Read_cplx64Vec(Vec,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Read_Rk8Vec
+  SUBROUTINE QDUtil_Read_Ck8Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
     integer, intent(in)                 :: nio,nbcol_loc
-    complex(kind=real64), intent(inout) :: Vec(:)
+    complex(kind=Rk8), intent(inout) :: Vec(:)
     integer, intent(inout)              :: err
 
      integer :: n,i,nb,nbblocs,nfin
@@ -622,23 +612,22 @@ MODULE QDUtil_RW_MatVec_m
      read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
-       write(out_unit,*) ' ERROR in QDUtil_Read_cplx64Vec'
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ck8Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_cplx64Vec
+  END SUBROUTINE QDUtil_Read_Ck8Vec
 
 
-  SUBROUTINE QDUtil_Write_real32Mat(Mat,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Rk4Mat(Mat,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=real32),           intent(in) :: Mat(:,:)
+    real(kind=Rk4),           intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -687,16 +676,15 @@ MODULE QDUtil_RW_MatVec_m
 
     deallocate(wformat)
 
-  END SUBROUTINE QDUtil_Write_real32Mat
-  SUBROUTINE QDUtil_Write_real32Mat_string(Mat,string,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Write_Rk4Mat
+  SUBROUTINE QDUtil_Write_Rk4Mat_string(Mat,string,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     USE QDUtil_String_m,        ONLY : TO_string
     IMPLICIT NONE
 
     integer,                        intent(in)    :: nbcol
     character (len=:), allocatable, intent(inout) :: string
-    real(kind=real32),              intent(in)    :: Mat(:,:)
+    real(kind=Rk4),              intent(in)    :: Mat(:,:)
 
     character (len=*), optional,    intent(in)    :: Rformat
     character (len=*), optional,    intent(in)    :: info
@@ -757,16 +745,15 @@ MODULE QDUtil_RW_MatVec_m
       string = string // new_line('a')
     END DO
 
-  END SUBROUTINE QDUtil_Write_real32Mat_string
+  END SUBROUTINE QDUtil_Write_Rk4Mat_string
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx32Mat(Mat,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Ck4Mat(Mat,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    complex(kind=real32),        intent(in) :: Mat(:,:)
+    complex(kind=Rk4),        intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -817,17 +804,16 @@ MODULE QDUtil_RW_MatVec_m
 
       deallocate(wformat)
 
-  END SUBROUTINE QDUtil_Write_cplx32Mat
+  END SUBROUTINE QDUtil_Write_Ck4Mat
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real32Vec(Vec,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Rk4Vec(Vec,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=real32),           intent(in) :: Vec(:)
+    real(kind=Rk4),           intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -870,17 +856,16 @@ MODULE QDUtil_RW_MatVec_m
        write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
        deallocate(wformat)
-  END SUBROUTINE QDUtil_Write_real32Vec
+  END SUBROUTINE QDUtil_Write_Rk4Vec
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx32Vec(Vec,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Ck4Vec(Vec,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    complex(kind=real32),         intent(in) :: Vec(:)
+    complex(kind=Rk4),         intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -921,16 +906,15 @@ MODULE QDUtil_RW_MatVec_m
       write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
       deallocate(wformat)
-  END SUBROUTINE QDUtil_Write_cplx32Vec
+  END SUBROUTINE QDUtil_Write_Ck4Vec
 
-  SUBROUTINE QDUtil_Read_real32Mat(Mat,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Read_Rk4Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer,            intent(in)    :: nio,nbcol_loc
      integer,           intent(inout) :: err
-     real(kind=real32), intent(inout) :: Mat(:,:)
+     real(kind=Rk4), intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
@@ -971,8 +955,8 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_real32Mat(Mat,out_unit,nbcol_loc)
-       write(out_unit,*) ' ERROR in QDUtil_Read_real32Mat'
+       CALL QDUtil_Write_Rk4Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Rk4Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
@@ -980,14 +964,13 @@ MODULE QDUtil_RW_MatVec_m
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_real32Mat
-  SUBROUTINE QDUtil_Read_cplx32Mat(Mat,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Read_Rk4Mat
+  SUBROUTINE QDUtil_Read_Ck4Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer,             intent(in)    :: nio,nbcol_loc
-    complex(kind=real32), intent(inout) :: Mat(:,:)
+    complex(kind=Rk4), intent(inout) :: Mat(:,:)
     integer,             intent(inout) :: err
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
@@ -1024,26 +1007,25 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_cplx32Mat(Mat,out_unit,nbcol_loc)
-       write(out_unit,*) ' ERROR in QDUtil_Read_cplx32Mat'
+       CALL QDUtil_Write_Ck4Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ck4Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_cplx32Mat
+  END SUBROUTINE QDUtil_Read_Ck4Mat
 
   !================================================================
   ! ++    read a vector in line
   !================================================================
-  SUBROUTINE QDUtil_Read_real32Vec(Vec,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Read_Rk4Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer, intent(in)                :: nio,nbcol_loc
-     real(kind=real32), intent(inout)  :: Vec(:)
+     real(kind=Rk4), intent(inout)  :: Vec(:)
      integer, intent(inout)            :: err
 
      integer :: n,i,nb,nbblocs,nfin
@@ -1064,21 +1046,20 @@ MODULE QDUtil_RW_MatVec_m
      read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
-       write(out_unit,*) ' ERROR in QDUtil_Read_real32Vec'
+       write(out_unit,*) ' ERROR in QDUtil_Read_Rk4Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_real32Vec
-  SUBROUTINE QDUtil_Read_cplx32Vec(Vec,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real32
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Read_Rk4Vec
+  SUBROUTINE QDUtil_Read_Ck4Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk4
     IMPLICIT NONE
 
     integer, intent(in)                 :: nio,nbcol_loc
-    complex(kind=real32), intent(inout) :: Vec(:)
+    complex(kind=Rk4), intent(inout) :: Vec(:)
     integer, intent(inout)              :: err
 
      integer :: n,i,nb,nbblocs,nfin
@@ -1098,24 +1079,23 @@ MODULE QDUtil_RW_MatVec_m
      read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
-       write(out_unit,*) ' ERROR in QDUtil_Read_cplx32Vec'
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ck4Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_cplx32Vec
+  END SUBROUTINE QDUtil_Read_Ck4Vec
 
 
 
-  SUBROUTINE QDUtil_Write_real128Mat(Mat,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Rk16Mat(Mat,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=real128),          intent(in) :: Mat(:,:)
+    real(kind=Rk16),          intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -1164,16 +1144,15 @@ MODULE QDUtil_RW_MatVec_m
 
     deallocate(wformat)
 
-  END SUBROUTINE QDUtil_Write_real128Mat
-  SUBROUTINE QDUtil_Write_real128Mat_string(Mat,string,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Write_Rk16Mat
+  SUBROUTINE QDUtil_Write_Rk16Mat_string(Mat,string,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     USE QDUtil_String_m,        ONLY : TO_string
     IMPLICIT NONE
 
     integer,                        intent(in)    :: nbcol
     character (len=:), allocatable, intent(inout) :: string
-    real(kind=real128),              intent(in)    :: Mat(:,:)
+    real(kind=Rk16),              intent(in)    :: Mat(:,:)
 
     character (len=*), optional,    intent(in)    :: Rformat
     character (len=*), optional,    intent(in)    :: info
@@ -1234,16 +1213,15 @@ MODULE QDUtil_RW_MatVec_m
       string = string // new_line('a')
     END DO
 
-  END SUBROUTINE QDUtil_Write_real128Mat_string
+  END SUBROUTINE QDUtil_Write_Rk16Mat_string
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx128Mat(Mat,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Ck16Mat(Mat,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer,                      intent(in) :: nio,nbcol
-    complex(kind=real128),        intent(in) :: Mat(:,:)
+    complex(kind=Rk16),        intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -1294,17 +1272,16 @@ MODULE QDUtil_RW_MatVec_m
 
       deallocate(wformat)
 
-  END SUBROUTINE QDUtil_Write_cplx128Mat
+  END SUBROUTINE QDUtil_Write_Ck16Mat
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_real128Vec(Vec,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Rk16Vec(Vec,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=real128),            intent(in) :: Vec(:)
+    real(kind=Rk16),            intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -1347,17 +1324,16 @@ MODULE QDUtil_RW_MatVec_m
        write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
        deallocate(wformat)
-  END SUBROUTINE QDUtil_Write_real128Vec
+  END SUBROUTINE QDUtil_Write_Rk16Vec
 
   !!@description: TODO
   !!@param: TODO
-  SUBROUTINE QDUtil_Write_cplx128Vec(Vec,nio,nbcol,Rformat,info,iprint)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Write_Ck16Vec(Vec,nio,nbcol,Rformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    complex(kind=real128),       intent(in) :: Vec(:)
+    complex(kind=Rk16),       intent(in) :: Vec(:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -1398,16 +1374,15 @@ MODULE QDUtil_RW_MatVec_m
       write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
       deallocate(wformat)
-  END SUBROUTINE QDUtil_Write_cplx128Vec
+  END SUBROUTINE QDUtil_Write_Ck16Vec
 
-  SUBROUTINE QDUtil_Read_real128Mat(Mat,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Read_Rk16Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer,             intent(in)    :: nio,nbcol_loc
      integer,            intent(inout) :: err
-     real(kind=real128), intent(inout) :: Mat(:,:)
+     real(kind=Rk16), intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
@@ -1448,8 +1423,8 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_real128Mat(Mat,out_unit,nbcol_loc)
-       write(out_unit,*) ' ERROR in QDUtil_Read_real128Mat'
+       CALL QDUtil_Write_Rk16Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Rk16Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
@@ -1457,14 +1432,13 @@ MODULE QDUtil_RW_MatVec_m
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_real128Mat
-  SUBROUTINE QDUtil_Read_cplx128Mat(Mat,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Read_Rk16Mat
+  SUBROUTINE QDUtil_Read_Ck16Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer,               intent(in)    :: nio,nbcol_loc
-    complex(kind=real128), intent(inout) :: Mat(:,:)
+    complex(kind=Rk16), intent(inout) :: Mat(:,:)
     integer,               intent(inout) :: err
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
@@ -1501,26 +1475,25 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
      IF (err /= 0) THEN
-       CALL QDUtil_Write_cplx128Mat(Mat,out_unit,nbcol_loc)
-       write(out_unit,*) ' ERROR in QDUtil_Read_cplx128Mat'
+       CALL QDUtil_Write_Ck16Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ck16Mat'
        write(out_unit,*) '  while reading a matrix'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_cplx128Mat
+  END SUBROUTINE QDUtil_Read_Ck16Mat
 
   !================================================================
   ! ++    read a vector in line
   !================================================================
-  SUBROUTINE QDUtil_Read_real128Vec(Vec,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  SUBROUTINE QDUtil_Read_Rk16Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer, intent(in)                 :: nio,nbcol_loc
-     real(kind=real128), intent(inout)  :: Vec(:)
+     real(kind=Rk16), intent(inout)  :: Vec(:)
      integer, intent(inout)             :: err
 
      integer :: n,i,nb,nbblocs,nfin
@@ -1541,21 +1514,20 @@ MODULE QDUtil_RW_MatVec_m
      read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
-       write(out_unit,*) ' ERROR in QDUtil_Read_real128Vec'
+       write(out_unit,*) ' ERROR in QDUtil_Read_Rk16Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_real128Vec
-  SUBROUTINE QDUtil_Read_cplx128Vec(Vec,nio,nbcol_loc,err)
-    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real128
-    USE QDUtil_NumParameters_m, ONLY : out_unit
+  END SUBROUTINE QDUtil_Read_Rk16Vec
+  SUBROUTINE QDUtil_Read_Ck16Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
     integer, intent(in)                  :: nio,nbcol_loc
-    complex(kind=real128), intent(inout) :: Vec(:)
+    complex(kind=Rk16), intent(inout)    :: Vec(:)
     integer, intent(inout)               :: err
 
      integer :: n,i,nb,nbblocs,nfin
@@ -1575,14 +1547,14 @@ MODULE QDUtil_RW_MatVec_m
      read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
 
      IF (err /= 0) THEN
-       write(out_unit,*) ' ERROR in QDUtil_Read_cplx128Vec'
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ck16Vec'
        write(out_unit,*) '  while reading a vector'
        write(out_unit,*) '  end of file or end of record'
        write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
        write(out_unit,*) ' Check your data !!'
      END IF
 
-  END SUBROUTINE QDUtil_Read_cplx128Vec
+  END SUBROUTINE QDUtil_Read_Ck16Vec
 
 
   SUBROUTINE Test_QDUtil_RW_MatVec()
@@ -1633,7 +1605,7 @@ MODULE QDUtil_RW_MatVec_m
     ELSE
       res_test = all(abs(R1Mat-R2Mat) < ZeroTresh)
     END IF
-    CALL Logical_Test(test_var,test1=res_test,info='Read-Write real64Mat')
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write Rk8Mat')
 
    ! Test1bis for the real matrix (in a string)
     open(newunit=io,file='test_io_file.txt')
@@ -1649,7 +1621,7 @@ MODULE QDUtil_RW_MatVec_m
     ELSE
       res_test = all(abs(R1Mat-R2Mat) < ZeroTresh)
     END IF
-    CALL Logical_Test(test_var,test1=res_test,info='Read-Write_string real64Mat')
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write_string Rk8Mat')
 
     ! Test2 for the complex matrix
     open(newunit=io,file='test_io_file.txt')
@@ -1664,7 +1636,7 @@ MODULE QDUtil_RW_MatVec_m
     ELSE
       res_test = all(abs(C1Mat-C2Mat) < ZeroTresh)
     END IF
-    CALL Logical_Test(test_var,test1=res_test,info='Read-Write cplx64Mat')
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write Ck8Mat')
 
 
     ! Test3 for the real vector
@@ -1680,7 +1652,7 @@ MODULE QDUtil_RW_MatVec_m
     ELSE
       res_test = all(abs(R1Vec-R2Vec) < ZeroTresh)
     END IF
-    CALL Logical_Test(test_var,test1=res_test,info='Read-Write real64Vec')
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write Rk8Vec')
 
     ! Test4 for the complex vector
     open(newunit=io,file='test_io_file.txt')
@@ -1695,7 +1667,7 @@ MODULE QDUtil_RW_MatVec_m
     ELSE
       res_test = all(abs(C1Vec-C2Vec) < ZeroTresh)
     END IF
-    CALL Logical_Test(test_var,test1=res_test,info='Read-Write cplx64Vec')
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write Ck8Vec')
 
     CALL Flush_Test(test_var)
     ! finalize the tests

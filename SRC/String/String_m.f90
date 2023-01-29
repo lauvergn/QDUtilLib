@@ -40,6 +40,8 @@ IMPLICIT NONE
   PUBLIC :: int_TO_char,logical_TO_char,real_TO_char
   PUBLIC :: TO_string
 
+  PUBLIC :: alloc_array,dealloc_array
+
   PUBLIC :: Test_QDUtil_String
 
   INTERFACE string_uppercase_TO_lowercase
@@ -65,7 +67,7 @@ IMPLICIT NONE
   INTERFACE TO_string
     MODULE PROCEDURE QDUtil_int32_TO_string,QDUtil_int64_TO_string
     MODULE PROCEDURE QDUtil_logical_TO_string
-    MODULE PROCEDURE QDUtil_real32_TO_string,QDUtil_real64_TO_string,QDUtil_real128_TO_string
+    MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
   END INTERFACE
 
   INTERFACE int_TO_char
@@ -75,14 +77,19 @@ IMPLICIT NONE
     MODULE PROCEDURE QDUtil_logical_TO_string
   END INTERFACE
   INTERFACE real_TO_char
-    MODULE PROCEDURE QDUtil_real32_TO_string,QDUtil_real64_TO_string,QDUtil_real128_TO_string
+    MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
   END INTERFACE
 
   INTERFACE Read_line
     MODULE PROCEDURE QDUtil_Read_line
   END INTERFACE
-  
 
+  INTERFACE alloc_array
+    MODULE PROCEDURE QDUtil_alloc_array_OF_Stringdim1 ! ,QDUtil_alloc_array_OF_ChLendim1
+  END INTERFACE
+  INTERFACE dealloc_array
+    MODULE PROCEDURE QDUtil_dealloc_array_OF_Stringdim1
+  END INTERFACE
 
 CONTAINS
   PURE FUNCTION QDUtil_string_TO_lowercase(string) RESULT (lstring)
@@ -171,11 +178,11 @@ CONTAINS
 
   END FUNCTION QDUtil_logical_TO_string
   PURE FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : IkS,RkD
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Rk8
     IMPLICIT NONE
 
     character (len=:),  allocatable             :: string
-    integer (kind=IkS),             intent(in)  :: i
+    integer (kind=Ik4),             intent(in)  :: i
 
 
     character (len=:), allocatable  :: name_int
@@ -185,9 +192,9 @@ CONTAINS
     IF (i == 0) THEN
       clen = 1
     ELSE IF (i < 0) THEN
-      clen = int(log10(abs(real(i,kind=RkD))))+2
+      clen = int(log10(abs(real(i,kind=Rk8))))+2
     ELSE
-      clen = int(log10(real(i,kind=RkD)))+1
+      clen = int(log10(real(i,kind=Rk8)))+1
     END IF
 
     ! allocate name_int
@@ -204,11 +211,11 @@ CONTAINS
 
   END FUNCTION QDUtil_int32_TO_string
   PURE FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : IkD,RkD
+    USE QDUtil_NumParameters_m, ONLY : Ik8,Rk8
     IMPLICIT NONE
 
     character (len=:),  allocatable             :: string
-    integer (kind=IkD),             intent(in)  :: i
+    integer (kind=Ik8),             intent(in)  :: i
 
 
     character (len=:), allocatable  :: name_int
@@ -218,9 +225,9 @@ CONTAINS
     IF (i == 0) THEN
       clen = 1
     ELSE IF (i < 0) THEN
-      clen = int(log10(abs(real(i,kind=RkD))))+2
+      clen = int(log10(abs(real(i,kind=Rk8))))+2
     ELSE
-      clen = int(log10(real(i,kind=RkD)))+1
+      clen = int(log10(real(i,kind=Rk8)))+1
     END IF
 
     ! allocate name_int
@@ -236,13 +243,13 @@ CONTAINS
     deallocate(name_int)
 
   END FUNCTION QDUtil_int64_TO_string
-  FUNCTION QDUtil_real128_TO_string(r,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : RkQ
+  FUNCTION QDUtil_Rk16_TO_string(r,Rformat) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
     IMPLICIT NONE
 
     character (len=:), allocatable           :: string
 
-    real (kind=RkQ), intent(in)              :: r
+    real (kind=Rk16), intent(in)              :: r
     character (len=*), intent(in), optional  :: Rformat
 
 
@@ -250,7 +257,7 @@ CONTAINS
     character(len=Line_len)           :: name_real
     integer :: clen,i
 
-    !$OMP  CRITICAL (QDUtil_real128_TO_string_CRIT)
+    !$OMP  CRITICAL (QDUtil_Rk16_TO_string_CRIT)
 
     IF (allocated(string)) deallocate(string)
 
@@ -299,16 +306,16 @@ CONTAINS
       string = trim(adjustl(string))
     END IF
 
-    !$OMP  END CRITICAL (QDUtil_real128_TO_string_CRIT)
+    !$OMP  END CRITICAL (QDUtil_Rk16_TO_string_CRIT)
 
-  END FUNCTION QDUtil_real128_TO_string
-  FUNCTION QDUtil_real64_TO_string(r,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : RkD
+  END FUNCTION QDUtil_Rk16_TO_string
+  FUNCTION QDUtil_Rk8_TO_string(r,Rformat) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
     IMPLICIT NONE
 
     character (len=:), allocatable           :: string
 
-    real (kind=RkD),   intent(in)            :: r
+    real (kind=Rk8),   intent(in)            :: r
     character (len=*), intent(in), optional  :: Rformat
 
 
@@ -316,7 +323,7 @@ CONTAINS
     character(len=Line_len)           :: name_real
     integer :: clen,i
 
-    !$OMP  CRITICAL (QDUtil_real64_TO_string_CRIT)
+    !$OMP  CRITICAL (QDUtil_Rk8_TO_string_CRIT)
 
     IF (allocated(string)) deallocate(string)
 
@@ -366,16 +373,16 @@ CONTAINS
 
     END IF
 
-    !$OMP  END CRITICAL (QDUtil_real64_TO_string_CRIT)
+    !$OMP  END CRITICAL (QDUtil_Rk8_TO_string_CRIT)
 
-  END FUNCTION QDUtil_real64_TO_string
-  FUNCTION QDUtil_real32_TO_string(r,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : RkS
+  END FUNCTION QDUtil_Rk8_TO_string
+  FUNCTION QDUtil_Rk4_TO_string(r,Rformat) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
     IMPLICIT NONE
 
     character (len=:), allocatable           :: string
 
-    real (kind=RkS), intent(in)              :: r
+    real (kind=Rk4), intent(in)              :: r
     character (len=*), intent(in), optional  :: Rformat
 
 
@@ -383,7 +390,7 @@ CONTAINS
     character(len=Line_len)           :: name_real
     integer :: clen,i
 
-    !$OMP  CRITICAL (QDUtil_real32_TO_string_CRIT)
+    !$OMP  CRITICAL (QDUtil_Rk4_TO_string_CRIT)
 
     IF (allocated(string)) deallocate(string)
 
@@ -432,9 +439,9 @@ CONTAINS
       string = trim(adjustl(string))
     END IF
 
-    !$OMP  END CRITICAL (QDUtil_real32_TO_string_CRIT)
+    !$OMP  END CRITICAL (QDUtil_Rk4_TO_string_CRIT)
 
-  END FUNCTION QDUtil_real32_TO_string
+  END FUNCTION QDUtil_Rk4_TO_string
 
   FUNCTION QDUtil_string_IS_empty(String)
     IMPLICIT NONE
@@ -473,6 +480,102 @@ CONTAINS
     deallocate(line)
   
   END FUNCTION QDUtil_Read_line
+
+  SUBROUTINE QDUtil_alloc_array_OF_Stringdim1(tab,tab_ub,name_var,name_sub,tab_lb)
+    USE QDUtil_Memory_base_m
+    IMPLICIT NONE
+  
+    character (len=*), pointer,     intent(inout) :: tab(:)
+    integer,                        intent(in)    :: tab_ub(:)
+    integer, optional,              intent(in)    :: tab_lb(:)
+    character (len=*),              intent(in)    :: name_var,name_sub
+  
+    integer, parameter :: ndim=1
+  
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub_alloc = 'QDUtil_alloc_array_OF_Stringdim1'
+    integer :: err_mem,memory
+    logical,parameter :: debug=.FALSE.
+    !logical,parameter :: debug=.TRUE.
+    !----- for debuging --------------------------------------------------
+  
+  
+    IF (associated(tab)) CALL Write_error_NOT_null(name_sub_alloc,name_var,name_sub)
+
+    CALL sub_test_tab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
+
+    IF (present(tab_lb)) THEN
+      CALL sub_test_tab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
+
+      memory = product(tab_ub(:)-tab_lb(:)+1)
+      allocate(tab(tab_lb(1):tab_ub(1)),stat=err_mem)
+    ELSE
+      memory = product(tab_ub(:))
+      allocate(tab(tab_ub(1)),stat=err_mem)
+    END IF
+    memory = len(tab(tab_ub(1))) * size(tab)
+    CALL error_memo_allo(err_mem,memory,name_var,name_sub,'character')
+  
+  END SUBROUTINE QDUtil_alloc_array_OF_Stringdim1
+  SUBROUTINE QDUtil_alloc_array_OF_ChLendim1(tab,tab_ub,ChLen,name_var,name_sub,tab_lb)
+    USE QDUtil_Memory_base_m
+    IMPLICIT NONE
+  
+    integer,                        intent(in)    :: ChLen
+    character (len=*), pointer,     intent(inout) :: tab(:)
+    integer,                        intent(in)    :: tab_ub(:)
+    integer, optional,              intent(in)    :: tab_lb(:)
+    character (len=*),              intent(in)    :: name_var,name_sub
+  
+    integer, parameter :: ndim=1
+  
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub_alloc = 'QDUtil_alloc_array_OF_ChLendim1'
+    integer :: err_mem,memory
+    logical,parameter :: debug=.FALSE.
+    !logical,parameter :: debug=.TRUE.
+    !----- for debuging --------------------------------------------------
+  
+  
+    IF (associated(tab)) CALL Write_error_NOT_null(name_sub_alloc,name_var,name_sub)
+  
+    CALL sub_test_tab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
+  
+    IF (present(tab_lb)) THEN
+      CALL sub_test_tab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
+  
+      memory = ChLen * product(tab_ub(:)-tab_lb(:)+1)
+      allocate(tab(tab_lb(1):tab_ub(1)),stat=err_mem)
+    ELSE
+      memory = ChLen * product(tab_ub(:))
+      allocate(tab(tab_ub(1)),stat=err_mem)
+    END IF
+    CALL error_memo_allo(err_mem,memory,name_var,name_sub,'character')
+  
+  END SUBROUTINE QDUtil_alloc_array_OF_ChLendim1
+  SUBROUTINE QDUtil_dealloc_array_OF_Stringdim1(tab,name_var,name_sub)
+    USE QDUtil_Memory_base_m
+    IMPLICIT NONE
+  
+    character (len=*), pointer, intent(inout) :: tab(:)
+    character (len=*),          intent(in)    :: name_var,name_sub
+  
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub_alloc = 'QDUtil_dealloc_array_OF_Stringdim1'
+    integer :: err_mem,memory
+    logical,parameter :: debug=.FALSE.
+    !logical,parameter :: debug=.TRUE.
+    !----- for debuging --------------------------------------------------
+  
+    !IF (.NOT. associated(tab)) RETURN
+    IF (.NOT. associated(tab)) CALL Write_error_null(name_sub_alloc,name_var,name_sub)
+  
+    memory = size(tab) * len(tab(lbound(tab,dim=1)))
+    deallocate(tab,stat=err_mem)
+    CALL error_memo_allo(err_mem,-memory,name_var,name_sub,'character')
+    nullify(tab)
+  
+  END SUBROUTINE QDUtil_dealloc_array_OF_Stringdim1
 
   SUBROUTINE Test_QDUtil_String()
     USE QDUtil_Test_m
@@ -541,21 +644,21 @@ CONTAINS
     !#7, 8, 9
     res_test = ('0' == TO_string(0))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (0)')
-    res_test = ('10' == TO_string(10_IkS))
-    CALL Logical_Test(test_var,test1=res_test,info='TO_string (10_IkS)')
-    res_test = ('-1099' == TO_string(-1099_IkD))
-    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1099_IkD)')
+    res_test = ('10' == TO_string(10_Ik4))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (10_Ik4)')
+    res_test = ('-1099' == TO_string(-1099_Ik8))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1099_Ik8)')
     CALL Flush_Test(test_var)
 
     !#10-12
     res_test = ('0.' == TO_string(0._Rkind))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (0.)')
-    res_test = ('1.' == TO_string(1._RkS))
-    CALL Logical_Test(test_var,test1=res_test,info='TO_string (1._RkS)')
-    res_test = ('-10.' == TO_string(-10._RkD))
-    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-10._RkD)')
-    res_test = ('-999.5' == TO_string(-999.5_RkQ))
-    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-999.5_RkQ)')
+    res_test = ('1.' == TO_string(1._Rk4))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (1._Rk4)')
+    res_test = ('-10.' == TO_string(-10._Rk8))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-10._Rk8)')
+    res_test = ('-999.5' == TO_string(-999.5_Rk16))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-999.5_Rk16)')
     CALL Flush_Test(test_var)
 
     !#13-14

@@ -37,6 +37,7 @@ MODULE QDUtil_m
   USE QDUtil_Frac_m
   USE QDUtil_File_m
   USE QDUtil_Time_m
+  USE QDUtil_Memory_m
 
   IMPLICIT NONE
 

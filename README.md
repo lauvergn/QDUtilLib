@@ -90,10 +90,10 @@ This module contains:
 
 - **kind** definitions from the intrinsinc ISO_FORTRAN_ENV module
   - Rkind: default real kind (normaly real64)
-  - RkS, RKD, RKQ for real32, real64, real128
+  - Rk4, Rk8, Rk16 for real32, real64, real128
   - Ikind: default integer kind (usualy int32)
   - ILkind: default long integer kind (usualy int64)
-  - IkS, IkD for int32, int63
+  - Ik4, Ik8 for int32, int64
 - Some real (kind=Rkind) numbers : ZERO to TWELVE, HALF, HUNDRED,ONETENTH ..., PI
 - Some complexe (kind=Rkind) numbers : EYE (i), CZERO, CONE, CHALF
 - out_unit and in_unit: the standard output and input units from the intrinsinc ISO_FORTRAN_ENV module
