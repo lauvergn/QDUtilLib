@@ -152,7 +152,7 @@ All functions **elemental** (except the ones with a string). Therefore, one can 
 This module contains public subroutines to read and write real and complex (kind=Rkind) vectors and matrices:
 
 - Subroutines to read a matrix from a file: **Read_Mat** or **Read_Vec**
-  All real and complexe kinds from NumParameters module are possible
+  All real kinds, all complexe kinds and one integer kind from NumParameters module are possible
   **Read_Mat(Mat,nio,nbcol,err)** or **Read_Vec(Vec,nio,nbcol,err)**
   - Mat or Vec: the matrice or the Vector to be readed. Mat or Vec have to be allocated
   - nio: the file unit

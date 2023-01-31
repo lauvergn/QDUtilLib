@@ -37,10 +37,10 @@ MODULE QDUtil_Matrix_m
     MODULE PROCEDURE QDUtil_inv_OF_CMat_TO
   END INTERFACE
 
-  PUBLIC inv_Mat_TO_Mat_inv
-  INTERFACE inv_Mat_TO_Mat_inv
-    MODULE PROCEDURE QDUtil_inv_RMat_TO_RMat_inv
-    MODULE PROCEDURE QDUtil_inv_CMat_TO_CMat_inv
+  PUBLIC inv_OF_Mat_TO_Mat_inv
+  INTERFACE inv_OF_Mat_TO_Mat_inv
+    MODULE PROCEDURE QDUtil_inv_OF_RMat_TO_RMat_inv
+    MODULE PROCEDURE QDUtil_inv_OF_CMat_TO_CMat_inv
   END INTERFACE
 
   PUBLIC LinearSys_Solve
@@ -159,7 +159,7 @@ MODULE QDUtil_Matrix_m
     END SELECT
 
   END FUNCTION QDUtil_inv_OF_RMat_TO
-  SUBROUTINE QDUtil_inv_RMat_TO_RMat_inv(RMat,RMat_inv,inv_type,epsi)
+  SUBROUTINE QDUtil_inv_OF_RMat_TO_RMat_inv(RMat,RMat_inv,inv_type,epsi)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
 
@@ -186,7 +186,7 @@ MODULE QDUtil_Matrix_m
 
     RMat_inv = inv_OF_Mat_TO(Rmat,inv_type_loc,epsi_loc)
 
-  END SUBROUTINE QDUtil_inv_RMat_TO_RMat_inv
+  END SUBROUTINE QDUtil_inv_OF_RMat_TO_RMat_inv
   !================================================================
   !   Inversion of a real matrix Cmat : CMat_inv = Cmat^-1
   !   Function and subroutine
@@ -282,7 +282,7 @@ MODULE QDUtil_Matrix_m
    END IF
 
   END FUNCTION QDUtil_inv_OF_CMat_TO
-  SUBROUTINE QDUtil_inv_CMat_TO_CMat_inv(CMat,CMat_inv,inv_type,epsi)
+  SUBROUTINE QDUtil_inv_OF_CMat_TO_CMat_inv(CMat,CMat_inv,inv_type,epsi)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
 
@@ -309,7 +309,7 @@ MODULE QDUtil_Matrix_m
 
     CMat_inv = inv_OF_Mat_TO(Cmat,inv_type_loc,epsi_loc)
 
-  END SUBROUTINE QDUtil_inv_CMat_TO_CMat_inv
+  END SUBROUTINE QDUtil_inv_OF_CMat_TO_CMat_inv
   !================================================================
   !    Determinant of a matrix: Function
   !================================================================
@@ -1266,9 +1266,10 @@ MODULE QDUtil_Matrix_m
     real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
 
     integer                          :: io,ioerr
-    real(kind=Rkind),    allocatable :: R1Mat(:,:),R1Vec(:)
-    complex(kind=Rkind), allocatable :: C1Mat(:,:),C1Vec(:)
+    real(kind=Rkind),    allocatable :: R1Mat(:,:),R1Vec(:),R11Mat(:,:)
+    complex(kind=Rkind), allocatable :: C1Mat(:,:),C1Vec(:),C11Mat(:,:)
     real(kind=Rkind),    allocatable :: R2Mat(:,:),R2Vec(:)
+
     complex(kind=Rkind), allocatable :: C2Mat(:,:),C2Vec(:)
     real(kind=Rkind),    allocatable :: R3Mat(:,:),R3Vec(:)
     complex(kind=Rkind), allocatable :: C3Mat(:,:),C3Vec(:)
@@ -1301,7 +1302,7 @@ MODULE QDUtil_Matrix_m
     !====================================================================
 
     !====================================================================
-    ! test for the derterminant
+    ! test for the determinant
     !
     ! define the matrices
     R1Mat = reshape([ONE,HALF,ZERO,                             &
@@ -1382,6 +1383,25 @@ MODULE QDUtil_Matrix_m
       CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
       CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
     END IF
+
+    CALL inv_OF_Mat_TO_Mat_inv(R1Mat,R11Mat,0,ZERO)
+    res_test = all(abs(R11Mat-R2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion of R1Mat (#0 sub)')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
+    END IF
+    CALL inv_OF_Mat_TO_Mat_inv(C1Mat,C11Mat,0,ZERO)
+    res_test = all(abs(C11Mat-C2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Inversion of C1Mat (#0 sub)')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+      CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
+    END IF
+    CALL Flush_Test(test_var)
+
     !====================================================================
 
 
