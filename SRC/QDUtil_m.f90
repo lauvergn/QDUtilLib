@@ -33,6 +33,7 @@ MODULE QDUtil_m
   USE QDUtil_String_m
   USE QDUtil_RW_MatVec_m
   USE QDUtil_Matrix_m
+  USE QDUtil_Vector_m
   USE QDUtil_diago_m
   USE QDUtil_Frac_m
   USE QDUtil_File_m

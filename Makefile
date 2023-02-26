@@ -126,7 +126,7 @@ MAIN=App_QDLib
 TESTS=Test_QDLib
 
 SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 \
-         String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Diago_m.f90 \
+         String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Vector_m.f90 Diago_m.f90 \
          Frac_m.f90 File_m.f90 Time_m.f90 \
          Memory_NotPointer_m.f90 Memory_Pointer_m.f90 Memory_base_m.f90 Memory_m.f90 \
          QDUtil_m.f90
@@ -220,6 +220,7 @@ $(OBJ_DIR)/File_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Stri
 
 $(OBJ_DIR)/RW_MatVec_m.o:           $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
 $(OBJ_DIR)/Matrix_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
+$(OBJ_DIR)/Vector_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
 $(OBJ_DIR)/Diago_m.o:               $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o
 
 
@@ -260,8 +261,10 @@ ifeq ($(FFC),ifort)
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   ifeq ($(LLAPACK),1)
-    FLIB += -mkl -lpthread
+    #FLIB += -mkl -lpthread
     #FLIB += -qmkl -lpthread
+    FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
+             ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
   else
     FLIB += -lpthread
   endif

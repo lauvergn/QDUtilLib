@@ -33,6 +33,10 @@ MODULE QDUtil_Test_m
 
   TYPE, PUBLIC :: test_t
     PRIVATE
+    integer                        :: nb_AllTest  = 0
+    integer                        :: nb_AllOK    = 0
+    integer                        :: nb_AllErr   = 0
+
     integer                        :: nb_Test  = 0
     integer                        :: nb_OK    = 0
     integer                        :: nb_Err   = 0
@@ -48,13 +52,17 @@ MODULE QDUtil_Test_m
 
   END TYPE test_t
 
-  PUBLIC :: Logical_Test,Finalize_Test,Initialize_Test,Flush_Test,Append_Test
+  PUBLIC :: Logical_Test,Flush_Test,Append_Test
+  PUBLIC :: Initialize_Test,Finalize_Test,Finalize_Intermediate_Test
 
   INTERFACE Logical_Test
     MODULE PROCEDURE QD_Logical_Test
   END INTERFACE
   INTERFACE Finalize_Test
     MODULE PROCEDURE QD_Finalize_Test
+  END INTERFACE
+  INTERFACE Finalize_Intermediate_Test
+    MODULE PROCEDURE QD_Finalize_Intermediate_Test
   END INTERFACE
   INTERFACE Initialize_Test
     MODULE PROCEDURE QD_Initialize_Test
@@ -94,7 +102,8 @@ CONTAINS
     ELSE
       test2_loc = .TRUE.
     END IF
-    test_var%nb_Test = test_var%nb_Test + 1
+    test_var%nb_Test    = test_var%nb_Test    + 1
+    test_var%nb_AllTest = test_var%nb_AllTest + 1
 
     IF (debug) THEN
       write(OUTPUT_UNIT,*)
@@ -109,10 +118,12 @@ CONTAINS
 
     IF (test1 .eqv. test2_loc) THEN
       CALL Append_Test(test_var,info // ': OK')
-      test_var%nb_OK = test_var%nb_OK + 1
+      test_var%nb_OK    = test_var%nb_OK    + 1
+      test_var%nb_AllOK = test_var%nb_AllOK + 1
     ELSE
       CALL Append_Test(test_var,info // ': Err')
-      test_var%nb_Err = test_var%nb_Err + 1
+      test_var%nb_Err    = test_var%nb_Err    + 1
+      test_var%nb_AllErr = test_var%nb_AllErr + 1
     END IF
 
     CALL Flush_Test(test_var)
@@ -123,6 +134,50 @@ CONTAINS
       flush(OUTPUT_UNIT)
     END IF
   END SUBROUTINE QD_Logical_Test
+  SUBROUTINE QD_Finalize_Intermediate_Test(test_var,info)
+    IMPLICIT NONE
+  
+      TYPE (test_t),      intent(inout)          :: test_var
+      character (len=*),  intent(in),  optional  :: info
+
+      character (len=:),  allocatable  :: info_loc
+
+      IF (present(info)) THEN
+        info_loc = info
+      ELSE
+        info_loc = test_var%test_name
+      END IF
+
+      CALL Append_Test(test_var,'-------------------------------------------------------')
+      IF (present(info)) THEN
+        CALL Append_Test(test_var,'   Intermediate Test: ' // info)
+      ELSE
+        CALL Append_Test(test_var,'   Intermediate Test')
+      END IF
+      CALL Append_Test(test_var,'')
+  
+      IF (test_var%nb_Test /= test_var%nb_OK + test_var%nb_Err) THEN
+        CALL Append_Test(test_var,'ERROR while testing ' //                       &
+                       test_var%test_name // ' module: nb_Test /= nb_OK + nb_Err')
+        CALL Append_Test(test_var,'nb_Test' // TO_String(test_var%nb_Test))
+        CALL Append_Test(test_var,'nb_OK  ' // TO_String(test_var%nb_OK))
+        CALL Append_Test(test_var,'nb_Err ' // TO_String(test_var%nb_Err))
+      END IF
+  
+      CALL Append_Test(test_var,'TESTING ' // info_loc //               &
+                  ' module. Number of tests   :' // TO_String(test_var%nb_Test))
+      CALL Append_Test(test_var,'TESTING ' // info_loc //               &
+                  ' module. Number of error(s):' // TO_String(test_var%nb_Err))
+      CALL Append_Test(test_var,'== END TESTING ' // info_loc // ' module ====')
+  
+      test_var%nb_Test = 0
+      test_var%nb_OK   = 0
+      test_var%nb_Err  = 0
+
+      CALL Append_Test(test_var,'-------------------------------------------------------')
+      CALL Flush_Test(test_var)
+    
+    END SUBROUTINE QD_Finalize_Intermediate_Test
   SUBROUTINE QD_Finalize_Test(test_var)
   IMPLICIT NONE
 
@@ -131,19 +186,19 @@ CONTAINS
     CALL Append_Test(test_var,'-------------------------------------------------------')
     CALL Append_Test(test_var,'')
 
-    IF (test_var%nb_Test /= test_var%nb_OK + test_var%nb_Err) THEN
+    IF (test_var%nb_AllTest /= test_var%nb_AllOK + test_var%nb_AllErr) THEN
       CALL Append_Test(test_var,'ERROR while testing ' //                       &
-                     test_var%test_name // ' module: nb_Test /= nb_OK + nb_Err')
-      CALL Append_Test(test_var,'nb_Test' // TO_String(test_var%nb_Test))
-      CALL Append_Test(test_var,'nb_OK  ' // TO_String(test_var%nb_OK))
-      CALL Append_Test(test_var,'nb_Err ' // TO_String(test_var%nb_Err))
+                       test_var%test_name // ' module: nb_Test /= nb_OK + nb_Err')
+      CALL Append_Test(test_var,'nb_Test' // TO_String(test_var%nb_AllTest))
+      CALL Append_Test(test_var,'nb_OK  ' // TO_String(test_var%nb_AllOK))
+      CALL Append_Test(test_var,'nb_Err ' // TO_String(test_var%nb_AllErr))
 
     END IF
 
     CALL Append_Test(test_var,'TESTING ' // test_var%test_name //               &
-                ' module. Number of tests   :' // TO_String(test_var%nb_Test))
+                ' module. Number of tests   :' // TO_String(test_var%nb_AllTest))
     CALL Append_Test(test_var,'TESTING ' // test_var%test_name //               &
-                ' module. Number of error(s):' // TO_String(test_var%nb_Err))
+                ' module. Number of error(s):' // TO_String(test_var%nb_AllErr))
     CALL Append_Test(test_var,'== END TESTING ' // test_var%test_name // ' module ====')
 
 
@@ -161,10 +216,14 @@ CONTAINS
     character (len=*),  intent(in),  optional  :: log_file_name
     logical,            intent(in),  optional  :: PrintFlag
 
+    test_var%nb_AllTest = 0
+    test_var%nb_AllOK   = 0
+    test_var%nb_AllErr  = 0
+
     test_var%nb_Test = 0
     test_var%nb_OK   = 0
     test_var%nb_Err  = 0
-  
+
     IF (present(PrintFlag)) test_var%PrintFlag = PrintFlag
   
     IF (present(test_name)) THEN

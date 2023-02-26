@@ -60,6 +60,16 @@ MODULE QDUtil_Matrix_m
     MODULE PROCEDURE QDUtil_Identity_RMat
   END INTERFACE
 
+  PUBLIC LU_solve
+  INTERFACE LU_solve
+    MODULE PROCEDURE QDUtil_Driver_LU_solve_cplx
+  END INTERFACE
+
+  PUBLIC LU_decomp
+  INTERFACE LU_decomp
+    MODULE PROCEDURE QDUtil_Driver_LU_decomp_cplx
+  END INTERFACE
+
   PUBLIC :: Test_QDUtil_Matrix
   CONTAINS
   !================================================================
@@ -556,8 +566,8 @@ MODULE QDUtil_Matrix_m
     CASE (0) ! ludcmp ...
       allocate(indx(n))
 
-      CALL QDUtil_Driver_LU_decomp_cplx(m1w,n,indx,d,type_lu=1)
-      CALL QDUtil_Driver_LU_solve_cplx(m1w,n,indx,CVecL,type_lu=1)
+      CALL QDUtil_Driver_LU_decomp_cplx(m1w,n,indx,d,lu_type=1)
+      CALL QDUtil_Driver_LU_solve_cplx(m1w,n,indx,CVecL,lu_type=1)
       !CALL QDUtil_ludcmp_cplx(m1w,n,work,indx,d)
       !CALL QDUtil_lubksb_cplx(m1w,n,indx,CVecL)
 
@@ -565,8 +575,8 @@ MODULE QDUtil_Matrix_m
     CASE (3) ! ludcmp ...
       allocate(indx(n))
 
-      CALL QDUtil_Driver_LU_decomp_cplx(m1w,n,indx,d,type_lu=3)
-      CALL QDUtil_Driver_LU_solve_cplx(m1w,n,indx,CVecL,type_lu=3)
+      CALL QDUtil_Driver_LU_decomp_cplx(m1w,n,indx,d,lu_type=3)
+      CALL QDUtil_Driver_LU_solve_cplx(m1w,n,indx,CVecL,lu_type=3)
 
       deallocate(indx)
     CASE (1) ! svd
@@ -1002,31 +1012,32 @@ MODULE QDUtil_Matrix_m
 !================================================================
 !    resolution de a*x=b apres la procedure ludcmp
 !================================================================
-  SUBROUTINE QDUtil_Driver_LU_solve_cplx(a,n,LU_index,b,type_lu)
+  SUBROUTINE QDUtil_Driver_LU_solve_cplx(a,n,LU_index,b,lu_type)
   USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
   USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
-  integer,             intent(in)    :: n,type_lu
-  complex(kind=Rkind), intent(inout) :: a(n,n),b(n)
+  integer,             intent(in)    :: n,lu_type
+  complex(kind=Rkind), intent(inout) :: b(n)
+  complex(kind=Rkind), intent(in)    :: a(n,n)
   integer,             intent(in)    :: LU_index(n)
 
-  integer               :: err,type_lu_loc
-  integer, parameter    :: type_lu_default = 1
+  integer               :: err,lu_type_loc
+  integer, parameter    :: lu_type_default = 1
   integer(kind=int32)   :: n4,ierr4
 
 
 
-    type_lu_loc = type_lu
+    lu_type_loc = lu_type
 
     !when lapack is used and Rkind /= real64 (not a double)
-    IF (Rkind /= real64 .AND. type_lu_loc == 3) type_lu_loc = type_lu_default
+    IF (Rkind /= real64 .AND. lu_type_loc == 3) lu_type_loc = lu_type_default
 
 #if __LAPACK != 1
-    IF ( type_lu_loc == 3) type_lu_loc = type_lu_default
+    IF (lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
-    SELECT CASE (type_lu)
+    SELECT CASE (lu_type)
     CASE(1) ! ori
       CALL QDUtil_lubksb_cplx(a,n,LU_index,b)
     CASE(3) ! lapack
@@ -1034,46 +1045,46 @@ MODULE QDUtil_Matrix_m
       n4     = int(n,kind=int32)
       CALL ZGETRS('No transpose',n4,1,a,n4,LU_index,b,n4,ierr4)
       err = int(ierr4)
-      IF (err /= 0) STOP 'LU Driver_LU_solve_cplx'
+      IF (err /= 0) STOP 'LU QDUtil_Driver_LU_solve_cplx'
 #else
-      write(out_unit,*) ' ERROR in Driver_LU_solve_cplx'
+      write(out_unit,*) ' ERROR in QDUtil_Driver_LU_solve_cplx'
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
       write(out_unit,*) '  The program should not reach the LAPACK case.'
       write(out_unit,*) '  => Probabely, wrong type_diag_default.'
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in Driver_LU_solve_cplx: LAPACK case impossible'
+      STOP 'ERROR in QDUtil_Driver_LU_solve_cplx: LAPACK case impossible'
 #endif
     CASE Default
       CALL QDUtil_lubksb_cplx(a,n,LU_index,b)
     END SELECT
 
   END SUBROUTINE QDUtil_Driver_LU_solve_cplx
-  SUBROUTINE QDUtil_Driver_LU_decomp_cplx(a,n,LU_index,d,type_lu)
+  SUBROUTINE QDUtil_Driver_LU_decomp_cplx(a,n,LU_index,d,lu_type)
   USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
   USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
-  integer,             intent(in)    :: n,type_lu
+  integer,             intent(in)    :: n,lu_type
   complex(kind=Rkind), intent(inout) :: d,a(n,n)
-  integer,             intent(in)    :: LU_index(n)
+  integer,             intent(inout) :: LU_index(n)
 
-  integer               :: err,type_lu_loc
-  integer, parameter    :: type_lu_default = 1
+  integer               :: err,lu_type_loc
+  integer, parameter    :: lu_type_default = 1
   integer(kind=int32)   :: n4,ierr4
   complex(kind=Rkind), allocatable :: work(:)
 
 
 
-    type_lu_loc = type_lu
+  lu_type_loc = lu_type
 
     !when lapack is used and Rkind /= real64 (not a double)
-    IF (Rkind /= real64 .AND. type_lu_loc == 3) type_lu_loc = type_lu_default
+    IF (Rkind /= real64 .AND. lu_type_loc == 3) lu_type_loc = lu_type_default
 
 #if __LAPACK != 1
-    IF ( type_lu_loc == 3) type_lu_loc = type_lu_default
+    IF ( lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
-    SELECT CASE (type_lu)
+    SELECT CASE (lu_type)
     CASE(1) ! ori
       allocate(work(n))
       CALL QDUtil_ludcmp_cplx(a,n,work,LU_index,d)
@@ -1083,14 +1094,14 @@ MODULE QDUtil_Matrix_m
       n4     = int(n,kind=int32)
       CALL ZGETRF(n4,n4,a,n4,LU_index,ierr4)
       err = int(ierr4)
-      IF (err /= 0) STOP 'Driver_LU_decomp_cplx'
+      IF (err /= 0) STOP 'QDUtil_Driver_LU_decomp_cplx'
 #else
-      write(out_unit,*) ' ERROR in Driver_LU_decomp_cplx'
+      write(out_unit,*) ' ERROR in QDUtil_Driver_LU_decomp_cplx'
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
       write(out_unit,*) '  The program should not reach the LAPACK case.'
-      write(out_unit,*) '  => Probabely, wrong type_lu_default.'
+      write(out_unit,*) '  => Probabely, wrong lu_type_default.'
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in Driver_LU_decomp_cplx: LAPACK case impossible'
+      STOP 'ERROR in QDUtil_Driver_LU_decomp_cplx: LAPACK case impossible'
 #endif
     CASE Default
       allocate(work(n))

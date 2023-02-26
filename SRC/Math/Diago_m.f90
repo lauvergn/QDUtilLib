@@ -33,12 +33,108 @@ MODULE QDUtil_diago_m
 
   PUBLIC diagonalization
   INTERFACE diagonalization
-    MODULE PROCEDURE QDUtil_diagonalization
+    MODULE PROCEDURE QDUtil_Rdiagonalization,QDUtil_Cdiagonalization,QDUtil_Cdiagonalization_Her
   END INTERFACE
 
   PUBLIC :: Test_QDUtil_Diago
 
   CONTAINS
+  RECURSIVE SUBROUTINE QDUtil_Cdiagonalization(CMat,CEigVal,CEigVec,nb_diago,diago_type,sort,phase)
+    USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    complex(kind=Rkind), intent(in)              :: CMat(:,:)
+    complex(kind=Rkind), intent(inout)           :: CEigVal(:),CEigVec(:,:)
+    integer,          intent(in),       optional :: nb_diago ! when nb_diago < size(REigVal), only nb_diago eigenvavlues and  eigenREigVectors are calculated
+
+    integer,          intent(in),       optional :: diago_type,sort
+    logical,          intent(in),       optional :: phase
+
+
+    !local variables
+    integer            :: diago_type_loc
+    integer            :: diago_type_default = 2 ! tred+tql
+    !                                   tred+tql
+    integer, parameter :: list_type(*) = [2]
+
+    complex(kind=Rkind), allocatable :: CMat_save(:,:)
+    integer :: n_size,n_vect,n
+
+    integer              :: i,ierr
+    complex(kind=Rkind), allocatable :: work(:)
+
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='QDUtil_Cdiagonalization'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    n_size = size(CEigVal)
+    IF (present(nb_diago)) THEN
+      n = nb_diago
+    ELSE
+      n = n_size
+    END IF
+
+    IF (n_size /= size(CMat,dim=1) .OR. n_size /= size(CEigVec,dim=1)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The matrix or eigenvector sizes are not consistant'
+      write(out_unit,*) '   size(REigVal):  ',size(CEigVal)
+      write(out_unit,*) '   size(RMat):     ',size(CMat,dim=1)
+      write(out_unit,*) '   size(REigVec):  ',size(CEigVec,dim=1)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Cdiagonalization: The matrix or eigenvector sizes are not consistant.'
+    END IF
+    IF (n < 1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,"(a,i0,a)") ' n < 1. It MUST be in the range [1,',n_size,']'
+      write(out_unit,*) '   n:              ',n
+      write(out_unit,*) '   size(CEigVal):  ',size(CEigVal)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Cdiagonalization:  n < 1.'
+    END IF
+    n_vect = min(n,n_size)
+
+    IF (present(diago_type)) THEN
+      diago_type_loc = diago_type
+    ELSE
+      diago_type_loc = diago_type_default
+    END IF
+
+    IF (count(list_type == diago_type_loc) == 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' diago_type is out-of-range.'
+      write(out_unit,*) '   diago_type:      ',diago_type_loc
+      write(out_unit,*) '   Possible values:',list_type(:)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Cdiagonalization: diago_type is out-of-range.'
+    END IF
+
+
+    SELECT CASE (diago_type_loc)
+    CASE (2) ! tred+tql
+      IF (debug) write(out_unit,*) 'tred+tql: complex symetric'
+      allocate(work(n))
+
+      CMat_save = CMat
+
+      CALL QDUtil_cTred2(n,n,CMat_save,CEigVal,work,CEigVec)
+      CALL QDUtil_cTql2(n,n,CEigVal,work,CEigVec,ierr)
+      IF (debug) write(out_unit,*)'ierr=',ierr
+
+      deallocate(work)
+      deallocate(CMat_save)
+
+    CASE DEFAULT
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The default CASE is not defined.'
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Cdiagonalization: default case impossible'
+    END SELECT
+
+  END SUBROUTINE QDUtil_Cdiagonalization
 !============================================================
 !
 !   Driver for the diagonalization
@@ -51,7 +147,7 @@ MODULE QDUtil_diago_m
 !     phase:
 !============================================================
 !
-  RECURSIVE SUBROUTINE QDUtil_diagonalization(RMat,REigVal,REigVec,nb_diago,diago_type,sort,phase,IEigVec)
+  RECURSIVE SUBROUTINE QDUtil_Rdiagonalization(RMat,REigVal,REigVec,nb_diago,diago_type,sort,phase,IEigVec)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
@@ -84,7 +180,7 @@ MODULE QDUtil_diago_m
     real(kind=Rkind) :: dummy(1,1)
 
     !----- for debuging --------------------------------------------------
-    character (len=*), parameter :: name_sub='QDUtil_diagonalization'
+    character (len=*), parameter :: name_sub='QDUtil_Rdiagonalization'
     logical, parameter :: debug = .FALSE.
     !logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------
@@ -96,14 +192,14 @@ MODULE QDUtil_diago_m
       n = n_size
     END IF
 
-    IF (n_size /= size(RMat,dim=1) .OR. n_size /= size(RMat,dim=1)) THEN
+    IF (n_size /= size(RMat,dim=1) .OR. n_size /= size(REigVec,dim=1)) THEN
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' The matrix or eigenvector sizes are not consistant'
       write(out_unit,*) '   size(REigVal):  ',size(REigVal)
       write(out_unit,*) '   size(RMat):     ',size(RMat,dim=1)
       write(out_unit,*) '   size(REigVec):  ',size(REigVec,dim=1)
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: The matrix or eigenvector sizes are not consistant.'
+      STOP 'ERROR in QDUtil_Rdiagonalization: The matrix or eigenvector sizes are not consistant.'
     END IF
     IF (n < 1) THEN
       write(out_unit,*) ' ERROR in ',name_sub
@@ -111,7 +207,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '   n:              ',n
       write(out_unit,*) '   size(REigVal):  ',size(REigVal)
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization:  n < 1.'
+      STOP 'ERROR in QDUtil_Rdiagonalization:  n < 1.'
     END IF
     n_vect = min(n,n_size)
 
@@ -134,7 +230,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  Try to link LAPACK with the code (use LAPACK=1 in the makfile).'
       write(out_unit,*) '   diago_type:      ',diago_type_loc
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: Problem with non-symmetric matrix.'
+      STOP 'ERROR in QDUtil_Rdiagonalization: Problem with non-symmetric matrix.'
     END IF
 #else
     IF (debug) write(out_unit,*) '  Lapack library is linked'
@@ -146,7 +242,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '   diago_type:      ',diago_type_loc
       write(out_unit,*) '   Possible values:',list_type(:)
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: diago_type is out-of-range.'
+      STOP 'ERROR in QDUtil_Rdiagonalization: diago_type is out-of-range.'
     END IF
 
 
@@ -187,7 +283,7 @@ MODULE QDUtil_diago_m
       IF (ierr4 /= 0_int32) THEN
          write(out_unit,*) ' ERROR in ',name_sub
          write(out_unit,*) ' DSYEV lapack subroutine has FAILED!'
-         STOP 'ERROR in QDUtil_diagonalization: DSYEV lapack subroutine has FAILED!'
+         STOP 'ERROR in QDUtil_Rdiagonalization: DSYEV lapack subroutine has FAILED!'
       END IF
 
       deallocate(work)
@@ -197,7 +293,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  The program should not reach the LAPACK case.'
       write(out_unit,*) '  => Probabely, wrong diago_type_default.'
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: LAPACK case impossible'
+      STOP 'ERROR in QDUtil_Rdiagonalization: LAPACK case impossible'
 #endif
 !      CASE(395) ! lapack95
 !        IF (debug) write(out_unit,*) 'lapack95: LA_SYEVD'
@@ -231,7 +327,7 @@ MODULE QDUtil_diago_m
       IF (ierr4 /= 0_int32) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
-        STOP 'ERROR in QDUtil_diagonalization: DGEEV lapack subroutine has FAILED!'
+        STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
       END IF
 
       DO i=1,n
@@ -248,7 +344,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  The program should not reach the LAPACK case.'
       write(out_unit,*) '  => Probabely, wrong diago_type_default.'
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: LAPACK case impossible'
+      STOP 'ERROR in QDUtil_Rdiagonalization: LAPACK case impossible'
 #endif
 
     CASE(5) ! lanczos
@@ -259,7 +355,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' The default CASE is not defined.'
       write(out_unit,*) '  => CHECK the fortran!!'
-      STOP 'ERROR in QDUtil_diagonalization: default case impossible'
+      STOP 'ERROR in QDUtil_Rdiagonalization: default case impossible'
     END SELECT
 
 
@@ -289,8 +385,131 @@ MODULE QDUtil_diago_m
       CALL QDUtil_Unique_phase(REigVec)
     END IF
 
-  END SUBROUTINE QDUtil_diagonalization
+  END SUBROUTINE QDUtil_Rdiagonalization
 
+
+  SUBROUTINE QDUtil_Cdiagonalization_Her(Mat,Eig,Vec,diago_type,sort,phase)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    complex(kind=Rkind), intent(in)              :: Mat(:,:)
+    complex(kind=Rkind), intent(inout)           :: Vec(:,:)
+    real(kind=Rkind),    intent(inout)           :: Eig(:)
+
+    integer,             intent(in),  optional   :: diago_type,sort
+    logical,             intent(in),  optional   :: phase
+
+
+    integer            :: n,n_size,n_vect
+    integer            :: diago_type_loc
+
+    integer            :: diago_type_default = 3 ! lapack
+
+    integer          :: ierr
+    integer          :: i,lwork
+    complex(kind=Rkind), allocatable :: work(:),saveMat(:,:)
+    real(kind=Rkind),    allocatable :: rwork(:)
+
+    integer(kind=Ik4)  :: n4,lwork4,ierr4
+
+
+!----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='QDUtil_Cdiagonalization_Her'
+    logical, parameter :: debug = .FALSE.
+!      logical, parameter :: debug = .TRUE.
+!-----------------------------------------------------------
+
+
+    n_size = size(Eig)
+    n = n_size
+
+    IF (n_size /= size(Mat,dim=1) .OR. n_size /= size(Vec,dim=1)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The matrix or eigenvector sizes are not consistant'
+      write(out_unit,*) '   size(Eig):  ',size(Eig)
+      write(out_unit,*) '   size(Mat):  ',size(Mat,dim=1)
+      write(out_unit,*) '   size(Vec):  ',size(Vec,dim=1)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Rdiagonalization: The matrix or eigenvector sizes are not consistant.'
+    END IF
+    IF (n < 1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,"(a,i0,a)") ' n < 1. It MUST be in the range [1,',n_size,']'
+      write(out_unit,*) '   n:              ',n
+      write(out_unit,*) '   size(REigVal):  ',size(Eig)
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Rdiagonalization:  n < 1.'
+    END IF
+    n_vect = min(n,n_size)
+
+    IF (present(diago_type)) THEN
+      diago_type_loc = diago_type
+    ELSE
+      diago_type_loc = diago_type_default
+    END IF
+
+    SELECT CASE (diago_type_loc)
+    CASE(1)
+      stop ' type_diag=1 not yet in QDUtil_Cdiagonalization_Her'
+    CASE(2)
+      stop ' type_diag=2 not yet in QDUtil_Cdiagonalization_Her'
+    CASE(3) ! lapack77
+
+#if __LAPACK == 1
+      lwork = (5+1)*n ! max(1,2*n-1)
+
+      allocate(work(lwork))
+      allocate(rwork(max(1, 3*n-2)))
+
+
+      Vec(:,:) = Mat(:,:)
+
+      ! lapack subroutines need integer (kind=int32 or 4), therefore, we add a conversion, otherwise
+      ! it fails when integers (kind=int64 or 8) are used (at the compilation).
+      n4     = int(n,kind=Ik4)
+      lwork4 = int(lwork,kind=Ik4)
+      CALL ZHEEV('V','U',n4,Vec,n4,Eig, work,lwork4, rwork, ierr4)
+
+      IF (debug) write(out_unit,*)'ierr=',ierr4
+      IF (ierr4 /= 0_Ik4) THEN
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) ' ZHEEV lapack subroutine has FAILED!'
+         STOP
+      END IF
+
+      deallocate(work)
+      deallocate(rwork)
+
+#else
+      stop ' no lapack in QDUtil_Cdiagonalization_Her'
+
+#endif
+
+    CASE DEFAULT
+      stop ' no default in QDUtil_Cdiagonalization_Her'
+    END SELECT
+
+
+    SELECT CASE (sort)
+    CASE(1)
+      CALL QDUtil_sort_VecCplx_EneR(Eig,Vec)
+    CASE(-1)
+      Eig = -Eig
+      CALL QDUtil_sort_VecCplx_EneR(Eig,Vec)
+      Eig = -Eig
+    CASE(2)
+      CALL QDUtil_sort_abs_VecCplx_EneR(Eig,Vec)
+    CASE DEFAULT ! no sort
+      CONTINUE
+    END SELECT
+
+     DO i=1,n
+       Vec(:,i) = Vec(:,i)/sqrt(dot_product(Vec(:,i),Vec(:,i)))
+     END DO
+
+     IF (phase) CALL QDUtil_Unique_phase_cplx(Vec)
+
+  END SUBROUTINE QDUtil_Cdiagonalization_Her
   SUBROUTINE QDUtil_JACOBI2(A,N,D,V)
       USE QDUtil_NumParameters_m
       IMPLICIT NONE
@@ -655,6 +874,64 @@ MODULE QDUtil_diago_m
         END DO
 
   end subroutine QDUtil_sort_abs
+  SUBROUTINE QDUtil_sort_VecCplx_EneR(ene,psi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rkind),    intent(inout) :: ene(:)
+    complex(kind=Rkind), intent(inout) :: psi(:,:)
+
+    real(kind=Rkind)    :: a
+    complex(kind=Rkind) :: ca
+    integer             :: i,j,k
+
+
+    DO i=1,size(ene)
+    DO j=i+1,size(ene)
+     IF (ene(i) > ene(j)) THEN
+        ! permutation
+        a=ene(i)
+        ene(i)=ene(j)
+        ene(j)=a
+        DO k=1,size(ene)
+          ca=psi(k,i)
+          psi(k,i)=psi(k,j)
+          psi(k,j)=ca
+        END DO
+      END IF
+    END DO
+    END DO
+
+END SUBROUTINE QDUtil_sort_VecCplx_EneR
+SUBROUTINE QDUtil_sort_abs_VecCplx_EneR(ene,psi)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  real(kind=Rkind),    intent(inout) :: ene(:)
+  complex(kind=Rkind), intent(inout) :: psi(:,:)
+
+  real(kind=Rkind)    :: a
+  complex(kind=Rkind) :: ca
+  integer             :: i,j,k
+
+
+  DO i=1,size(ene)
+  DO j=i+1,size(ene)
+   IF (abs(ene(i)) > abs(ene(j))) THEN
+      ! permutation
+      a=ene(i)
+      ene(i)=ene(j)
+      ene(j)=a
+      DO k=1,size(ene)
+        ca=psi(k,i)
+        psi(k,i)=psi(k,j)
+        psi(k,j)=ca
+      END DO
+    END IF
+  END DO
+  END DO
+
+END SUBROUTINE QDUtil_sort_abs_VecCplx_EneR
 !
 !============================================================
 !
@@ -676,7 +953,32 @@ MODULE QDUtil_diago_m
         IF (Vec(jloc,i) < ZERO) Vec(:,i) = -Vec(:,i)
       END DO
 
-      END SUBROUTINE QDUtil_Unique_phase
+  END SUBROUTINE QDUtil_Unique_phase
+  SUBROUTINE QDUtil_Unique_phase_cplx(Vec)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+  
+    complex(kind=Rkind), intent(inout) :: Vec(:,:)
+
+        real(kind=Rkind)    :: max_val
+        complex(kind=Rkind) :: val
+        integer             :: i,j
+
+        DO i=lbound(Vec,dim=2),ubound(Vec,dim=2)
+          max_val        = ZERO
+          DO j=lbound(Vec,dim=1),ubound(Vec,dim=1)
+            IF (abs(Vec(j,i)) > max_val) THEN
+              max_val = abs(Vec(j,i))
+              val     = Vec(j,i)
+            END IF
+          END DO
+          val = conjg(val/max_val)
+          IF (max_val > ZERO) THEN
+            Vec(:,i) = Vec(:,i)*val
+          END IF
+        END DO
+  
+  END SUBROUTINE QDUtil_Unique_phase_cplx
 !=====================================================================
 !
 !   c_new(:,i) =  cos(th) c(:,i) + sin(th) c(:,j)
