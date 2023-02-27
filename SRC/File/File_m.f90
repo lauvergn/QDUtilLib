@@ -32,8 +32,6 @@ MODULE QDUtil_File_m
 
   PRIVATE
 
-  character (len=:), allocatable, public :: File_path
-
   !!@description: TODO
   !!@param: TODO
   TYPE File_t
@@ -56,7 +54,7 @@ MODULE QDUtil_File_m
   END TYPE File_t
 
   PUBLIC :: File_t,file_GetUnit, file_set, file_open, file_open2
-  PUBLIC :: file_close, file_delete, file_dealloc, file_write, make_FileName
+  PUBLIC :: file_close, file_delete, file_dealloc, file_write
   PUBLIC :: err_FileName,check_file_exist_WITH_FileName
   PUBLIC :: flush_perso
   PUBLIC :: Test_QDUtil_File
@@ -85,9 +83,6 @@ MODULE QDUtil_File_m
   INTERFACE file_write
     MODULE PROCEDURE QDUtil_file_write
   END INTERFACE
-  INTERFACE make_FileName
-    MODULE PROCEDURE QDUtil_make_FileName
-  END INTERFACE
 
   INTERFACE err_FileName
     MODULE PROCEDURE QDUtil_err_FileName
@@ -107,7 +102,6 @@ CONTAINS
 
     CLASS(File_t), intent(inout)  :: file1
     TYPE(File_t),  intent(in)     :: file2
-
 
     file1%name      = file2%name
     file1%unit      = file2%unit
@@ -676,20 +670,20 @@ CONTAINS
   SUBROUTINE QDUtil_file_dealloc(ffile)
     IMPLICIT NONE
 
-    TYPE(File_t)  :: ffile
+    TYPE(File_t), intent(inout)  :: ffile
 
-  !write(out_unit,*) 'BEGINNING file_dealloc'
+    !write(out_unit,*) 'BEGINNING file_dealloc'
 
-  ! first close the file
-  CALL file_close(ffile)
+    ! first close the file
+    CALL file_close(ffile)
 
-  ffile%init = .FALSE.
+    ffile%init = .FALSE.
 
-  ffile%nb_thread = 0
-  IF (allocated(ffile%tab_unit))    deallocate(ffile%tab_unit)
-  IF (allocated(ffile%tab_name_th)) deallocate(ffile%tab_name_th)
+    ffile%nb_thread = 0
+    IF (allocated(ffile%tab_unit))    deallocate(ffile%tab_unit)
+    IF (allocated(ffile%tab_name_th)) deallocate(ffile%tab_name_th)
 
-  !write(out_unit,*) 'END file_dealloc'
+    !write(out_unit,*) 'END file_dealloc'
 
   END SUBROUTINE QDUtil_file_dealloc
 
@@ -724,29 +718,6 @@ CONTAINS
     write(out_unit,*) 'END file_Write'
 
   END SUBROUTINE QDUtil_file_Write
-
-  FUNCTION QDUtil_make_FileName(FileName) RESULT(make_FileName)
-    IMPLICIT NONE
-
-    character (len=:), allocatable  :: make_FileName
-
-    character(len=*), intent(in)    :: FileName
-
-    integer :: ilast_char
-
-    ilast_char = len_trim(File_path)
-
-    IF (FileName(1:1) == "/" .OR. FileName(1:1) == "" .OR. ilast_char == 0) THEN
-      make_FileName = trim(adjustl(FileName))
-    ELSE
-      IF (File_path(ilast_char:ilast_char) == "/") THEN
-        make_FileName = trim(adjustl(File_path)) // trim(adjustl(FileName))
-      ELSE
-        make_FileName = trim(adjustl(File_path)) // '/' // trim(adjustl(FileName))
-      END IF
-    END IF
-
-  END FUNCTION QDUtil_make_FileName
 
   !!@description: TODO
   !!@param: TODO
@@ -823,8 +794,10 @@ CONTAINS
     CALL Logical_Test(test_var,test1=res_test,info='direct+UnFormatted file',test2=.TRUE.)
     write(iunit,rec=1) 1
     write(iunit,rec=1) 2
-    CALL file_close(file1) ! the file is deleted
+    CALL file_close(file1) ! the file is closed
+    CALL file_dealloc(file1) ! variable are deallocated
     !--------------------------------------------------------------
+
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
