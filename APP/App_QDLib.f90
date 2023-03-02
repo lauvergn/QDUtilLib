@@ -3,7 +3,9 @@ PROGRAM App_QDLib
   IMPLICIT NONE
 
   integer                          :: i,n
-  real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),REigVec(:,:)
+  real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),REigVec(:,:),RVec(:)
+  real(kind=Rkind),    allocatable :: RVec2(:)
+
   TYPE(Frac_t)                     :: Frac1, Frac2
   TYPE(Frac_t),        allocatable :: tab_Frac(:)
 
@@ -50,6 +52,19 @@ PROGRAM App_QDLib
     write(out_unit,*) i,matmul(Rmat,REigVec(:,i))-REigVal(i)*REigVec(:,i)
   END DO
 
-  write(out_unit,*) 'print_level',print_level
+
+ !====================================================================
+  ! Tests for identity matrix
+  !
+  ! define the matrices
+  write(out_unit,*) 'Test identity matrix'
+  n = 100
+  RMat =  Identity_Mat(n)
+  RVec  = [(real(i,kind=Rkind)/Pi,i=1,n)]
+  RVec2 = matmul(Rmat,RVec)
+
+
+  write(out_unit,*) 'RVec(1) and RVec(n)',RVec(1),RVec(n)
+  write(out_unit,*) 'diff',maxval(abs((RVec-RVec2)))
 
 END PROGRAM App_QDLib
