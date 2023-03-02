@@ -725,13 +725,13 @@ MODULE QDUtil_Memory_NotPointer_m
        IF (allocated(tab))                                             &
              CALL Write_error_NOT_null(name_sub_alloc,name_var,name_sub)
 
-       CALL sub_test_Bigtab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
+       CALL sub_test_tab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
 
        IF (present(tab_lb)) THEN
          !write(out_unit,*) 'tab_lb',tab_lb
          !write(out_unit,*) 'tab_ub',tab_ub
 
-         CALL sub_test_Bigtab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
+         CALL sub_test_tab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
 
          memory = product(tab_ub(:)-tab_lb(:)+1)
          allocate(tab(tab_lb(1):tab_ub(1)),stat=err_mem)
