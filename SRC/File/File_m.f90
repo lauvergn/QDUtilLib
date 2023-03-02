@@ -103,7 +103,7 @@ CONTAINS
     CLASS(File_t), intent(inout)  :: file1
     TYPE(File_t),  intent(in)     :: file2
 
-    file1%name      = file2%name
+    IF (allocated(file2%name)) file1%name      = file2%name
     file1%unit      = file2%unit
     file1%formatted = file2%formatted
     file1%append    = file2%append
