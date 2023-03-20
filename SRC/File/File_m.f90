@@ -390,7 +390,7 @@ CONTAINS
 
     integer :: err_mem,memory
 
-    !write(out_unit,*) 'BEGINNING GetUnit_file_open'
+    !write(out_unit,*) 'BEGINNING QDUtil_file_open'
 
     !- test if optional arguments are present ---------
     IF (.NOT. ffile%init) THEN  ! IF init=.T., those parameters are already set-up
@@ -479,9 +479,12 @@ CONTAINS
       STOP ' ERROR in file_open, the file name is empty!'
     END IF
     IF (present(err_file)) err_file = err_file_loc
+    IF (err_file_loc /= 0) RETURN
 
     !- check if the file is already open ------------------
     inquire(FILE=ffile%name,NUMBER=iunit,OPENED=unit_opened)
+    !write(out_unit,*) 'unit_opened ?',unit_opened
+
     IF (.NOT. unit_opened) THEN ! the file is not open
         !-- open the file
       IF (ffile%seq) THEN
@@ -536,7 +539,7 @@ CONTAINS
     END IF
 
     iunit = ffile%unit
-    !write(out_unit,*) 'END GetUnit_file_open'
+    !write(out_unit,*) 'END QDUtil_file_open'
 
   END SUBROUTINE QDUtil_file_open
 
@@ -695,7 +698,11 @@ CONTAINS
     integer :: ith
 
     write(out_unit,*) 'BEGINNING file_Write'
-    write(out_unit,*) 'name:    ',trim(adjustl(ffile%name))
+    IF (allocated(ffile%name)) THEN
+      write(out_unit,*) 'name:    ',ffile%name
+    ELSE
+      write(out_unit,*) 'name is not defined (not allocated)'
+    END IF
     write(out_unit,*) 'unit     ',ffile%unit
     write(out_unit,*) 'formatted',ffile%formatted
     write(out_unit,*) 'append   ',ffile%append

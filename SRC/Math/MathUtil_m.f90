@@ -186,8 +186,8 @@ MODULE QDUtil_MathUtil_m
     END IF
     flush(out_unit)
     !-----------------------------------------------------------
-    Val = gamma_perso(0)
-    write(out_unit,*) 'gamma_perso(0)',Val
+    !Val = gamma_perso(0)
+    !write(out_unit,*) 'gamma_perso(0)',Val
     !Val = factorial(-1)
     !write(out_unit,*) 'factorial(-1)',Val
 

@@ -270,8 +270,61 @@ ifeq ($(FFC),ifort)
     FLIB += -lpthread
   endif
 
-  FC_VER = $(shell $(F90) --version | head -1 )
+  FC_VER = $(shell $(FFC) --version | head -1 )
 
 endif
 #=================================================================================
 #=================================================================================
+#===============================================================================
+# nag compillation (nagfor)
+#===============================================================================
+ifeq ($(FFC),nagfor)
+
+  # opt management
+  ifeq ($(OOPT),1)
+      FFLAGS = -O4 -o -compatible -kind=byte -Ounroll=4 -s
+  else
+    ifeq ($(OOMP),0)
+      ifeq ($(LLAPACK),0)
+          FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf -C=undefined
+      else
+          FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf
+      endif
+    else
+          FFLAGS = -O0 -g        -kind=byte -C -C=alias -C=intovf
+    endif
+  endif
+
+ # where to store the .mod files
+  FFLAGS +=-mdir $(MOD_DIR)
+
+# where to look the .mod files
+  FFLAGS +=-I $(MOD_DIR)
+
+  # omp management
+  ifeq ($(OOMP),1)
+    FFLAGS += -openmp
+  endif
+
+  # lapack management with cpreprocessing
+  FFLAGS += -fpp -D__LAPACK="$(LLAPACK)"
+
+  # lapact management (default with openmp), with cpreprocessing
+  ifeq ($(LLAPACK),1)
+    ifeq ($(OS),Darwin)    # OSX
+      # OSX libs (included lapack+blas)
+      FLIB = -framework Accelerate
+    else                   # Linux
+      # linux libs
+      FLIB = -llapack -lblas
+      #
+      # linux libs with mkl and with openmp
+      #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
+      # linux libs with mkl and without openmp
+      #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+    endif
+  endif
+
+  FC_VER = $(shell $(FFC) -V 3>&1 1>&2 2>&3 | head -1 )
+
+endif
