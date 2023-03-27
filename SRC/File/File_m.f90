@@ -553,11 +553,13 @@ CONTAINS
 
     inquire(unit=ffile%unit,OPENED=op)
     IF (op) close(ffile%unit)
+    ffile%unit = 0
 
     IF (ffile%nb_thread > 1) THEN
       DO ith=0,ffile%nb_thread-1
         inquire(unit=ffile%tab_unit(ith),OPENED=op)
         IF (op)  close(ffile%tab_unit(ith))
+        ffile%tab_unit(ith) = 0
       END DO
     END IF
     ffile%init = .FALSE.
@@ -655,12 +657,14 @@ CONTAINS
     CALL file_open(ffile,unit)
 
     close(unit,status='delete')
+    ffile%unit = 0
     !write(out_unit,*) 'delete file: ',unit,file%name
 
     IF (ffile%nb_thread > 1) THEN
       DO ithread=0,ffile%nb_thread-1
         nio = ffile%tab_unit(ithread)
         close(nio,status='delete')
+        ffile%tab_unit(ithread) = 0
         !write(out_unit,*) 'delete file: ',nio,ffile%tab_name_th(ithread)
       END DO
     END IF

@@ -86,7 +86,8 @@ MODULE QDUtil_NumParameters_m
   integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
   integer :: out_unit  = OUTPUT_UNIT ! Unit for the input   files, with the ISO_FORTRAN_ENV
 
-  integer, protected :: print_level = 1        ! 0 minimal, 1 default, 2 large, -1 nothing
+  !integer, protected :: print_level  = 1        ! 0 minimal, 1 default, 2 large, -1 nothing, -2 not initialized
+  integer, protected :: print_level  = -2        ! 0 minimal, 1 default, 2 large, -1 nothing, -2 not initialized
 
   integer, parameter :: Name_len     = 20
   integer, parameter :: Name_longlen = 50
@@ -99,11 +100,17 @@ MODULE QDUtil_NumParameters_m
   END INTERFACE
 
 CONTAINS
-  SUBROUTINE QDUtil_set_print_level(prtlev)
+  SUBROUTINE QDUtil_set_print_level(prtlev,force)
     IMPLICIT NONE
-    integer, intent(in) :: prtlev
+    integer, intent(in)           :: prtlev
+    logical, intent(in), optional :: force
+    logical :: force_loc
 
-    print_level = prtlev
+    IF (present(force)) THEN
+      IF (force .OR. print_level < -1) print_level = prtlev
+    ELSE
+      IF (print_level < -1)            print_level = prtlev
+    END IF
 
   END SUBROUTINE QDUtil_set_print_level
   SUBROUTINE Test_QDUtil_NumParameters()
@@ -163,12 +170,19 @@ CONTAINS
     END IF
     CALL Flush_Test(test_var)
 
-
     ! print_level
+    CALL set_print_level(1,force=.TRUE.)
+
     res_test = (print_level == 1)
     CALL Logical_Test(test_var,test1=res_test,info='print_level=1')
 
-    CALL set_print_level(0)
+    CALL set_print_level(0,force=.TRUE.)
+    res_test = (print_level == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='set_print_level(0)')
+    CALL set_print_level(2)
+    res_test = (print_level == 0)
+    CALL Logical_Test(test_var,test1=res_test,info='set_print_level(0)')
+    CALL set_print_level(1,force=.FALSE.)
     res_test = (print_level == 0)
     CALL Logical_Test(test_var,test1=res_test,info='set_print_level(0)')
     CALL Flush_Test(test_var)
