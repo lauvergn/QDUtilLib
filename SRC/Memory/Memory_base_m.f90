@@ -27,7 +27,7 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_Memory_base_m
-  USE QDUtil_NumParameters_m, only : Rkind, ILkind, out_unit
+  USE QDUtil_NumParameters_m, only : Rkind, Ik4, Ik8, out_unit
   IMPLICIT NONE
 
   PRIVATE
@@ -41,11 +41,11 @@ MODULE QDUtil_Memory_base_m
   PUBLIC :: Write_mem_file,Write_mem_tot
 
   TYPE Memory_t
-    integer (kind=ILkind)           :: max_mem      =  4000000000_ILkind/Rkind   ! (8GO) max_memory
+    integer (kind=Ik8)              :: max_mem      =  4000000000_Ik8/Rkind   ! (8GO) max_memory
 
-    integer (kind=ILkind)           :: max_mem_used =  0   ! the maximal memory used
-    integer (kind=ILkind)           :: mem_tot      =  0   ! memory used
-    integer (kind=ILkind)           :: memory       =  0   ! asked memory
+    integer (kind=Ik8)              :: max_mem_used =  0   ! the maximal memory used
+    integer (kind=Ik8)              :: mem_tot      =  0   ! memory used
+    integer (kind=Ik8)              :: memory       =  0   ! asked memory
   
     integer                         :: nb_alloc     =  0   ! nb of allocations
     integer                         :: nb_dealloc   =  0   ! nb of deallocations
@@ -66,14 +66,14 @@ MODULE QDUtil_Memory_base_m
   END INTERFACE
 
   INTERFACE sub_test_tab_ub
-    MODULE PROCEDURE QDUtil_sub_test_tab_ub,QDUtil_sub_test_Bigtab_ub
+    MODULE PROCEDURE QDUtil_sub_test_tab_ub_Ik4,QDUtil_sub_test_tab_ub_Ik8
   END INTERFACE
   INTERFACE sub_test_tab_lb
-    MODULE PROCEDURE QDUtil_sub_test_tab_lb,QDUtil_sub_test_Bigtab_lb
+    MODULE PROCEDURE QDUtil_sub_test_tab_lb_Ik4,QDUtil_sub_test_tab_lb_Ik8
   END INTERFACE
 
   INTERFACE error_memo_allo
-    MODULE PROCEDURE QDUtil_error_memo_allo,QDUtil_error_lmemo_allo
+    MODULE PROCEDURE QDUtil_error_memo_allo_Ik8,QDUtil_error_memo_allo_Ik4
   END INTERFACE
 
   INTERFACE Check_mem
@@ -131,12 +131,12 @@ MODULE QDUtil_Memory_base_m
       STOP
 
       END SUBROUTINE QDUtil_Write_error_null
-      SUBROUTINE QDUtil_sub_test_tab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
+      SUBROUTINE QDUtil_sub_test_tab_ub_Ik4(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
       IMPLICIT NONE
 
-      integer, intent(in) :: ndim
-      integer, intent(in) :: tab_ub(:)
-      character (len=*), intent(in) :: name_var,name_sub,name_sub_alloc
+      integer,            intent(in) :: ndim
+      integer (kind=Ik4), intent(in) :: tab_ub(:)
+      character (len=*),  intent(in) :: name_var,name_sub,name_sub_alloc
 
        IF (sum(shape(tab_ub)) /= ndim) THEN
          write(out_unit,*) ' ERROR in ',name_sub_alloc
@@ -150,13 +150,13 @@ MODULE QDUtil_Memory_base_m
          STOP
        END IF
 
-      END SUBROUTINE QDUtil_sub_test_tab_ub
-      SUBROUTINE QDUtil_sub_test_tab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
+      END SUBROUTINE QDUtil_sub_test_tab_ub_Ik4
+      SUBROUTINE QDUtil_sub_test_tab_lb_Ik4(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
       IMPLICIT NONE
 
-      integer, intent(in) :: ndim
-      integer, intent(in) :: tab_lb(:)
-      character (len=*), intent(in) :: name_var,name_sub,name_sub_alloc
+      integer,            intent(in) :: ndim
+      integer (kind=Ik4), intent(in) :: tab_lb(:)
+      character (len=*),  intent(in) :: name_var,name_sub,name_sub_alloc
 
        IF (sum(shape(tab_lb)) /= ndim) THEN
          write(out_unit,*) ' ERROR in ',name_sub_alloc
@@ -170,12 +170,12 @@ MODULE QDUtil_Memory_base_m
          STOP
        END IF
 
-      END SUBROUTINE QDUtil_sub_test_tab_lb
-      SUBROUTINE QDUtil_sub_test_Bigtab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
+      END SUBROUTINE QDUtil_sub_test_tab_lb_Ik4
+      SUBROUTINE QDUtil_sub_test_tab_ub_Ik8(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
       IMPLICIT NONE
 
       integer,               intent(in) :: ndim
-      integer (kind=ILkind), intent(in) :: tab_ub(:)
+      integer (kind=Ik8),    intent(in) :: tab_ub(:)
       character (len=*),     intent(in) :: name_var,name_sub,name_sub_alloc
 
        IF (sum(shape(tab_ub)) /= ndim) THEN
@@ -190,12 +190,12 @@ MODULE QDUtil_Memory_base_m
          STOP
        END IF
 
-      END SUBROUTINE QDUtil_sub_test_Bigtab_ub
-      SUBROUTINE QDUtil_sub_test_Bigtab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
+      END SUBROUTINE QDUtil_sub_test_tab_ub_Ik8
+      SUBROUTINE QDUtil_sub_test_tab_lb_Ik8(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
       IMPLICIT NONE
 
       integer,               intent(in) :: ndim
-      integer (kind=ILkind), intent(in) :: tab_lb(:)
+      integer (kind=Ik8),    intent(in) :: tab_lb(:)
       character (len=*),     intent(in) :: name_var,name_sub,name_sub_alloc
 
        IF (sum(shape(tab_lb)) /= ndim) THEN
@@ -210,15 +210,15 @@ MODULE QDUtil_Memory_base_m
          STOP
        END IF
 
-      END SUBROUTINE QDUtil_sub_test_Bigtab_lb
+      END SUBROUTINE QDUtil_sub_test_tab_lb_Ik8
 
-      SUBROUTINE QDUtil_error_memo_allo(err,memory,name_var,name_sub,var_type)
+      SUBROUTINE QDUtil_error_memo_allo_Ik4(err,memory,name_var,name_sub,var_type)
       IMPLICIT NONE
 
-      integer, intent(in) :: err
-      integer, intent(in) :: memory
-      character (len=*), intent(in) :: name_var,name_sub
-      character (len=*), intent(in), optional :: var_type
+      integer,            intent(in) :: err
+      integer (kind=Ik4), intent(in) :: memory
+      character (len=*),  intent(in) :: name_var,name_sub
+      character (len=*),  intent(in), optional :: var_type
 
 
       logical :: memory_test
@@ -226,32 +226,6 @@ MODULE QDUtil_Memory_base_m
 !----- for debuging --------------------------------------------------
       logical,parameter :: debug=.FALSE.
       ! logical,parameter :: debug=.TRUE.
-
-!      para_mem%mem_tot = para_mem%mem_tot + int(memory,kind=ILkind)
-!      IF (para_mem%mem_tot > para_mem%max_mem_used)                     &
-!                               para_mem%max_mem_used = para_mem%mem_tot
-!      IF (memory > 0) THEN
-!        para_mem%nb_alloc = para_mem%nb_alloc + 1
-!      ELSE IF (memory < 0) THEN
-!        para_mem%nb_dealloc = para_mem%nb_dealloc + 1
-!      END IF
-
-!      IF (abs(memory) > 10**6-1) THEN
-!!$OMP CRITICAL (error_memo_allo_CRIT)
-!      IF (present(var_type)) THEN
-!        write(999,*) para_mem%mem_tot,para_mem%mem_tot+int(memory,kind=ILkind),&
-!                memory,' var_type=',var_type,' name_var=',name_var,' ',name_sub
-!        !write(out_unit,*) para_mem%mem_tot,memory,' var_type=',var_type,&
-!        !      ' name_var=',name_var,' ',name_sub
-!      ELSE
-!        write(999,*) para_mem%mem_tot,para_mem%mem_tot+int(memory,kind=ILkind),&
-!                         memory,' no_var_type name_var=',name_var,' ',name_sub
-!        !write(out_unit,*) para_mem%mem_tot,memory,' no_var_type name_var=',  &
-!        !        name_var,' ',name_sub
-!      END IF
-!      flush(999)
-!!$OMP END CRITICAL (error_memo_allo_CRIT)
-!      END IF
 
       IF (err /= 0) THEN
         write(out_unit,*) ' ERROR in  the routine "',name_sub,'"'
@@ -266,36 +240,36 @@ MODULE QDUtil_Memory_base_m
 
       IF (.NOT. debug .AND. .NOT. para_mem%mem_debug) RETURN
 
-!$OMP CRITICAL (error_memo_allo_CRIT)
+!$OMP CRITICAL (QDUtil_error_memo_allo_Ik4_CRIT)
       CALL QDUtil_open_mem_file()
 
       IF (present(var_type)) THEN
-        write(para_mem%mem_unit,*) para_mem%mem_tot,para_mem%mem_tot+int(memory,kind=ILkind),&
+        write(para_mem%mem_unit,*) para_mem%mem_tot,para_mem%mem_tot+int(memory,kind=Ik8),&
                 memory,' var_type=',var_type,' name_var=',name_var,' ',name_sub
       ELSE
-        write(para_mem%mem_unit,*) para_mem%mem_tot,para_mem%mem_tot+int(memory,kind=ILkind),&
+        write(para_mem%mem_unit,*) para_mem%mem_tot,para_mem%mem_tot+int(memory,kind=Ik8),&
                          memory,' no_var_type name_var=',name_var,' ',name_sub
       END IF
       flush(para_mem%mem_unit)
 
       IF (memory > 0) THEN
-        memory_test = ( para_mem%mem_tot > huge(1_ILkind)-int(memory,kind=ILkind) )
+        memory_test = ( para_mem%mem_tot > huge(1_Ik8)-int(memory,kind=Ik8) )
         IF (memory_test) THEN
-          write(out_unit,*) ' ERROR in error_memo_allo'
+          write(out_unit,*) ' ERROR in QDUtil_error_memo_allo_Ik4'
           write(out_unit,*) ' Variable and subroutine: ',                      &
                                 name_var,' in ',name_sub
           IF (present(var_type) ) write(out_unit,*) 'Variable TYPE: ',var_type
 
           write(out_unit,*) ' mem_tot WILL be larger than the largest integer!'
           write(out_unit,*) ' mem_tot,memory,huge(int)',para_mem%mem_tot,      &
-                                                         memory,huge(1_ILkind)
-          write(out_unit,*) ' huge(int)-memory',huge(1_ILkind)-int(memory,kind=ILkind)
+                                                         memory,huge(1_Ik8)
+          write(out_unit,*) ' huge(int)-memory',huge(1_Ik8)-int(memory,kind=Ik8)
           write(out_unit,*) ' => calculation TOO large or memory leak'
           STOP
         END IF
       END IF
 
-      para_mem%mem_tot = para_mem%mem_tot + int(memory,kind=ILkind)
+      para_mem%mem_tot = para_mem%mem_tot + int(memory,kind=Ik8)
       IF (para_mem%mem_tot > para_mem%max_mem_used)                     &
                                para_mem%max_mem_used = para_mem%mem_tot
       IF (memory > 0) THEN
@@ -308,21 +282,21 @@ MODULE QDUtil_Memory_base_m
         IF (memory == 0 .AND. err == 0) THEN
           write(out_unit,*) ' WARNING memory = 0'
           write(out_unit,*) 'old_mem_tot,new_mem_tot,memory',          &
-                              para_mem%mem_tot-int(memory,kind=ILkind),para_mem%mem_tot, &
+                              para_mem%mem_tot-int(memory,kind=Ik8),para_mem%mem_tot, &
                               memory,'nothing: ',name_var,' in ',name_sub
           IF (present(var_type) ) write(out_unit,*) 'Variable TYPE: ',var_type
         END IF
 
         IF ((debug .OR. para_mem%mem_debug) .AND. memory < 0 .AND. err == 0) THEN
           write(out_unit,*) 'old_mem_tot,new_mem_tot,memory',          &
-                              para_mem%mem_tot-int(memory,kind=ILkind),para_mem%mem_tot, &
+                              para_mem%mem_tot-int(memory,kind=Ik8),para_mem%mem_tot, &
                               memory,' dealloc of var name "',name_var, &
                               '" in routine "',name_sub,'"'
           IF (present(var_type) ) write(out_unit,*) 'Variable TYPE: ',var_type
         END IF
         IF ((debug .OR. para_mem%mem_debug) .AND. memory > 0 .AND. err == 0) THEN
           write(out_unit,*) 'old_mem_tot,new_mem_tot,memory',          &
-                              para_mem%mem_tot-int(memory,kind=ILkind),para_mem%mem_tot, &
+                              para_mem%mem_tot-int(memory,kind=Ik8),para_mem%mem_tot, &
                               memory,' alloc of var name "',name_var,   &
                               '" in routine "',name_sub,'"'
           IF (present(var_type) ) write(out_unit,*) 'Variable TYPE: ',var_type
@@ -337,14 +311,14 @@ MODULE QDUtil_Memory_base_m
 
       END IF
 
-!$OMP END CRITICAL (error_memo_allo_CRIT)
-      END SUBROUTINE QDUtil_error_memo_allo
+!$OMP END CRITICAL (QDUtil_error_memo_allo_Ik4_CRIT)
+      END SUBROUTINE QDUtil_error_memo_allo_Ik4
 
-      SUBROUTINE QDUtil_error_lmemo_allo(err,memory,name_var,name_sub,var_type)
+      SUBROUTINE QDUtil_error_memo_allo_Ik8(err,memory,name_var,name_sub,var_type)
       IMPLICIT NONE
 
       integer,               intent(in)            :: err
-      integer (kind=ILkind), intent(in)            :: memory
+      integer (kind=Ik8),    intent(in)            :: memory
       character (len=*),     intent(in)            :: name_var,name_sub
       character (len=*),     intent(in), optional :: var_type
 
@@ -368,7 +342,7 @@ MODULE QDUtil_Memory_base_m
 
       IF (.NOT. debug .AND. .NOT. para_mem%mem_debug) RETURN
 
-!$OMP CRITICAL (error_lmemo_allo_CRIT)
+!$OMP CRITICAL (QDUtil_error_memo_allo_Ik8_CRIT)
 
       CALL QDUtil_open_mem_file()
 
@@ -382,17 +356,17 @@ MODULE QDUtil_Memory_base_m
       flush(para_mem%mem_unit)
 
       IF (memory > 0) THEN
-        memory_test = ( para_mem%mem_tot > huge(1_ILkind)-memory )
+        memory_test = ( para_mem%mem_tot > huge(1_Ik8)-memory )
         IF (memory_test) THEN
-          write(out_unit,*) ' ERROR in error_memo_allo'
+          write(out_unit,*) ' ERROR in QDUtil_error_memo_allo_Ik8'
           write(out_unit,*) ' Variable and subroutine: ',                      &
                                 name_var,' in ',name_sub
           IF (present(var_type) ) write(out_unit,*) 'Variable TYPE: ',var_type
 
           write(out_unit,*) ' mem_tot WILL be larger than the largest integer!'
           write(out_unit,*) ' mem_tot,memory,huge(int)',para_mem%mem_tot,      &
-                                                         memory,huge(1_ILkind)
-          write(out_unit,*) ' huge(int)-memory',huge(1_ILkind)-memory
+                                                         memory,huge(1_Ik8)
+          write(out_unit,*) ' huge(int)-memory',huge(1_Ik8)-memory
           write(out_unit,*) ' => calculation TOO large or memory leak'
           STOP
         END IF
@@ -440,8 +414,8 @@ MODULE QDUtil_Memory_base_m
 
       END IF
 
-!$OMP END CRITICAL (error_lmemo_allo_CRIT)
-  END SUBROUTINE QDUtil_error_lmemo_allo
+!$OMP END CRITICAL (QDUtil_error_memo_allo_Ik8_CRIT)
+  END SUBROUTINE QDUtil_error_memo_allo_Ik8
 
 
   SUBROUTINE QDUtil_Check_mem()

@@ -11,6 +11,9 @@ OPT = 1
 OMP = 1
 ## Lapack/blas/mkl? Empty: default with Lapack; 0: without Lapack; 1 with Lapack
 LAPACK = 1
+## force the default integer (without kind) during the compillation.
+## default 4: , INT=8 (for kind=8)
+INT = 4
 #=================================================================================
 ifeq ($(FC),)
   FFC      := gfortran
@@ -40,7 +43,7 @@ endif
 OS=$(shell uname)
 
 # Extension for the object directory and the library
-ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)
+ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
 
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
@@ -66,6 +69,11 @@ ifeq ($(FFC),gfortran)
   else
     FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
     #FFLAGS = -O0 -fbounds-check -Wuninitialized
+  endif
+
+# integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -fdefault-integer-8
   endif
 
   FFLAGS +=-J$(MOD_DIR)
@@ -107,6 +115,7 @@ $(info ***********COMPILER:     $(FFC))
 $(info ***********COMPILER_VER: $(FC_VER))
 $(info ***********OPTIMIZATION: $(OOPT))
 $(info ***********OpenMP:       $(OOMP))
+$(info ***********INT:          $(INT))
 $(info ***********LAPACK:       $(LLAPACK))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
@@ -246,6 +255,11 @@ ifeq ($(FFC),ifort)
       FFLAGS = -O0 -check all -g -traceback
   endif
 
+# integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -i8
+  endif
+
   # where to store the modules
   FFLAGS +=-module $(MOD_DIR)
 
@@ -259,9 +273,9 @@ ifeq ($(FFC),ifort)
 
   ifeq ($(LLAPACK),1)
     #FLIB += -mkl -lpthread
-    #FLIB += -qmkl -lpthread
-    FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
-             ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
+    FLIB += -qmkl -lpthread
+    #FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
+    #         ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
   else
     FLIB += -lpthread
   endif
@@ -291,6 +305,11 @@ ifeq ($(FFC),nagfor)
     endif
   endif
 
+  # integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -i8
+  endif
+
  # where to store the .mod files
   FFLAGS +=-mdir $(MOD_DIR)
 
@@ -313,11 +332,6 @@ ifeq ($(FFC),nagfor)
     else                   # Linux
       # linux libs
       FLIB = -llapack -lblas
-      #
-      # linux libs with mkl and with openmp
-      #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
-      # linux libs with mkl and without openmp
-      #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
     endif
   endif
 

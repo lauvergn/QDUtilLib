@@ -39,30 +39,31 @@ MODULE QDUtil_RW_MatVec_m
     MODULE PROCEDURE QDUtil_Write_Rk8Vec,QDUtil_Write_Ck8Vec
     MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
     MODULE PROCEDURE QDUtil_Write_Ik4Mat,QDUtil_Write_Ik4Vec
+    MODULE PROCEDURE QDUtil_Write_Ik8Mat,QDUtil_Write_Ik8Vec
   END INTERFACE
   INTERFACE Write_Mat
     MODULE PROCEDURE QDUtil_Write_Rk4Mat,QDUtil_Write_Ck4Mat,QDUtil_Write_Rk4Mat_string
     MODULE PROCEDURE QDUtil_Write_Rk8Mat,QDUtil_Write_Ck8Mat,QDUtil_Write_Rk8Mat_string
     MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
-    MODULE PROCEDURE QDUtil_Write_Ik4Mat
+    MODULE PROCEDURE QDUtil_Write_Ik4Mat,QDUtil_Write_Ik8Mat
   END INTERFACE
   INTERFACE Write_Vec
     MODULE PROCEDURE QDUtil_Write_Rk4Vec,QDUtil_Write_Ck4Vec
     MODULE PROCEDURE QDUtil_Write_Rk8Vec,QDUtil_Write_Ck8Vec
     MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
-    MODULE PROCEDURE QDUtil_Write_Ik4Vec
+    MODULE PROCEDURE QDUtil_Write_Ik4Vec,QDUtil_Write_Ik8Vec
   END INTERFACE
   INTERFACE Read_Mat
     MODULE PROCEDURE QDUtil_Read_Rk4Mat,QDUtil_Read_Ck4Mat
     MODULE PROCEDURE QDUtil_Read_Rk8Mat,QDUtil_Read_Ck8Mat
     MODULE PROCEDURE QDUtil_Read_Rk16Mat,QDUtil_Read_Ck16Mat
-    MODULE PROCEDURE QDUtil_Read_Ik4Mat
+    MODULE PROCEDURE QDUtil_Read_Ik4Mat,QDUtil_Read_Ik8Mat
   END INTERFACE
   INTERFACE Read_Vec
     MODULE PROCEDURE QDUtil_Read_Rk4Vec,QDUtil_Read_Ck4Vec
     MODULE PROCEDURE QDUtil_Read_Rk8Vec,QDUtil_Read_Ck8Vec
     MODULE PROCEDURE QDUtil_Read_Rk16Vec,QDUtil_Read_Ck16Vec
-    MODULE PROCEDURE QDUtil_Read_Ik4Vec
+    MODULE PROCEDURE QDUtil_Read_Ik4Vec,QDUtil_Read_Ik8Vec
   END INTERFACE
 
   PUBLIC :: Write_VecMat, Write_Mat, Write_Vec, Read_Mat, Read_Vec
@@ -165,7 +166,7 @@ MODULE QDUtil_RW_MatVec_m
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=Rk8),           intent(in) :: Mat(:,:)
+    real(kind=Rk8),              intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
@@ -1779,6 +1780,228 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
   END SUBROUTINE QDUtil_Read_Ik4Vec
+
+
+  SUBROUTINE QDUtil_Write_Ik8Mat(Mat,nio,nbcol,Iformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Ik8,Rk8
+    USE QDUtil_String_m,        ONLY : TO_String
+    IMPLICIT NONE
+  
+    integer,                     intent(in) :: nio,nbcol
+    integer(kind=Ik8),           intent(in) :: Mat(:,:)
+
+    character (len=*), optional, intent(in) :: Iformat
+    character (len=*), optional, intent(in) :: info
+    integer,           optional, intent(in) :: iprint
+
+
+    integer         :: nl,nc
+    integer         :: i,j,nb,nbblocs,nfin,nbcol_loc,ilen
+    character (len=:), allocatable  :: wformat,Iformat_loc
+
+    IF (present(iprint)) THEN
+      IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
+    END IF
+    IF (present(Iformat)) THEN
+      Iformat_loc = trim(adjustl(Iformat))
+    ELSE
+      Iformat_loc = 'i5'
+    END IF
+
+    nl = size(Mat,dim=1)
+    nc = size(Mat,dim=2)
+ 
+   !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(nc/nbcol_loc)
+    IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
+
+    IF (present(info)) THEN
+      wformat = '(2x,"' // trim(adjustl(info)) // ' ",'
+    ELSE
+      wformat = '('
+    END IF
+
+    IF (nl > 0) THEN
+
+      !ilen = int(log10(real(nb_line,kind=Rk8)))+1
+      ! ensure compatible with very small system in test
+      ilen = MAX(int(log10(real(nl,kind=Rk8)))+1,2)
+
+      !write(*,*) 'nbcol_loc check:',nbcol_loc,ilen
+
+      wformat = wformat // '1x,i' //                       &
+          TO_String(ilen) // ',2x,' //                     &
+          TO_String(nbcol_loc) // '(' //                   &
+          Iformat_loc // ',1x))'
+
+    ELSE
+
+      wformat = wformat // TO_String(nbcol_loc) // '(' //  &
+                    Iformat_loc // ',1x))'
+
+    END IF
+
+      DO nb=0,nbblocs-1
+        DO j=1,nl
+          write(nio,wformat) j,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
+        END DO
+        IF (nl > 1 ) write(nio,*)
+      END DO
+      DO j=1,nl
+        nfin=nc-nbcol_loc*nbblocs
+        write(nio,wformat) j,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
+      END DO
+
+    deallocate(wformat)
+    deallocate(Iformat_loc)
+
+  END SUBROUTINE QDUtil_Write_Ik8Mat
+  SUBROUTINE QDUtil_Read_Ik8Mat(Mat,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Ik8
+    IMPLICIT NONE
+
+    integer,           intent(in)    :: nio,nbcol_loc
+    integer,           intent(inout) :: err
+    integer(kind=Ik8), intent(inout) :: Mat(:,:)
+
+     integer i,j,jj,nb,nbblocs,nfin,nl,nc
+
+     nl = size(Mat,dim=1)
+     nc = size(Mat,dim=2)
+     !write(out_unit,*) 'nl,nc,nbcol_loc',nl,nc,nbcol_loc
+
+
+     nbblocs=int(nc/nbcol_loc)
+
+     IF (nbblocs*nbcol_loc == nc) nbblocs=nbblocs-1
+     err = 0
+
+     !write(out_unit,*) 'nl,nc,nbcol_loc,nbblocs',nl,nc,nbcol_loc,nbblocs
+
+
+     DO nb=0,nbblocs-1
+
+         DO j=1,nl
+           read(nio,*,IOSTAT=err) jj,(Mat(j,i+nb*nbcol_loc),i=1,nbcol_loc)
+           IF (err /= 0) EXIT
+         END DO
+
+         IF (err /= 0) EXIT
+
+         IF (nl > 1) read(nio,*,IOSTAT=err)
+         IF (err /= 0) EXIT
+
+     END DO
+
+     nfin=nc-nbcol_loc*nbblocs
+     IF (err == 0) THEN
+       DO j=1,nl
+         read(nio,*,IOSTAT=err) jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
+         !write(out_unit,*) err,jj,(Mat(j,i+nbcol_loc*nbblocs),i=1,nfin)
+         IF (err /= 0) EXIT
+       END DO
+     END IF
+
+     IF (err /= 0) THEN
+       CALL QDUtil_Write_Ik8Mat(Mat,out_unit,nbcol_loc)
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ik8Mat'
+       write(out_unit,*) '  while reading a matrix'
+       write(out_unit,*) '  end of file or end of record'
+       write(out_unit,*) '  The matrix paramters: nl,nc,nbcol_loc',nl,nc,nbcol_loc
+       write(out_unit,*) '  Internal paramters: nbblocs,nfin',nbblocs,nfin
+       write(out_unit,*) ' Check your data !!'
+     END IF
+
+  END SUBROUTINE QDUtil_Read_Ik8Mat
+  SUBROUTINE QDUtil_Write_Ik8Vec(Vec,nio,nbcol,Iformat,info,iprint)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Ik8,Rk8
+    USE QDUtil_String_m,        ONLY : TO_String
+    IMPLICIT NONE
+
+    integer,                     intent(in) :: nio,nbcol
+    integer(kind=Ik8),           intent(in) :: Vec(:)
+
+    character (len=*), optional, intent(in) :: Iformat
+    character (len=*), optional, intent(in) :: info
+    integer,           optional, intent(in) :: iprint
+
+
+    integer           :: n,i,nb,nbblocs,nfin,nbcol_loc,ilen
+    character (len=:), allocatable  :: wformat,Iformat_loc
+
+    IF (present(iprint)) THEN
+      IF (iprint /=0) RETURN ! it was MPI_id in the module mod_MPI
+    END IF
+
+    n = size(Vec)
+    !write(out_unit,*) 'n,nbcol_loc',n,nbcol_loc
+    nbcol_loc = nbcol
+    IF (nbcol_loc > 10) nbcol_loc=10
+    nbblocs=int(n/nbcol_loc)
+    IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
+
+    IF (present(Iformat)) THEN
+      Iformat_loc = trim(adjustl(Iformat))
+    ELSE
+      Iformat_loc = 'i5'
+    END IF
+
+    IF (present(info)) THEN
+      wformat = '(2x,"' // trim(adjustl(info)) // ' ",'
+    ELSE
+      wformat = '('
+    END IF
+
+    wformat = wformat // TO_String(nbcol_loc) // '(' // Iformat_loc // ',1x))'
+
+    DO nb=0,nbblocs-1
+      write(nio,wformat) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
+    END DO
+    nfin=n-nbcol_loc*nbblocs
+    write(nio,wformat) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
+
+    deallocate(Iformat_loc)
+    deallocate(wformat)
+
+  END SUBROUTINE QDUtil_Write_Ik8Vec
+  SUBROUTINE QDUtil_Read_Ik8Vec(Vec,nio,nbcol_loc,err)
+    USE QDUtil_NumParameters_m, ONLY : out_unit,Ik8
+    IMPLICIT NONE
+
+    integer(kind=Ik8), intent(inout)  :: Vec(:)
+    integer,           intent(in)     :: nio,nbcol_loc
+    integer,           intent(inout)  :: err
+
+
+     integer :: n,i,nb,nbblocs,nfin
+
+     n = size(Vec,dim=1)
+     nbblocs=int(n/nbcol_loc)
+     err = 0
+
+     IF (nbblocs*nbcol_loc == n) nbblocs=nbblocs-1
+
+     DO nb=0,nbblocs-1
+       read(nio,*,IOSTAT=err) (Vec(i+nb*nbcol_loc),i=1,nbcol_loc)
+       IF (err /= 0) EXIT
+     END DO
+
+     nfin=n-nbcol_loc*nbblocs
+     read(nio,*,IOSTAT=err) (Vec(i+nbcol_loc*nbblocs),i=1,nfin)
+
+     IF (err /= 0) THEN
+       write(out_unit,*) ' ERROR in QDUtil_Read_Ik8Vec'
+       write(out_unit,*) '  while reading a vector'
+       write(out_unit,*) '  end of file or end of record'
+       write(out_unit,*) '  The vector paramters: n,nbcol_loc',n,nbcol_loc
+       write(out_unit,*) ' Check your data !!'
+     END IF
+
+  END SUBROUTINE QDUtil_Read_Ik8Vec
+
+
   SUBROUTINE Test_QDUtil_RW_MatVec()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
