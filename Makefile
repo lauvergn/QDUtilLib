@@ -134,7 +134,7 @@ QDLIB=QD
 MAIN=App_QDLib
 TESTS=Test_QDLib
 
-SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 \
+SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 FFT_m.f90 \
          String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Vector_m.f90 Diago_m.f90 \
          Frac_m.f90 File_m.f90 Time_m.f90 \
          Memory_NotPointer_m.f90 Memory_Pointer_m.f90 Memory_base_m.f90 Memory_m.f90 \
@@ -217,6 +217,7 @@ $(OBJ_DIR)/Time_m.o:                $(OBJ_DIR)/NumParameters_m.o
 
 
 $(OBJ_DIR)/MathUtil_m.o:            $(OBJ_DIR)/NumParameters_m.o
+$(OBJ_DIR)/FFT_m.o:                 $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o
 
 $(OBJ_DIR)/String_m.o:              $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_base_m.o
 

@@ -18,5 +18,6 @@ PROGRAM Test_QDLib
   CALL Test_QDUtil_Frac()
   CALL Test_QDUtil_File()
   CALL Test_QDUtil_Memory()
+  CALL Test_QDUtil_FFT_OOURA()
 
 END PROGRAM Test_QDLib
