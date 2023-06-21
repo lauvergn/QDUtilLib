@@ -251,7 +251,7 @@ ifeq ($(FFC),ifort)
   # opt management
   ifeq ($(OOPT),1)
       #F90FLAGS = -O -parallel -g -traceback
-      FFLAGS = -O  -g -traceback
+      FFLAGS = -O  -g -traceback -heap-arrays
   else
       FFLAGS = -O0 -check all -g -traceback
   endif

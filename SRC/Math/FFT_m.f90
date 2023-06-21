@@ -6,7 +6,8 @@
 !Copyright:
 !Copyright(C) 1996-2001 Takuya OOURA
 ! email: ooura@mmm.t.u-tokyo.ac.jp
-! download: http://momonga.t.u-tokyo.ac.jp/~ooura/fft.html
+! download: http://momonga.t.u-tokyo.ac.jp/~ooura/fft.html (does not work)
+! download (2023-06-19): https://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
 ! You may use, copy, modify this code for any purpose and 
 ! without fee. You may distribute this ORIGINAL package.
 ! Fast Fourier/Cosine/Sine Transform
@@ -287,6 +288,9 @@ MODULE QDUtil_FFT_OOURA_m
     integer,           allocatable :: ip(:)
     real (kind=Rkind), allocatable :: w(:)
     real (kind=Rkind), allocatable :: t(:)
+  CONTAINS
+    PROCEDURE :: alloc    => QDUtil_alloc_FFT_OOURA
+    PROCEDURE :: dealloc  => QDUtil_dealloc_FFT_OOURA
   END TYPE FFT_OOURA_t
 
   INTERFACE cdft !     cdft: Complex Discrete Fourier Transform
@@ -311,14 +315,14 @@ MODULE QDUtil_FFT_OOURA_m
   PUBLIC :: FFT_OOURA_t, cdft, rdft, ddct, ddst, dfct, dfst, Test_QDUtil_FFT_OOURA
 
 CONTAINS
-  subroutine QDUtil_alloc_FFT_OOURA(n, FFT_OOURA, err_allo,err_msg)
+  subroutine QDUtil_alloc_FFT_OOURA(FFT_OOURA, n, err_allo,err_msg)
     USE QDUtil_String_m
 
     integer,                        intent(in)    :: n
     integer,                        intent(out)   :: err_allo
     character (len=:), allocatable, intent(inout) :: err_msg
 
-    TYPE (FFT_OOURA_t), intent(inout) :: FFT_OOURA
+    CLASS (FFT_OOURA_t), intent(inout) :: FFT_OOURA
     !integer :: ip(0 : nmaxsqrt + 1)
     !real (kind=Rkind) :: w(0 : nmax * 5 / 4 - 1)
     !real (kind=Rkind) :: t(0 : nmax / 2)
@@ -354,7 +358,7 @@ CONTAINS
   end subroutine QDUtil_alloc_FFT_OOURA
   subroutine QDUtil_dealloc_FFT_OOURA(FFT_OOURA)
 
-    TYPE (FFT_OOURA_t), intent(inout) :: FFT_OOURA
+    CLASS (FFT_OOURA_t), intent(inout) :: FFT_OOURA
 
     FFT_OOURA%n = 0
     IF (allocated(FFT_OOURA%ip)) deallocate(FFT_OOURA%ip)
@@ -3133,7 +3137,9 @@ CONTAINS
 
     n = 2**16
 
-    CALL QDUtil_alloc_FFT_OOURA(n, FFT_OOURA, err_allo,err_msg)
+    !CALL QDUtil_alloc_FFT_OOURA(FFT_OOURA, n, err_allo,err_msg)
+    CALL FFT_OOURA%alloc(n, err_allo,err_msg)
+
     IF (err_allo /= 0) THEN
       CALL Logical_Test(test_var,test1=.FALSE.,info=err_msg)
       CALL Finalize_Test(test_var)
@@ -3217,6 +3223,8 @@ CONTAINS
     write (*, *) 'dfst err= ', err
     res_test = ( err < err_thres)
     CALL Logical_Test(test_var,test1=res_test,info='dfst')
+
+    CALL FFT_OOURA%dealloc()
 
   
     ! finalize the tests
