@@ -220,14 +220,14 @@ MODULE QDUtil_diago_m
     !when lapack is used and Rkind /= real64 (not a double)
     IF (Rkind /= real64 .AND. diago_type_loc == 3) diago_type_loc = diago_type_default
 
-#if __LAPACK != 1
+#if __LAPACK == 0
     IF (debug) write(out_unit,*) '  Lapack library is not linked'
     IF (count([3,377,395] == diago_type_loc) == 1) diago_type_loc = diago_type_default
     IF (count([4,477] == diago_type_loc) == 1) THEN
       !diago_type_loc = 0
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' The diagonalization of non-symmetric needs LAPACK.'
-      write(out_unit,*) '  Try to link LAPACK with the code (use LAPACK=1 in the makfile).'
+      write(out_unit,*) '  Try to link LAPACK with the code (use LAPACK=1 in the makefile).'
       write(out_unit,*) '   diago_type:      ',diago_type_loc
       write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in QDUtil_Rdiagonalization: Problem with non-symmetric matrix.'
@@ -287,6 +287,24 @@ MODULE QDUtil_diago_m
       END IF
 
       deallocate(work)
+#elif __LAPACK == 8
+      lwork = 3*n-1
+      allocate(work(lwork))
+      REigVec(:,:) = RMat(:,:)
+
+      ! with mkl (ifort), lapack lib can linked with -i8 option (int64), so that we don't need to convert integer in int32
+      CALL DSYEV('V','U',n,REigVec,n,REigVal,work,lwork,ierr)
+
+      IF (debug) write(out_unit,*) 'ierr=',ierr
+      flush(out_unit)
+
+      IF (ierr /= 0) THEN
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) ' DSYEV lapack subroutine has FAILED!'
+         STOP 'ERROR in QDUtil_Rdiagonalization: DSYEV lapack subroutine has FAILED!'
+      END IF
+
+      deallocate(work)
 #else
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
@@ -295,11 +313,7 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in QDUtil_Rdiagonalization: LAPACK case impossible'
 #endif
-!      CASE(395) ! lapack95
-!        IF (debug) write(out_unit,*) 'lapack95: LA_SYEVD'
-!        flush(out_unit)
-!        REigVec(:,:) = RMat
-!        CALL LA_SYEVD(REigVec,REigVal)
+
 
     CASE(4,477) ! lapack77 (non-symmetric)
 #if __LAPACK == 1
@@ -325,6 +339,35 @@ MODULE QDUtil_diago_m
                  int(1,kind=int32),REigVec,ldvr4,work,lwork4,ierr4)
       IF (debug) write(out_unit,*)'ierr=',ierr4
       IF (ierr4 /= 0_int32) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
+        STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
+      END IF
+
+      DO i=1,n
+        write(out_unit,*) 'Eigenvalue(', i, ') = ', REigVal(i),'+I ',IEigVec_loc(i)
+      END DO
+      IF (present(IEigVec)) IEigVec = IEigVec_loc
+
+      deallocate(IEigVec_loc)
+      deallocate(work)
+      deallocate(RMat_save)
+#elif __LAPACK == 8
+      IF (debug) write(out_unit,*) 'lapack77: DGEEV (non-symmetric)'
+      flush(out_unit)
+
+      RMat_save = RMat ! save RMat
+
+      lwork = (2+64)*n
+      ldvr  = n
+      lda   = n
+
+      allocate(work(lwork))
+      allocate(IEigVec_loc(n))
+
+      CALL DGEEV('N','V',n,RMat_save,lda,REigVal,IEigVec_loc,dummy,1,REigVec,ldvr,work,lwork,ierr)
+      IF (debug) write(out_unit,*)'ierr=',ierr
+      IF (ierr /= 0) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
         STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
@@ -1419,7 +1462,7 @@ stop
     DO diago_type=1,4
       info = 'diago (#' // TO_string(diago_type) // ')'
 
-#if __LAPACK != 1
+#if __LAPACK == 0
       IF (diago_type == 4) THEN
         write(out_unit,*) 'WARNING: LAPACK and BLAS are not linked'
         write(out_unit,*) '=> diago with type=4 is not possible'

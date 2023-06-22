@@ -9,11 +9,11 @@ PROGRAM App_QDLib
   TYPE(Frac_t)                     :: Frac1, Frac2
   TYPE(Frac_t),        allocatable :: tab_Frac(:)
 
-  !  #if __LAPACK != 1
-  !    write(out_unit,*) '  Lapack library is linked'
-  !  #else
-  !    write(out_unit,*) '  Lapack library is not linked'
-  !  #endif
+!  #if __LAPACK == 0
+!    write(out_unit,*) '  Lapack library is not linked'
+!  #else
+!    write(out_unit,*) '  Lapack library is linked'
+!  #endif
  !====================================================================
   ! Tests on fractions
   Frac1 = '1/-2' ! use the conversion from string to Frac_t

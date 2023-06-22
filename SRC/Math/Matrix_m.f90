@@ -1033,7 +1033,7 @@ MODULE QDUtil_Matrix_m
     !when lapack is used and Rkind /= real64 (not a double)
     IF (Rkind /= real64 .AND. lu_type_loc == 3) lu_type_loc = lu_type_default
 
-#if __LAPACK != 1
+#if __LAPACK == 0
     IF (lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
@@ -1045,6 +1045,10 @@ MODULE QDUtil_Matrix_m
       n4     = int(n,kind=int32)
       CALL ZGETRS('No transpose',n4,1,a,n4,LU_index,b,n4,ierr4)
       err = int(ierr4)
+      IF (err /= 0) STOP 'LU QDUtil_Driver_LU_solve_cplx'
+#elif __LAPACK == 8
+      n4     = int(n,kind=int32)
+      CALL ZGETRS('No transpose',n,1,a,n,LU_index,b,n,err)
       IF (err /= 0) STOP 'LU QDUtil_Driver_LU_solve_cplx'
 #else
       write(out_unit,*) ' ERROR in QDUtil_Driver_LU_solve_cplx'
@@ -1080,7 +1084,7 @@ MODULE QDUtil_Matrix_m
     !when lapack is used and Rkind /= real64 (not a double)
     IF (Rkind /= real64 .AND. lu_type_loc == 3) lu_type_loc = lu_type_default
 
-#if __LAPACK != 1
+#if __LAPACK == 0
     IF ( lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
@@ -1094,6 +1098,9 @@ MODULE QDUtil_Matrix_m
       n4     = int(n,kind=int32)
       CALL ZGETRF(n4,n4,a,n4,LU_index,ierr4)
       err = int(ierr4)
+      IF (err /= 0) STOP 'QDUtil_Driver_LU_decomp_cplx'
+#elif __LAPACK == 8
+      CALL ZGETRF(n,n,a,n,LU_index,err)
       IF (err /= 0) STOP 'QDUtil_Driver_LU_decomp_cplx'
 #else
       write(out_unit,*) ' ERROR in QDUtil_Driver_LU_decomp_cplx'
@@ -1486,7 +1493,7 @@ MODULE QDUtil_Matrix_m
       CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
-#if __LAPACK == 1
+#if __LAPACK != 0
     C2Vec = LinearSys_Solve(C1Mat,C1Vec,LS_type=3)
     res_test = all(abs(matmul(C1Mat,C2Vec)-C1Vec) < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#3) of C1Mat')

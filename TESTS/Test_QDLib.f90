@@ -2,10 +2,10 @@ PROGRAM Test_QDLib
   USE QDUtil_m
   IMPLICIT NONE
 
-!  #if __LAPACK != 1
-!    write(out_unit,*) '  Lapack library is linked'
-!  #else
+!  #if __LAPACK == 0
 !    write(out_unit,*) '  Lapack library is not linked'
+!  #else
+!    write(out_unit,*) '  Lapack library is linked'
 !  #endif
 
   CALL Test_QDUtil_NumParameters()  
