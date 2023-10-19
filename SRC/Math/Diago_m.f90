@@ -546,11 +546,15 @@ MODULE QDUtil_diago_m
       CONTINUE
     END SELECT
 
-     DO i=1,n
-       Vec(:,i) = Vec(:,i)/sqrt(dot_product(Vec(:,i),Vec(:,i)))
-     END DO
+    DO i=1,n
+      Vec(:,i) = Vec(:,i)/sqrt(dot_product(Vec(:,i),Vec(:,i)))
+    END DO
 
-     IF (phase) CALL QDUtil_Unique_phase_cplx(Vec)
+    IF (present(phase)) THEN
+      IF (phase) CALL QDUtil_Unique_phase_cplx(Vec)
+    ELSE
+      CALL QDUtil_Unique_phase_cplx(Vec)
+    END IF
 
   END SUBROUTINE QDUtil_Cdiagonalization_Her
   SUBROUTINE QDUtil_JACOBI2(A,N,D,V)
