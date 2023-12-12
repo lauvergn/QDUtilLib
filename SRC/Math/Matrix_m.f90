@@ -70,6 +70,12 @@ MODULE QDUtil_Matrix_m
     MODULE PROCEDURE QDUtil_Driver_LU_decomp_cplx
   END INTERFACE
 
+  PUBLIC Ortho_GramSchmidt
+  INTERFACE Ortho_GramSchmidt
+    MODULE PROCEDURE QDUtil_Ortho_GramSchmidt_RMat
+    MODULE PROCEDURE QDUtil_Ortho_GramSchmidt_CMat
+  END INTERFACE
+  
   PUBLIC :: Test_QDUtil_Matrix
   CONTAINS
   !================================================================
@@ -1273,6 +1279,92 @@ MODULE QDUtil_Matrix_m
 
   END FUNCTION QDUtil_Identity_CMat
 
+  FUNCTION QDUtil_Ortho_GramSchmidt_RMat(V,epsi) RESULT(Vortho)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    real(kind=Rkind), allocatable                        :: Vortho(:,:)
+    real(kind=Rkind),             intent(in)             :: V(:,:)
+    real(kind=Rkind),             intent(in), optional   :: epsi
+
+    integer          :: i,j,n,k
+    real(kind=Rkind) :: Norm
+
+    real(kind=Rkind)   :: epsi_loc
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+    n = size(V,dim=1)
+    k = size(V,dim=2)
+
+    allocate(Vortho(n,k))
+    Vortho = ZERO
+
+    Norm   = sqrt(dot_product(V(:,1),V(:,1)))
+    Vortho(:,1) = V(:,1)/Norm
+
+    DO i=2,k
+      Vortho(:,i) = V(:,i)
+      DO j=1,i-1
+        Vortho(:,i) = Vortho(:,i) - dot_product(Vortho(:,j),Vortho(:,i))*Vortho(:,j)
+      END DO
+      Norm   = sqrt(dot_product(Vortho(:,i),Vortho(:,i)))
+      IF (Norm > epsi_loc) THEN 
+        Vortho(:,i) = Vortho(:,i) / Norm
+      ELSE
+        Vortho(:,i) = ZERO
+      END IF
+    END DO
+
+  END FUNCTION QDUtil_Ortho_GramSchmidt_RMat
+  FUNCTION QDUtil_Ortho_GramSchmidt_CMat(V,epsi) RESULT(Vortho)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    complex(kind=Rkind), allocatable                        :: Vortho(:,:)
+    complex(kind=Rkind),             intent(in)             :: V(:,:)
+    real(kind=Rkind),                intent(in), optional   :: epsi
+
+    integer          :: i,j,n,k
+    real(kind=Rkind) :: Norm
+
+    real(kind=Rkind)   :: epsi_loc
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+    n = size(V,dim=1)
+    k = size(V,dim=2)
+
+    allocate(Vortho(n,k))
+    Vortho = CZERO
+
+    Norm   = sqrt(real(dot_product(V(:,1),V(:,1)),kind=Rkind))
+    Vortho(:,1) = V(:,1)/Norm
+
+    DO i=2,k
+
+      Vortho(:,i) = V(:,i)
+      DO j=1,i-1
+        Vortho(:,i) = Vortho(:,i) - dot_product(Vortho(:,j),Vortho(:,i))*Vortho(:,j)
+      END DO
+
+      Norm   = sqrt(real(dot_product(Vortho(:,i),Vortho(:,i)),kind=Rkind))
+
+      IF (Norm > epsi_loc) THEN 
+        Vortho(:,i) = Vortho(:,i) / Norm
+      ELSE
+        Vortho(:,i) = ZERO
+      END IF
+
+    END DO
+
+  END FUNCTION QDUtil_Ortho_GramSchmidt_CMat
   SUBROUTINE Test_QDUtil_Matrix()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
@@ -1506,6 +1598,55 @@ MODULE QDUtil_Matrix_m
     CALL Flush_Test(test_var)
 #endif
     !====================================================================
+
+    !====================================================================
+    ! test for solving a system of linear equations
+    !
+    ! define the matrices
+    R1Mat = reshape([ONE,HALF,ZERO,                             &
+                     HALF,ONE,HALF,                             &
+                     ZERO,HALF,ONE],shape=[3,3])
+    R2Mat = reshape([TWO/sqrt(FIVE),ONE/sqrt(FIVE),ZERO,        &
+                    -THREE/sqrt(70._Rkind),sqrt(18._Rkind/35._Rkind),sqrt(FIVE/14._Rkind),                            &
+                    sqrt(ONE/14._Rkind),-sqrt(TWO/SEVEN),THREE/sqrt(14._Rkind)],shape=[3,3])
+    !{{2/Sqrt[5], 1/Sqrt[5], 0}, {-(3/Sqrt[70]), 3 Sqrt[2/35], Sqrt[5/14]}, {1/Sqrt[14], -Sqrt[(2/7)], 3/Sqrt[14]}}
+    !atomic_add
+    R3Mat = Ortho_GramSchmidt(R1Mat)
+    res_test = all(abs(R2Mat-R3Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='GramSmidt ortho of R1Mat')
+    !CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+    !CALL Write_Mat(R3Mat,out_unit,5,info='R3Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      CALL Write_Mat(R3Mat,out_unit,5,info='R3Mat')
+    END IF
+    CALL Flush_Test(test_var)
+
+    ! define the matrices
+    C1Mat = reshape([CONE,CHALF,CZERO,                             &
+                     CHALF,CONE,CHALF,                             &
+                     CZERO,CHALF,EYE],shape=[3,3])
+    C2Mat = reshape([CTWO/sqrt(FIVE),CONE/sqrt(FIVE),CZERO,       &
+                    cmplx(-THREE/sqrt(70._Rkind),kind=Rkind),     &
+                    cmplx(sqrt(18._Rkind/35._Rkind),kind=Rkind),  &
+                    cmplx(sqrt(FIVE/14._Rkind),kind=Rkind),       &
+                    cmplx(-ONE,THREE,kind=Rkind)/sqrt(140._Rkind), &
+                    cmplx(ONE,-THREE,kind=Rkind)/sqrt(35._Rkind), &
+                    cmplx(-THREE,NINE,kind=Rkind)/sqrt(140._Rkind)],shape=[3,3])
+    !atomic_add
+    !CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+
+    C3Mat = Ortho_GramSchmidt(C1Mat)
+    res_test = all(abs(C2Mat-C3Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='GramSmidt ortho of C1Mat')
+    !CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+    !CALL Write_Mat(C3Mat,out_unit,5,info='C3Mat')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      CALL Write_Mat(C3Mat,out_unit,5,info='C3Mat')
+    END IF
+    CALL Flush_Test(test_var)
+!====================================================================
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
