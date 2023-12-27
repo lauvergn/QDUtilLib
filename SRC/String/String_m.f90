@@ -68,6 +68,7 @@ IMPLICIT NONE
     MODULE PROCEDURE QDUtil_int32_TO_string,QDUtil_int64_TO_string
     MODULE PROCEDURE QDUtil_logical_TO_string
     MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
+    MODULE PROCEDURE QDUtil_Ck4_TO_string,QDUtil_Ck8_TO_string,QDUtil_Ck16_TO_string
   END INTERFACE
 
   INTERFACE int_TO_char
@@ -443,6 +444,90 @@ CONTAINS
 
   END FUNCTION QDUtil_Rk4_TO_string
 
+  FUNCTION QDUtil_Ck4_TO_string(c,Rformat) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
+    IMPLICIT NONE
+
+    character (len=:), allocatable           :: string
+
+    complex (kind=Rk4), intent(in)           :: c
+    character (len=*), intent(in), optional  :: Rformat
+
+
+    integer,                parameter :: Line_len = 256
+    character(len=Line_len)           :: name_real
+    integer :: clen,i
+
+    !$OMP  CRITICAL (QDUtil_Ck4_TO_string_CRIT)
+
+    IF (allocated(string)) deallocate(string)
+
+
+    IF (present(Rformat)) THEN
+      string = '(' // TO_string(c%re,Rformat) // ',' // TO_string(c%im,Rformat) // ')'
+    ELSE
+      string = '(' // TO_string(c%re) // ',' // TO_string(c%im) // ')'
+    END IF
+
+    !$OMP  END CRITICAL (QDUtil_Ck4_TO_string_CRIT)
+
+  END FUNCTION QDUtil_Ck4_TO_string
+  FUNCTION QDUtil_Ck8_TO_string(c,Rformat) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
+    IMPLICIT NONE
+
+    character (len=:), allocatable           :: string
+
+    complex (kind=Rk8), intent(in)           :: c
+    character (len=*), intent(in), optional  :: Rformat
+
+
+    integer,                parameter :: Line_len = 256
+    character(len=Line_len)           :: name_real
+    integer :: clen,i
+
+    !$OMP  CRITICAL (QDUtil_Ck8_TO_string_CRIT)
+
+    IF (allocated(string)) deallocate(string)
+
+
+    IF (present(Rformat)) THEN
+      string = '(' // TO_string(c%re,Rformat) // ',' // TO_string(c%im,Rformat) // ')'
+    ELSE
+      string = '(' // TO_string(c%re) // ',' // TO_string(c%im) // ')'
+    END IF
+
+    !$OMP  END CRITICAL (QDUtil_Ck8_TO_string_CRIT)
+
+  END FUNCTION QDUtil_Ck8_TO_string
+  FUNCTION QDUtil_Ck16_TO_string(c,Rformat) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
+    IMPLICIT NONE
+
+    character (len=:), allocatable           :: string
+
+    complex (kind=Rk16), intent(in)           :: c
+    character (len=*), intent(in), optional  :: Rformat
+
+
+    integer,                parameter :: Line_len = 256
+    character(len=Line_len)           :: name_real
+    integer :: clen,i
+
+    !$OMP  CRITICAL (QDUtil_Ck16_TO_string_CRIT)
+
+    IF (allocated(string)) deallocate(string)
+
+
+    IF (present(Rformat)) THEN
+      string = '(' // TO_string(c%re,Rformat) // ',' // TO_string(c%im,Rformat) // ')'
+    ELSE
+      string = '(' // TO_string(c%re) // ',' // TO_string(c%im) // ')'
+    END IF
+
+    !$OMP  END CRITICAL (QDUtil_Ck16_TO_string_CRIT)
+
+  END FUNCTION QDUtil_Ck16_TO_string
   FUNCTION QDUtil_string_IS_empty(String)
     IMPLICIT NONE
 
@@ -662,6 +747,14 @@ CONTAINS
     CALL Flush_Test(test_var)
 
     !#13-14
+    res_test = ('(0.,0.)' == TO_string(cmplx(0._Rk4,0._Rk4,kind=Rk4)))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (0.,0.)')
+    res_test = ('(0.,1.)' == TO_string(cmplx(0._Rk8,1._Rk8,kind=Rk8)))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (0.,1.)')
+    res_test = ('(-1.,1.)' == TO_string(cmplx(-1._Rk8,1._Rk8,kind=Rk8)))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1.,1.)')
+
+    !#17-18
     res_test = string_IS_empty(string)
     CALL Logical_Test(test_var,test1=res_test,info='string_IS_empty (F)',test2=.FALSE.)
     string = ''

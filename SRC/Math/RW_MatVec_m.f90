@@ -133,14 +133,14 @@ MODULE QDUtil_RW_MatVec_m
         !write(*,*) 'max_col check:',max_col,ilen
 
         wformat_loc = wformat_loc // '1x,i' //                       &
-                    int_TO_char(ilen) // ',2x,' //                   &
-                    int_TO_char(max_col) // '(' //                   &
+                    TO_string(ilen) // ',2x,' //                   &
+                    TO_string(max_col) // '(' //                   &
                     trim(adjustl(NMatformat)) // ',1x))'
 
 
     ELSE
 
-        wformat_loc = wformat_loc // int_TO_char(max_col) // '(' //  &
+        wformat_loc = wformat_loc // TO_string(max_col) // '(' //  &
                       trim(adjustl(NMatformat)) // ',1x))'
 
 

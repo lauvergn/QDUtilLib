@@ -12,21 +12,21 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1)
+To build the library, **libQD_gfortran_opt1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1, INT=4)
 ```bash
 make lib
 ```
-It creates a library with the folowing name: **libQD_XXX_optY_ompZ.a**
-with XXX, the compiler name (like gfortran), Y or Z the value O or 1
-For instance, the default library is: **libQD_gfortran_opt1_omp1.a**
-The module file (.mod) are in the OBJ/obj__XXX_optY_ompZ directory.
+It creates a library with the folowing name: **libQD_XXX_optY_ompZ_intX.a**
+with XXX, the compiler name (like gfortran), Y or Z the value O or 1 and X the value 4 or 8.
+For instance, the default library is: **libQD_gfortran_opt1_omp1_int4.a**
+The module file (.mod) are in the OBJ/obj__XXX_optY_ompZ_intX directory.
 
 Two options to clean:
 ```bash
 make clean
 ```
 
-Remove some files, but keep the libraries, **libQD_XXX_optY_ompZ.a**
+Remove some files, but keep the libraries, **libQD_XXX_optY_ompZ_intX.a**
 
 ```bash
 make cleanall
@@ -45,6 +45,7 @@ The tests are running with gfortran and several option combinations:
 - OPT=1 or 0: compilation with optimization or without optimization
 - OMP=1 or 0: with or without openmp
 - LAPACK=1 or 0: with or without blas and lapack libraries
+- INT=4 or 8: change the integer kind default compilation option
 
 The file, **ALL_Tests.log**, contains a summary of all the tests.
 
@@ -98,24 +99,39 @@ This module contains:
 - Some complexe (kind=Rkind) numbers : EYE (i), CZERO, CONE, CHALF
 - out_unit and in_unit: the standard output and input units from the intrinsinc ISO_FORTRAN_ENV module
 - print_level: level of printing:     0 minimal, 1 default, 2 large, -1 nothing
-To change print_level:
-CALL set_print_level(prtlev), where **prtlev** is an integer.
+To change print_level (**prtlev** is an integer):
+
+```Fortran
+CALL set_print_level(prtlev=0)
+```
 
 ### String
 
 This module contains functions and subroutines to manipulate character string (character(len=)):
 
 - Functions to change to upper to lowercase or the reverse: **TO_lowercase**, **TO_uppercase**
-- Functions to convert numbers in string: **TO_string**
+- Functions to convert numbers (integer, real, complex, Frac, logical) in string: **TO_string**
   All kinds defined in NumParameters module and logical type are possible
-  For real convertion, an optional format (Rformat) can be given.
+  For real and comlex convertions, an optional format (Rformat) can be given.
 - Function to read a line from a file define with its unit: **Read_line**
 - Function to check is a string is empty: **string_IS_empty**
+- Examples:
+```Fortran
+character (len=:), allocatable :: str
+
+str = TO_string(1)        ! => "1"
+str = TO_string(1.0)      ! => "1."
+str = TO_string(EYE)      ! => "(0.,1.)"
+str = TO_string(.FALSE.)  ! => "F"
+
+str = TO_lowercase("AbC") ! => "abc"
+str = TO_uppercase("aBc") ! => "ABC"
+```
 
 ### Frac
 
-This module contains functions and subroutines to manipulate fractions. 
-All functions **elemental** (except the ones with a string). Therefore, one can use those functions with table.
+This module contains functions and subroutines to manipulate fractions.
+All functions are **elemental** (except **TO_string(frac)**). Therefore, one can use those functions with table of fractions.
 
 - A type: **Frac_t**, which contains the numerator and denominator
   When the fraction is negative, the numerator has the minus sign.
@@ -175,10 +191,11 @@ This module contains public subroutines to read and write real and complex (kind
 
 This module contains public functions and subroutines to perform some lienar algebra operations with the default real kind (kind=Rkind). It can use some LAPACK subroutines:
 
-- Function to compute the inverse of a matrix:     **inv_OF_Mat_TO**
-- Function to solve a linear system of equation:   **LinearSys_Solve**
-- Function to compute the determinant of a matrix: **Det_OF**
-- Function to initialyze a real identity matrix:   **Identity_Mat**
+- Function to compute the inverse of a matrix:      **inv_OF_Mat_TO**
+- Function to solve a linear system of equation:    **LinearSys_Solve**
+- Function to compute the determinant of a matrix:  **Det_OF**
+- Function to initialyze a real identity matrix:    **Identity_Mat**
+- Gram-Schmidt Orthonormaization (real or complex): **Ortho_GramSchmidt**
 
 ### Diago
 
