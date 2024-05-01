@@ -8,13 +8,13 @@ copyright = "2023 David Lauvergnat"
 [library]
 source-dir="SRC"
 
-[[ test ]]
+[[test]]
 name="TestQDLib"
 source-dir="TESTS"
 main="Test_QDLib.f90"
 
 
-[[ executable ]]
+[[executable]]
 name="AppQDLib"
 source-dir="APP"
 main="App_QDLib.f90"
@@ -28,3 +28,6 @@ link = ["blas", "lapack"]
 
 [preprocess]
 cpp.macros = ["__LAPACK=1"]
+
+[fortran]
+implicit-external = true
