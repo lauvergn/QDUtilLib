@@ -12,21 +12,21 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1, INT=4)
+To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1, INT=4)
 ```bash
 make lib
 ```
-It creates a library with the folowing name: **libQD_XXX_optY_ompZ_intX.a**
-with XXX, the compiler name (like gfortran), Y or Z the value O or 1 and X the value 4 or 8.
-For instance, the default library is: **libQD_gfortran_opt1_omp1_int4.a**
-The module file (.mod) are in the OBJ/obj__XXX_optY_ompZ_intX directory.
+It creates a library with the folowing name: **libQD_XXX_optW_lapackX_ompY_intZ.a**
+with XXX, the compiler name (like gfortran), W, X, Y the value O or 1 and Z the value 4 or 8.
+For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4.a**
+The module file (.mod) are in the OBJ/obj__XXX_optW_lapackX_ompY_intZ directory.
 
 Two options to clean:
 ```bash
 make clean
 ```
 
-Remove some files, but keep the libraries, **libQD_XXX_optY_ompZ_intX.a**
+Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ.a**
 
 ```bash
 make cleanall
@@ -56,7 +56,7 @@ To build the library, **libQDUtilLib.a**, with the Lapack (LAPACK=1)
 fpm build
 ```
 The library is in **build/gfortran_xxxx/QDUtilLib** directory.
-To remove Lapack library, the **fpm.tom** file must be edited.
+To remove Lapack library, the **fpm.toml** file must be edited.
 
 Two options to clean:
 ```bash
@@ -65,11 +65,6 @@ fpm clean
 
 Remove the build directory.
 
-Remove some files, but keep the libraries, **libQDUtilLib.a**
-
-```bash
-fpm cleanall
-```
 
 To test the module:
 
@@ -83,7 +78,34 @@ To run an example:
 fpm run AppQDLib 
 ```
 
-## 2) List of modules
+## 2) How tu use it
+
+### 2a) With fpm
+
+If you want to use it with **fpm**, you have to add a dependency in your own the **fpm.toml** file:
+
+```
+[dependencies]
+QDUtilLib = { git = "https://github.com/lauvergn/QDUtilLib" }
+```
+
+### 2b) With makefile
+
+If the QDUtil library is build with make, you have to:
+- compile your code (such xxx.f90) with the QDUtil module files (.mod files). Those files are in the **OBJ/obj_XXX_optW_lapackX_ompY_intZ** directory.
+For instance, with gfortran, OpenMP, lapack and integer kind=4:
+
+```bash
+gfortan -c xxx.f90 -fopenmp -IOBJ/libQD_gfortran_opt0_omp1_lapack1_int4
+```
+
+- link with **libQD_XXX_optW_lapackX_ompY_intZ.a** library
+
+```bash
+gfortran ...    libQD_gfortran_opt0_omp1_int4.a -llapack -lblas
+```
+
+## 3) List of modules
 
 ### NumParameters
 
@@ -197,8 +219,10 @@ This module contains public functions and subroutines to perform some lienar alg
 - Function to initialyze a real identity matrix:    **Identity_Mat**
 - Gram-Schmidt Orthonormaization (real or complex): **Ortho_GramSchmidt**
 
-### Diago
+### Diagonalization
 
 This module contains public subroutines to digonlize a matrix with the default real kind (kind=Rkind). It can use some LAPACK subroutines:
 
 - Subroutine to diagnalize a real matrix: **diagonalization**
+
+
