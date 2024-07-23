@@ -135,6 +135,7 @@ This module contains functions and subroutines to manipulate character string (c
 - Functions to convert numbers (integer, real, complex, Frac, logical) in string: **TO_string**
   All kinds defined in NumParameters module and logical type are possible
   For real and comlex convertions, an optional format (Rformat) can be given.
+  It can work with table of dimension 1.
 - Function to read a line from a file define with its unit: **Read_line**
 - Function to check is a string is empty: **string_IS_empty**
 - Examples:
@@ -145,6 +146,7 @@ str = TO_string(1)        ! => "1"
 str = TO_string(1.0)      ! => "1."
 str = TO_string(EYE)      ! => "(0.,1.)"
 str = TO_string(.FALSE.)  ! => "F"
+str = TO_string([1,3,-1]) ! => "1 3 -1"
 
 str = TO_lowercase("AbC") ! => "abc"
 str = TO_uppercase("aBc") ! => "ABC"
