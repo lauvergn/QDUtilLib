@@ -69,6 +69,11 @@ IMPLICIT NONE
     MODULE PROCEDURE QDUtil_logical_TO_string
     MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
     MODULE PROCEDURE QDUtil_Ck4_TO_string,QDUtil_Ck8_TO_string,QDUtil_Ck16_TO_string
+
+    MODULE PROCEDURE QDUtil_Dim1int32_TO_string,QDUtil_Dim1int64_TO_string
+    MODULE PROCEDURE QDUtil_Dim1logical_TO_string
+    MODULE PROCEDURE QDUtil_Dim1Rk4_TO_string,QDUtil_Dim1Rk8_TO_string,QDUtil_Dim1Rk16_TO_string
+    MODULE PROCEDURE QDUtil_Dim1Ck4_TO_string,QDUtil_Dim1Ck8_TO_string,QDUtil_Dim1Ck16_TO_string
   END INTERFACE
 
   INTERFACE int_TO_char
@@ -166,6 +171,7 @@ CONTAINS
    QDUtil_strdup = trim(string)
 
   END FUNCTION QDUtil_strdup
+  
   PURE FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
 
     character (len=:), allocatable  :: string
@@ -528,6 +534,144 @@ CONTAINS
     !$OMP  END CRITICAL (QDUtil_Ck16_TO_string_CRIT)
 
   END FUNCTION QDUtil_Ck16_TO_string
+
+  PURE FUNCTION QDUtil_Dim1logical_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    logical, intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1logical_TO_string
+  PURE FUNCTION QDUtil_Dim1int32_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    integer (kind=Ik4), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1int32_TO_string
+  PURE FUNCTION QDUtil_Dim1int64_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    integer (kind=Ik8), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1int64_TO_string
+  FUNCTION QDUtil_Dim1Rk4_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    real (kind=Rk4), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1Rk4_TO_string
+  FUNCTION QDUtil_Dim1Rk8_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    real (kind=Rk8), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1Rk8_TO_string
+  FUNCTION QDUtil_Dim1Rk16_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    real (kind=Rk16), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1Rk16_TO_string
+  FUNCTION QDUtil_Dim1Ck4_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    complex (kind=Rk4), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1Ck4_TO_string
+  FUNCTION QDUtil_Dim1Ck8_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    complex (kind=Rk8), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1Ck8_TO_string
+  FUNCTION QDUtil_Dim1Ck16_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    complex (kind=Rk16), intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1Ck16_TO_string
+
+
   FUNCTION QDUtil_string_IS_empty(String)
     IMPLICIT NONE
 
@@ -719,23 +863,27 @@ CONTAINS
 
     CALL Flush_Test(test_var)
   
-    !#5 and 6
+    !#5, 6, 7
     res_test = ('T' == TO_string(.TRUE.))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (T)')
     res_test = ('F' == TO_string(.FALSE.))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (F)')
+    res_test = ('F T F' == TO_string([.FALSE.,.TRUE.,.FALSE.]))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (F T F)')
     CALL Flush_Test(test_var)
 
-    !#7, 8, 9
+    !#8-10
     res_test = ('0' == TO_string(0))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (0)')
     res_test = ('10' == TO_string(10_Ik4))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (10_Ik4)')
     res_test = ('-1099' == TO_string(-1099_Ik8))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1099_Ik8)')
+    res_test = ('-1 0 13' == TO_string([-1,0,13]))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1 0 13)')
     CALL Flush_Test(test_var)
 
-    !#10-12
+    !#11-13
     res_test = ('0.' == TO_string(0._Rkind))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (0.)')
     res_test = ('1.' == TO_string(1._Rk4))
@@ -744,15 +892,19 @@ CONTAINS
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-10._Rk8)')
     res_test = ('-999.5' == TO_string(-999.5_Rk16))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-999.5_Rk16)')
+    res_test = ('-1. 0. 13.' == TO_string([-1._Rk4,0._Rk4,13._Rk4]))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1. 0. 13.)')
     CALL Flush_Test(test_var)
 
-    !#13-14
+    !#14-15
     res_test = ('(0.,0.)' == TO_string(cmplx(0._Rk4,0._Rk4,kind=Rk4)))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (0.,0.)')
     res_test = ('(0.,1.)' == TO_string(cmplx(0._Rk8,1._Rk8,kind=Rk8)))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (0.,1.)')
     res_test = ('(-1.,1.)' == TO_string(cmplx(-1._Rk8,1._Rk8,kind=Rk8)))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1.,1.)')
+    res_test = ('(-1.,1.) (0.,1.)' == TO_string([cmplx(-1._Rk8,1._Rk8,kind=Rk8),cmplx(0._Rk8,1._Rk8,kind=Rk8)]))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string(-1.,1.) (0.,1.)')
 
     !#17-18
     res_test = string_IS_empty(string)

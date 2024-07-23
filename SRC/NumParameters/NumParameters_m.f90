@@ -104,7 +104,6 @@ CONTAINS
     IMPLICIT NONE
     integer, intent(in)           :: prtlev
     logical, intent(in), optional :: force
-    logical :: force_loc
 
     IF (present(force)) THEN
       IF (force .OR. print_level < -1) print_level = prtlev
