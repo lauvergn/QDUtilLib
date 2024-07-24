@@ -148,7 +148,8 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 #===============================================
 .PHONY: ut UT
 UT ut: $(TESTS).x
-	./$(TESTS).x |	grep "Number of error(s)"
+	./$(TESTS).x > test.log
+	grep "Number of error(s)" test.log
 	@echo "  done Tests"
 
 

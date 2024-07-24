@@ -580,94 +580,142 @@ CONTAINS
     string = string // TO_string((tab(ubound(tab,dim=1))))
 
   END FUNCTION QDUtil_Dim1int64_TO_string
-  FUNCTION QDUtil_Dim1Rk4_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1Rk4_TO_string(tab,Rformat)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
-    real (kind=Rk4), intent(in)             :: tab(:)
+    real (kind=Rk4),   intent(in)            :: tab(:)
+    character (len=*), intent(in), optional  :: Rformat
 
     integer :: i
 
     string = ''
-    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-      string = string // TO_string(tab(i)) // ' '
-    END DO
-    string = string // TO_string((tab(ubound(tab,dim=1))))
+    IF (present(Rformat)) THEN
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i),Rformat) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
+    ELSE
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i)) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))))
+    END IF
 
   END FUNCTION QDUtil_Dim1Rk4_TO_string
-  FUNCTION QDUtil_Dim1Rk8_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1Rk8_TO_string(tab,Rformat)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
-    real (kind=Rk8), intent(in)             :: tab(:)
+    real (kind=Rk8),   intent(in)            :: tab(:)
+    character (len=*), intent(in), optional  :: Rformat
 
     integer :: i
 
     string = ''
-    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-      string = string // TO_string(tab(i)) // ' '
-    END DO
-    string = string // TO_string((tab(ubound(tab,dim=1))))
+    IF (present(Rformat)) THEN
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i),Rformat) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
+    ELSE
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i)) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))))
+    END IF
 
   END FUNCTION QDUtil_Dim1Rk8_TO_string
-  FUNCTION QDUtil_Dim1Rk16_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1Rk16_TO_string(tab,Rformat)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
-    real (kind=Rk16), intent(in)             :: tab(:)
+    real (kind=Rk16),  intent(in)            :: tab(:)
+    character (len=*), intent(in), optional  :: Rformat
 
     integer :: i
 
     string = ''
-    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-      string = string // TO_string(tab(i)) // ' '
-    END DO
-    string = string // TO_string((tab(ubound(tab,dim=1))))
+    IF (present(Rformat)) THEN
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i),Rformat) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
+    ELSE
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i)) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))))
+    END IF
 
   END FUNCTION QDUtil_Dim1Rk16_TO_string
-  FUNCTION QDUtil_Dim1Ck4_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1Ck4_TO_string(tab,Rformat)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
-    complex (kind=Rk4), intent(in)             :: tab(:)
+    complex (kind=Rk4), intent(in)            :: tab(:)
+    character (len=*),  intent(in), optional  :: Rformat
 
     integer :: i
 
     string = ''
-    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-      string = string // TO_string(tab(i)) // ' '
-    END DO
-    string = string // TO_string((tab(ubound(tab,dim=1))))
+    IF (present(Rformat)) THEN
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i),Rformat) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
+    ELSE
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i)) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))))
+    END IF
 
   END FUNCTION QDUtil_Dim1Ck4_TO_string
-  FUNCTION QDUtil_Dim1Ck8_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1Ck8_TO_string(tab,Rformat)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
-    complex (kind=Rk8), intent(in)             :: tab(:)
+    complex (kind=Rk8), intent(in)            :: tab(:)
+    character (len=*),  intent(in), optional  :: Rformat
 
     integer :: i
 
     string = ''
-    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-      string = string // TO_string(tab(i)) // ' '
-    END DO
-    string = string // TO_string((tab(ubound(tab,dim=1))))
+    IF (present(Rformat)) THEN
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i),Rformat) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
+    ELSE
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i)) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))))
+    END IF
 
   END FUNCTION QDUtil_Dim1Ck8_TO_string
-  FUNCTION QDUtil_Dim1Ck16_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1Ck16_TO_string(tab,Rformat)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
-    complex (kind=Rk16), intent(in)             :: tab(:)
+    complex (kind=Rk16), intent(in)            :: tab(:)
+    character (len=*),   intent(in), optional  :: Rformat
 
     integer :: i
 
     string = ''
-    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-      string = string // TO_string(tab(i)) // ' '
-    END DO
-    string = string // TO_string((tab(ubound(tab,dim=1))))
+    IF (present(Rformat)) THEN
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i),Rformat) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
+    ELSE
+      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        string = string // TO_string(tab(i)) // ' '
+      END DO
+      string = string // TO_string((tab(ubound(tab,dim=1))))
+    END IF
 
   END FUNCTION QDUtil_Dim1Ck16_TO_string
 
@@ -894,6 +942,10 @@ CONTAINS
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-999.5_Rk16)')
     res_test = ('-1. 0. 13.' == TO_string([-1._Rk4,0._Rk4,13._Rk4]))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1. 0. 13.)')
+    res_test = ('-1.000 0.000 13.000' == TO_string([-1._Rk4,0._Rk4,13._Rk4],Rformat='f6.3'))
+    CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1.000 0.000 13.000)')
+    IF (.NOT. res_test) write(out_unit,*) 'Reals:',[-1._Rk4,0._Rk4,13._Rk4], &
+             ' string: ',TO_string([-1._Rk4,0._Rk4,13._Rk4],Rformat='f6.3')
     CALL Flush_Test(test_var)
 
     !#14-15
