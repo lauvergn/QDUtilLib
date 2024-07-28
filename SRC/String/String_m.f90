@@ -184,7 +184,7 @@ CONTAINS
     END IF
 
   END FUNCTION QDUtil_logical_TO_string
-  PURE FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
+  FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Rk8
     IMPLICIT NONE
 
@@ -194,6 +194,8 @@ CONTAINS
 
     character (len=:), allocatable  :: name_int
     integer :: clen
+
+    !$OMP  CRITICAL (QDUtil_int32_TO_string)
 
     ! first approximated size of name_int
     IF (i == 0) THEN
@@ -215,9 +217,10 @@ CONTAINS
 
     ! deallocate name_int
     deallocate(name_int)
+    !$OMP  END CRITICAL (QDUtil_int32_TO_string)
 
   END FUNCTION QDUtil_int32_TO_string
-  PURE FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
+  FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik8,Rk8
     IMPLICIT NONE
 
@@ -241,7 +244,9 @@ CONTAINS
     allocate(character(len=clen) :: name_int)
 
     ! write i in name_int
+    !$OMP  CRITICAL (QDUtil_int64_TO_string)
     write(name_int,'(i0)') i
+    !$OMP  END CRITICAL (QDUtil_int64_TO_string)
 
     ! transfert name_int in QDUtil_int_TO_char
     string = trim(adjustl(name_int))
@@ -550,7 +555,7 @@ CONTAINS
     string = string // TO_string((tab(ubound(tab,dim=1))))
 
   END FUNCTION QDUtil_Dim1logical_TO_string
-  PURE FUNCTION QDUtil_Dim1int32_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1int32_TO_string(tab)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
@@ -565,7 +570,7 @@ CONTAINS
     string = string // TO_string((tab(ubound(tab,dim=1))))
 
   END FUNCTION QDUtil_Dim1int32_TO_string
-  PURE FUNCTION QDUtil_Dim1int64_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1int64_TO_string(tab)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
