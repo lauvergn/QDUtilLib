@@ -37,6 +37,7 @@ IMPLICIT NONE
 
   PUBLIC :: Read_line
 
+  PUBLIC :: ADD_TO_string,SET_string
   PUBLIC :: int_TO_char,logical_TO_char,real_TO_char
   PUBLIC :: TO_string
 
@@ -84,6 +85,14 @@ IMPLICIT NONE
   END INTERFACE
   INTERFACE real_TO_char
     MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
+  END INTERFACE
+
+  INTERFACE ADD_TO_string
+    MODULE PROCEDURE QDUtil_ADD_TO_Astring
+  END INTERFACE
+
+  INTERFACE SET_string
+    MODULE PROCEDURE   QDUtil_SET_Astring
   END INTERFACE
 
   INTERFACE Read_line
@@ -171,7 +180,60 @@ CONTAINS
    QDUtil_strdup = trim(string)
 
   END FUNCTION QDUtil_strdup
+SUBROUTINE QDUtil_SET_Astring(string,string1,string2,string3,string4,string5, &
+                              string6,string7,string8,string9,string10)
+  IMPLICIT NONE
+
+character (len=:),  allocatable, intent(inout) :: string
+character (len=*),               intent(in)    :: string1
+character (len=*),  optional,    intent(in)    :: string2,string3,string4,string5
+character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
+
+!$OMP  CRITICAL (QDUtil_SET_Astring_CRIT)
+string = string1
+IF (present(string2 )) string = string // string2
+IF (present(string3 )) string = string // string3
+IF (present(string4 )) string = string // string4
+IF (present(string5 )) string = string // string5
+
+IF (present(string6 )) string = string // string6
+IF (present(string7 )) string = string // string7
+IF (present(string8 )) string = string // string8
+IF (present(string9 )) string = string // string9
+IF (present(string10)) string = string // string10
+
+!$OMP  END CRITICAL (QDUtil_SET_Astring_CRIT)
+
+END SUBROUTINE QDUtil_SET_Astring
+  SUBROUTINE QDUtil_ADD_TO_Astring(string,string1,string2,string3,string4,string5, &
+                                          string6,string7,string8,string9,string10)
+    IMPLICIT NONE
   
+      character (len=:),  allocatable, intent(inout) :: string
+      character (len=*),               intent(in)    :: string1
+      character (len=*),  optional,    intent(in)    :: string2,string3,string4,string5
+      character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
+
+      !$OMP  CRITICAL (QDUtil_ADD_TO_Astring_CRIT)
+      IF (.NOT. allocated(string)) THEN
+        string = string1
+      ELSE
+        string = string // string1
+      END IF
+      IF (present(string2 )) string = string // string2
+      IF (present(string3 )) string = string // string3
+      IF (present(string4 )) string = string // string4
+      IF (present(string5 )) string = string // string5
+
+      IF (present(string6 )) string = string // string6
+      IF (present(string7 )) string = string // string7
+      IF (present(string8 )) string = string // string8
+      IF (present(string9 )) string = string // string9
+      IF (present(string10)) string = string // string10
+
+      !$OMP  END CRITICAL (QDUtil_ADD_TO_Astring_CRIT)
+  
+  END SUBROUTINE QDUtil_ADD_TO_Astring
   PURE FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
 
     character (len=:), allocatable  :: string
@@ -195,7 +257,7 @@ CONTAINS
     character (len=:), allocatable  :: name_int
     integer :: clen
 
-    !$OMP  CRITICAL (QDUtil_int32_TO_string)
+    !$OMP  CRITICAL (QDUtil_int32_TO_string_CRIT)
 
     ! first approximated size of name_int
     IF (i == 0) THEN
@@ -217,7 +279,7 @@ CONTAINS
 
     ! deallocate name_int
     deallocate(name_int)
-    !$OMP  END CRITICAL (QDUtil_int32_TO_string)
+    !$OMP  END CRITICAL (QDUtil_int32_TO_string_CRIT)
 
   END FUNCTION QDUtil_int32_TO_string
   FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
@@ -244,9 +306,9 @@ CONTAINS
     allocate(character(len=clen) :: name_int)
 
     ! write i in name_int
-    !$OMP  CRITICAL (QDUtil_int64_TO_string)
+    !$OMP  CRITICAL (QDUtil_int64_TO_string_CRIT)
     write(name_int,'(i0)') i
-    !$OMP  END CRITICAL (QDUtil_int64_TO_string)
+    !$OMP  END CRITICAL (QDUtil_int64_TO_string_CRIT)
 
     ! transfert name_int in QDUtil_int_TO_char
     string = trim(adjustl(name_int))
@@ -540,7 +602,7 @@ CONTAINS
 
   END FUNCTION QDUtil_Ck16_TO_string
 
-  PURE FUNCTION QDUtil_Dim1logical_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1logical_TO_string(tab)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
@@ -548,11 +610,13 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1logical_TO_string_CRIT)
     string = ''
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
       string = string // TO_string(tab(i)) // ' '
     END DO
     string = string // TO_string((tab(ubound(tab,dim=1))))
+    !$OMP  END CRITICAL (QDUtil_Dim1logical_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1logical_TO_string
   FUNCTION QDUtil_Dim1int32_TO_string(tab)  RESULT(string)
@@ -563,11 +627,13 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1int32_TO_string_CRIT)
     string = ''
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
       string = string // TO_string(tab(i)) // ' '
     END DO
     string = string // TO_string((tab(ubound(tab,dim=1))))
+    !$OMP  END CRITICAL (QDUtil_Dim1int32_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1int32_TO_string
   FUNCTION QDUtil_Dim1int64_TO_string(tab)  RESULT(string)
@@ -578,11 +644,13 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1int64_TO_string_CRIT)
     string = ''
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
       string = string // TO_string(tab(i)) // ' '
     END DO
     string = string // TO_string((tab(ubound(tab,dim=1))))
+    !$OMP  END CRITICAL (QDUtil_Dim1int64_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1int64_TO_string
   FUNCTION QDUtil_Dim1Rk4_TO_string(tab,Rformat)  RESULT(string)
@@ -594,6 +662,7 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
@@ -606,6 +675,7 @@ CONTAINS
       END DO
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
+    !$OMP  END CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Rk4_TO_string
   FUNCTION QDUtil_Dim1Rk8_TO_string(tab,Rformat)  RESULT(string)
@@ -617,6 +687,7 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
@@ -629,6 +700,7 @@ CONTAINS
       END DO
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
+    !$OMP  END CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Rk8_TO_string
   FUNCTION QDUtil_Dim1Rk16_TO_string(tab,Rformat)  RESULT(string)
@@ -640,6 +712,8 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
+
     string = ''
     IF (present(Rformat)) THEN
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
@@ -652,6 +726,7 @@ CONTAINS
       END DO
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
+    !$OMP  END CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Rk16_TO_string
   FUNCTION QDUtil_Dim1Ck4_TO_string(tab,Rformat)  RESULT(string)
@@ -663,6 +738,7 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
@@ -675,6 +751,7 @@ CONTAINS
       END DO
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
+    !$OMP  END CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Ck4_TO_string
   FUNCTION QDUtil_Dim1Ck8_TO_string(tab,Rformat)  RESULT(string)
@@ -686,6 +763,7 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
@@ -698,6 +776,7 @@ CONTAINS
       END DO
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
+    !$OMP  END CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Ck8_TO_string
   FUNCTION QDUtil_Dim1Ck16_TO_string(tab,Rformat)  RESULT(string)
@@ -709,6 +788,7 @@ CONTAINS
 
     integer :: i
 
+    !$OMP CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
@@ -721,6 +801,7 @@ CONTAINS
       END DO
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
+    !$OMP  END CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Ck16_TO_string
 
@@ -969,6 +1050,33 @@ CONTAINS
     string = ''
     res_test = string_IS_empty(string)
     CALL Logical_Test(test_var,test1=res_test,info='string_IS_empty (T)')
+    CALL Flush_Test(test_var)
+
+    !#19
+    deallocate(string)
+    CALL ADD_TO_string(string,'1')
+    res_test = (string == '1')
+    CALL Logical_Test(test_var,test1=res_test,info='ADD_TO_string (1)')
+    deallocate(string)
+    CALL ADD_TO_string(string,'1','2')
+    res_test = (string == '12')
+    CALL Logical_Test(test_var,test1=res_test,info='ADD_TO_string (12)')
+    deallocate(string)
+    CALL ADD_TO_string(string,'1','2','3')
+    res_test = (string == '123')
+    CALL Logical_Test(test_var,test1=res_test,info='ADD_TO_string (123)')
+    deallocate(string)
+    CALL ADD_TO_string(string,'1','2','3','4')
+    res_test = (string == '1234')
+    CALL Logical_Test(test_var,test1=res_test,info='ADD_TO_string (1234)')
+    deallocate(string)
+    CALL ADD_TO_string(string,'1','2','3','4','5')
+    res_test = (string == '12345')
+    CALL Logical_Test(test_var,test1=res_test,info='ADD_TO_string (12345)')
+
+    CALL SET_string(string,'1','2','3','4','5','6','7','8','9','10')
+    res_test = (string == '12345678910')
+    CALL Logical_Test(test_var,test1=res_test,info='SET_string (12345678910)')
     CALL Flush_Test(test_var)
 
     ! finalize the tests
