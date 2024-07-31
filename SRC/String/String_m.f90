@@ -602,30 +602,37 @@ END SUBROUTINE QDUtil_SET_Astring
 
   END FUNCTION QDUtil_Ck16_TO_string
 
-  FUNCTION QDUtil_Dim1logical_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1logical_TO_string(tab,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
-    character (len=:), allocatable  :: string
-    logical, intent(in)             :: tab(:)
+    character (len=:), allocatable            :: string
+    logical,           intent(in)             :: tab(:)
+    integer,           intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1logical_TO_string_CRIT)
     string = ''
+    icol   = 0
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      icol = icol + 1
       string = string // TO_string(tab(i)) // ' '
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
     END DO
     string = string // TO_string((tab(ubound(tab,dim=1))))
     !$OMP  END CRITICAL (QDUtil_Dim1logical_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1logical_TO_string
-  FUNCTION QDUtil_Dim1int32_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1int32_TO_string(tab,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     integer (kind=Ik4), intent(in)             :: tab(:)
+    integer,            intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1int32_TO_string_CRIT)
     string = ''
@@ -636,31 +643,36 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP  END CRITICAL (QDUtil_Dim1int32_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1int32_TO_string
-  FUNCTION QDUtil_Dim1int64_TO_string(tab)  RESULT(string)
+  FUNCTION QDUtil_Dim1int64_TO_string(tab,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     integer (kind=Ik8), intent(in)             :: tab(:)
+    integer,            intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1int64_TO_string_CRIT)
     string = ''
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
       string = string // TO_string(tab(i)) // ' '
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
     END DO
     string = string // TO_string((tab(ubound(tab,dim=1))))
     !$OMP  END CRITICAL (QDUtil_Dim1int64_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1int64_TO_string
-  FUNCTION QDUtil_Dim1Rk4_TO_string(tab,Rformat)  RESULT(string)
+  FUNCTION QDUtil_Dim1Rk4_TO_string(tab,Rformat,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     real (kind=Rk4),   intent(in)            :: tab(:)
     character (len=*), intent(in), optional  :: Rformat
+    integer,           intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
     string = ''
@@ -668,24 +680,31 @@ END SUBROUTINE QDUtil_SET_Astring
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i),Rformat) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i)) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Rk4_TO_string
-  FUNCTION QDUtil_Dim1Rk8_TO_string(tab,Rformat)  RESULT(string)
+  FUNCTION QDUtil_Dim1Rk8_TO_string(tab,Rformat,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     real (kind=Rk8),   intent(in)            :: tab(:)
     character (len=*), intent(in), optional  :: Rformat
+    integer,           intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
     string = ''
@@ -693,24 +712,31 @@ END SUBROUTINE QDUtil_SET_Astring
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i),Rformat) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i)) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Rk8_TO_string
-  FUNCTION QDUtil_Dim1Rk16_TO_string(tab,Rformat)  RESULT(string)
+  FUNCTION QDUtil_Dim1Rk16_TO_string(tab,Rformat,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     real (kind=Rk16),  intent(in)            :: tab(:)
     character (len=*), intent(in), optional  :: Rformat
+    integer,           intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
 
@@ -719,24 +745,31 @@ END SUBROUTINE QDUtil_SET_Astring
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i),Rformat) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i)) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Rk16_TO_string
-  FUNCTION QDUtil_Dim1Ck4_TO_string(tab,Rformat)  RESULT(string)
+  FUNCTION QDUtil_Dim1Ck4_TO_string(tab,Rformat,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     complex (kind=Rk4), intent(in)            :: tab(:)
     character (len=*),  intent(in), optional  :: Rformat
+    integer,            intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
     string = ''
@@ -744,24 +777,31 @@ END SUBROUTINE QDUtil_SET_Astring
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i),Rformat) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i)) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Ck4_TO_string
-  FUNCTION QDUtil_Dim1Ck8_TO_string(tab,Rformat)  RESULT(string)
+  FUNCTION QDUtil_Dim1Ck8_TO_string(tab,Rformat,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     complex (kind=Rk8), intent(in)            :: tab(:)
     character (len=*),  intent(in), optional  :: Rformat
+    integer,            intent(in), optional   :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
     string = ''
@@ -769,24 +809,31 @@ END SUBROUTINE QDUtil_SET_Astring
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i),Rformat) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i)) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1Ck8_TO_string
-  FUNCTION QDUtil_Dim1Ck16_TO_string(tab,Rformat)  RESULT(string)
+  FUNCTION QDUtil_Dim1Ck16_TO_string(tab,Rformat,max_col)  RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable  :: string
     complex (kind=Rk16), intent(in)            :: tab(:)
     character (len=*),   intent(in), optional  :: Rformat
+    integer,             intent(in), optional  :: max_col
 
-    integer :: i
+    integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
     string = ''
@@ -794,11 +841,17 @@ END SUBROUTINE QDUtil_SET_Astring
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i),Rformat) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
         string = string // TO_string(tab(i)) // ' '
       END DO
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
@@ -1002,8 +1055,12 @@ END SUBROUTINE QDUtil_SET_Astring
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (T)')
     res_test = ('F' == TO_string(.FALSE.))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (F)')
-    res_test = ('F T F' == TO_string([.FALSE.,.TRUE.,.FALSE.]))
+    res_test = ('F T '// new_line('nl') //'F' == TO_string([.FALSE.,.TRUE.,.FALSE.],max_col=2))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (F T F)')
+    IF (.NOT. res_test) THEN
+      write(out_unit,*) 'Logicals:',[.FALSE.,.TRUE.,.FALSE.],' string (max_col=2): '
+      write(out_unit,'(a)') TO_string([.FALSE.,.TRUE.,.FALSE.],max_col=2)
+    END IF
     CALL Flush_Test(test_var)
 
     !#8-10
