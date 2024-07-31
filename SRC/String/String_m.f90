@@ -636,7 +636,9 @@ END SUBROUTINE QDUtil_SET_Astring
 
     !$OMP CRITICAL (QDUtil_Dim1int32_TO_string_CRIT)
     string = ''
+    icol   = 0
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      icol = icol + 1
       string = string // TO_string(tab(i)) // ' '
       IF (present(max_col)) THEN
         IF (mod(icol,max_col) == 0) string = string // new_line('nl')
@@ -657,7 +659,9 @@ END SUBROUTINE QDUtil_SET_Astring
 
     !$OMP CRITICAL (QDUtil_Dim1int64_TO_string_CRIT)
     string = ''
+    icol   = 0
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      icol = icol + 1
       string = string // TO_string(tab(i)) // ' '
       IF (present(max_col)) THEN
         IF (mod(icol,max_col) == 0) string = string // new_line('nl')
@@ -680,20 +684,24 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i),Rformat) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i)) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
@@ -712,20 +720,24 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i),Rformat) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i)) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
@@ -745,20 +757,24 @@ END SUBROUTINE QDUtil_SET_Astring
 
     string = ''
     IF (present(Rformat)) THEN
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i),Rformat) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i)) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
@@ -777,20 +793,24 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1
         string = string // TO_string(tab(i),Rformat) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1        
         string = string // TO_string(tab(i)) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
@@ -809,20 +829,24 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1        
         string = string // TO_string(tab(i),Rformat) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1        
         string = string // TO_string(tab(i)) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
@@ -841,20 +865,24 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
     string = ''
     IF (present(Rformat)) THEN
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1        
         string = string // TO_string(tab(i),Rformat) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
     ELSE
+      icol   = 0
       DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+        icol = icol + 1        
         string = string // TO_string(tab(i)) // ' '
+        IF (present(max_col)) THEN
+          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+        END IF
       END DO
-      IF (present(max_col)) THEN
-        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-      END IF
       string = string // TO_string((tab(ubound(tab,dim=1))))
     END IF
     !$OMP  END CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)

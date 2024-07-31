@@ -8,6 +8,7 @@ PROGRAM App_QDLib
 
   TYPE(Frac_t)                     :: Frac1, Frac2
   TYPE(Frac_t),        allocatable :: tab_Frac(:)
+  character (len=:), allocatable   :: str
 
 !  #if __LAPACK == 0
 !    write(out_unit,*) '  Lapack library is not linked'
@@ -15,6 +16,12 @@ PROGRAM App_QDLib
 !    write(out_unit,*) '  Lapack library is linked'
 !  #endif
  !====================================================================
+  ! Tests string
+  write(*,*) ' TO_string:'
+  write(*,*) TO_string([0,1,2,3,4,5,6,7,8],max_col=5)
+  write(*,*) TO_string([0.,1.,2.,3.,4.,5.,6.,7.,8.],max_col=5)
+
+  !====================================================================
   ! Tests on fractions
   Frac1 = '1/-2' ! use the conversion from string to Frac_t
   write(*,*) 'Frac1: ',TO_String(Frac1) ! it give "Frac1: -1/2"
