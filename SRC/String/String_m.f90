@@ -638,6 +638,9 @@ END SUBROUTINE QDUtil_SET_Astring
     string = ''
     DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
       string = string // TO_string(tab(i)) // ' '
+      IF (present(max_col)) THEN
+        IF (mod(icol,max_col) == 0) string = string // new_line('nl')
+      END IF
     END DO
     string = string // TO_string((tab(ubound(tab,dim=1))))
     !$OMP  END CRITICAL (QDUtil_Dim1int32_TO_string_CRIT)
