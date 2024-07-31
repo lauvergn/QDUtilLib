@@ -17,10 +17,17 @@ PROGRAM App_QDLib
 !  #endif
  !====================================================================
   ! Tests string
-  write(*,*) ' TO_string:'
-  write(*,*) TO_string([0,1,2,3,4,5,6,7,8],max_col=5)
-  write(*,*) TO_string([0.,1.,2.,3.,4.,5.,6.,7.,8.],max_col=5)
+  write(*,*) 'TO_string, integer: ',TO_string([0,1,2,3,4,5,6,7,8],max_col=5)
+  write(*,*) 'TO_string, integer Ik8: ',TO_string([integer(kind=Ik8) :: 0,1,2,3,4,5,6,7,8],max_col=5)
 
+  write(*,*) 'TO_string, real: ',TO_string([0.,1.,2.,3.,4.,5.,6.,7.,8.],max_col=5)
+  write(*,*) 'TO_string, real Rk4: ',TO_string([real(kind=Rk4) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+  write(*,*) 'TO_string, real Rk8: ',TO_string([real(kind=Rk8) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+  write(*,*) 'TO_string, real Rk16: ',TO_string([real(kind=Rk16) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+
+  write(*,*) 'TO_string, complex Rk4: ',TO_string([complex(kind=Rk4) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+  write(*,*) 'TO_string, complex Rk8: ',TO_string([complex(kind=Rk8) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+  write(*,*) 'TO_string, complex Rk16: ',TO_string([complex(kind=Rk16) :: 0,1,2,3,4,5,6,7,8],max_col=5)
   !====================================================================
   ! Tests on fractions
   Frac1 = '1/-2' ! use the conversion from string to Frac_t
