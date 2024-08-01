@@ -190,6 +190,7 @@ character (len=*),  optional,    intent(in)    :: string2,string3,string4,string
 character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
 
 !$OMP  CRITICAL (QDUtil_SET_Astring_CRIT)
+
 string = string1
 IF (present(string2 )) string = string // string2
 IF (present(string3 )) string = string // string3
@@ -215,6 +216,7 @@ END SUBROUTINE QDUtil_SET_Astring
       character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
 
       !$OMP  CRITICAL (QDUtil_ADD_TO_Astring_CRIT)
+
       IF (.NOT. allocated(string)) THEN
         string = string1
       ELSE
@@ -234,16 +236,18 @@ END SUBROUTINE QDUtil_SET_Astring
       !$OMP  END CRITICAL (QDUtil_ADD_TO_Astring_CRIT)
   
   END SUBROUTINE QDUtil_ADD_TO_Astring
-  PURE FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
+  FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
 
     character (len=:), allocatable  :: string
     logical, intent(in)             :: l
 
+    !$OMP  CRITICAL (QDUtil_logical_TO_string_CRIT)
     IF (l) THEN
       string = 'T'
     ELSE
       string = 'F'
     END IF
+    !$OMP  END CRITICAL (QDUtil_logical_TO_string_CRIT)
 
   END FUNCTION QDUtil_logical_TO_string
   FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
@@ -293,6 +297,8 @@ END SUBROUTINE QDUtil_SET_Astring
     character (len=:), allocatable  :: name_int
     integer :: clen
 
+    !$OMP  CRITICAL (QDUtil_int64_TO_string_CRIT)
+
     ! first approximated size of name_int
     IF (i == 0) THEN
       clen = 1
@@ -306,15 +312,15 @@ END SUBROUTINE QDUtil_SET_Astring
     allocate(character(len=clen) :: name_int)
 
     ! write i in name_int
-    !$OMP  CRITICAL (QDUtil_int64_TO_string_CRIT)
     write(name_int,'(i0)') i
-    !$OMP  END CRITICAL (QDUtil_int64_TO_string_CRIT)
 
     ! transfert name_int in QDUtil_int_TO_char
     string = trim(adjustl(name_int))
 
     ! deallocate name_int
     deallocate(name_int)
+
+    !$OMP  END CRITICAL (QDUtil_int64_TO_string_CRIT)
 
   END FUNCTION QDUtil_int64_TO_string
   FUNCTION QDUtil_Rk16_TO_string(r,Rformat) RESULT(string)
@@ -754,7 +760,6 @@ END SUBROUTINE QDUtil_SET_Astring
     integer :: i,icol,max_col_loc
 
     !$OMP CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
-
     string = ''
     IF (present(Rformat)) THEN
       icol   = 0
