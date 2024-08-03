@@ -39,7 +39,7 @@ MODULE QDUtil_Vector_m
   PUBLIC :: Test_QDUtil_Vector
   CONTAINS
   !================================================================
-  !   Sort a real matrix Rmat (in the same vector)
+  !   Sort a real matrix Rvec (in the same vector)
   !   subroutine
   !================================================================
   SUBROUTINE QDUtil_Sort_RVec(RVec,sort_type)

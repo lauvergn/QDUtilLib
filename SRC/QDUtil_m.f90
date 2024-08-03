@@ -35,6 +35,7 @@ MODULE QDUtil_m
   USE QDUtil_Matrix_m
   USE QDUtil_Vector_m
   USE QDUtil_diago_m
+  USE QDUtil_IntVec_m
   USE QDUtil_Frac_m
   USE QDUtil_File_m
   USE QDUtil_Time_m
