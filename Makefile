@@ -269,7 +269,7 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   # omp management
   ifeq ($(OOMP),1)
     ifeq ($(FFC),ifort)
-      FFLAGS += -openmp -parallel
+      FFLAGS += -qopenmp -parallel
     else # ifx
       FFLAGS += -qopenmp
     endif
