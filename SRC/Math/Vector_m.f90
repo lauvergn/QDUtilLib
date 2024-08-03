@@ -33,7 +33,11 @@ MODULE QDUtil_Vector_m
 
   PUBLIC Sort_Vec
   INTERFACE Sort_Vec
-    MODULE PROCEDURE QDUtil_Sort_RVec
+    MODULE PROCEDURE QDUtil_Sort_Rk8Vec
+  END INTERFACE
+
+  INTERFACE inferior_tab
+    MODULE PROCEDURE QDUtil_inferior_tab_Rk8, QDUtil_inferior_tab_Ik4
   END INTERFACE
 
   PUBLIC :: Test_QDUtil_Vector
@@ -42,18 +46,18 @@ MODULE QDUtil_Vector_m
   !   Sort a real matrix Rvec (in the same vector)
   !   subroutine
   !================================================================
-  SUBROUTINE QDUtil_Sort_RVec(RVec,sort_type)
+  SUBROUTINE QDUtil_Sort_Rk8Vec(RVec,sort_type)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
 
-    real(kind=Rkind), intent(inout)              :: RVec(:)
-    integer,          intent(in),    optional    :: sort_type
+    real(kind=Rk8), intent(inout)              :: RVec(:)
+    integer,          intent(in),    optional  :: sort_type
 
     integer            :: sort_type_loc
     integer, parameter :: sort_type_default = 1 ! ascending sort
 
-    real(kind=Rkind)   :: a
-    integer            :: i,j
+    real(kind=Rk8)   :: a
+    integer          :: i,j
 
     IF (present(sort_type)) THEN
       sort_type_loc = sort_type
@@ -86,8 +90,64 @@ MODULE QDUtil_Vector_m
       END DO
     END SELECT
 
-  END SUBROUTINE QDUtil_Sort_RVec
+  END SUBROUTINE QDUtil_Sort_Rk8Vec
 
+  logical FUNCTION QDUtil_inferior_tab_Rk8(x1,x2)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real (kind=Rk8), intent(in) :: x1(:),x2(:)
+
+    logical :: inf_loc
+    integer       :: i
+
+
+    IF (size(x1) /= size(x2)) then
+      write(out_unit,*) 'the size of the tab are different !!'
+      write(out_unit,*) 'x1(:)',x1(:)
+      write(out_unit,*) 'x2(:)',x2(:)
+      write(out_unit,*) 'Check the fortran'
+      STOP
+    END IF
+ 
+    inf_loc = .FALSE.
+ 
+    DO i=1,size(x1)
+      inf_loc = (x1(i) < x2(i))
+      IF (x1(i) == x2(i)) CYCLE
+      EXIT
+    END DO
+ 
+    QDUtil_inferior_tab_Rk8 = inf_loc
+ 
+  END FUNCTION QDUtil_inferior_tab_Rk8
+  logical FUNCTION QDUtil_inferior_tab_Ik4(x1,x2)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    logical :: inf_loc
+    integer       :: i
+    integer (kind=Ik4), intent(in) :: x1(:),x2(:)
+  
+  
+    IF (size(x1) /= size(x2)) then
+      write(out_unit,*) 'the size of the tab are different !!'
+      write(out_unit,*) 'x1(:)',x1(:)
+      write(out_unit,*) 'x2(:)',x2(:)
+      write(out_unit,*) 'Check the fortran'
+      STOP
+    END IF
+  
+    inf_loc = .FALSE.
+  
+    DO i=1,size(x1)
+      inf_loc = (x1(i) < x2(i))
+      IF (x1(i) == x2(i)) CYCLE
+      EXIT
+    END DO
+  
+    QDUtil_inferior_tab_Ik4 = inf_loc
+
+  END FUNCTION QDUtil_inferior_tab_Ik4
   SUBROUTINE Test_QDUtil_Vector()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
