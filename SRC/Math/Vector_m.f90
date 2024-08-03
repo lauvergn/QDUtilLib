@@ -36,6 +36,7 @@ MODULE QDUtil_Vector_m
     MODULE PROCEDURE QDUtil_Sort_Rk8Vec
   END INTERFACE
 
+  PUBLIC inferior_tab
   INTERFACE inferior_tab
     MODULE PROCEDURE QDUtil_inferior_tab_Rk8, QDUtil_inferior_tab_Ik4
   END INTERFACE
