@@ -156,7 +156,7 @@ CONTAINS
  
     memory = size(tab)
     deallocate(tab,stat=err_mem)
-    CALL error_memo_allo(err_mem,-memory,name_var,name_sub,'Type_IntVec')
+    CALL error_memo_allo(err_mem,-memory,name_var,name_sub,'IntVec_t')
     nullify(tab)
 
   END SUBROUTINE QDUtil_dealloc_array_OF_IntVecdim1

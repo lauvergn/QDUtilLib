@@ -280,7 +280,7 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   # lapack management with cpreprocessing
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
-  ifneq ($(LLAPACK),0)
+  ifneq ($(LLAPACK),1)
     ifeq ($(FFC),ifort)
       FLIB += -mkl -lpthread
     else # ifx
