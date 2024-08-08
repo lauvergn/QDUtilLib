@@ -35,7 +35,7 @@ IMPLICIT NONE
 
   PUBLIC :: string_IS_empty
 
-  PUBLIC :: Read_line
+  PUBLIC :: Read_line,Read_name_advNo
 
   PUBLIC :: ADD_TO_string,SET_string
   PUBLIC :: int_TO_char,logical_TO_char,real_TO_char
@@ -98,7 +98,10 @@ IMPLICIT NONE
   INTERFACE Read_line
     MODULE PROCEDURE QDUtil_Read_line
   END INTERFACE
-
+  INTERFACE read_name_advNo
+    MODULE PROCEDURE QDUtil_read_name_advNo
+  END INTERFACE
+  
   INTERFACE alloc_array
     MODULE PROCEDURE QDUtil_alloc_array_OF_Stringdim1 ! ,QDUtil_alloc_array_OF_ChLendim1
   END INTERFACE
@@ -932,6 +935,39 @@ END SUBROUTINE QDUtil_SET_Astring
     deallocate(line)
   
   END FUNCTION QDUtil_Read_line
+
+
+  SUBROUTINE QDUtil_read_name_advNo(nio,Read_name,err_io)
+    character(len=*), intent(inout) :: Read_name
+    integer,          intent(inout) :: err_io
+    integer,          intent(in)    :: nio
+
+    character(len=1) :: chara
+    logical          :: first
+    integer :: ic
+
+    Read_name = ''
+    first     = .TRUE.
+    ic        = 0
+    DO
+      err_io    = 0
+      read(nio,'(a1)',IOSTAT=err_io,advance='no') chara
+
+      IF (err_io /= 0)   EXIT
+      !write(out_unitp,*) 'ic,chara',ic,'"',chara,'"'
+      IF (chara == ' ' .AND. .NOT. first) EXIT
+
+      IF (chara == ' ' .AND. first) CYCLE
+
+      ic = ic + 1
+      Read_name(ic:ic) = chara
+      first = .FALSE.
+
+    END DO
+    !write(out_unitp,*) 'Read_name: ',trim(Read_name)
+
+  END SUBROUTINE QDUtil_read_name_advNo
+
 
   SUBROUTINE QDUtil_alloc_array_OF_Stringdim1(tab,tab_ub,name_var,name_sub,tab_lb)
     USE QDUtil_Memory_base_m

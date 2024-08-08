@@ -38,7 +38,14 @@ MODULE QDUtil_Vector_m
 
   PUBLIC inferior_tab
   INTERFACE inferior_tab
-    MODULE PROCEDURE QDUtil_inferior_tab_Rk8, QDUtil_inferior_tab_Ik4
+    MODULE PROCEDURE QDUtil_inferior_tab_Rk4, QDUtil_inferior_tab_Rk8, QDUtil_inferior_tab_Rk16
+    MODULE PROCEDURE QDUtil_inferior_tab_Ik4, QDUtil_inferior_tab_Ik8
+  END INTERFACE
+
+  PUBLIC compare_tab
+  INTERFACE compare_tab
+    MODULE PROCEDURE QDUtil_compare_Rk4, QDUtil_compare_Rk8, QDUtil_compare_Rk16
+    MODULE PROCEDURE QDUtil_compare_Ik4, QDUtil_compare_Ik8
   END INTERFACE
 
   PUBLIC :: Test_QDUtil_Vector
@@ -93,13 +100,13 @@ MODULE QDUtil_Vector_m
 
   END SUBROUTINE QDUtil_Sort_Rk8Vec
 
-  logical FUNCTION QDUtil_inferior_tab_Rk8(x1,x2)
+  FUNCTION QDUtil_inferior_tab_Rk4(x1,x2) RESULT (inferior)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
 
-    real (kind=Rk8), intent(in) :: x1(:),x2(:)
+    real (kind=Rk4), intent(in) :: x1(:),x2(:)
 
-    logical :: inf_loc
+    logical :: inferior
     integer       :: i
 
 
@@ -111,21 +118,73 @@ MODULE QDUtil_Vector_m
       STOP
     END IF
  
-    inf_loc = .FALSE.
+    inferior = .FALSE.
  
     DO i=1,size(x1)
-      inf_loc = (x1(i) < x2(i))
+      inferior = (x1(i) < x2(i))
       IF (x1(i) == x2(i)) CYCLE
       EXIT
     END DO
- 
-    QDUtil_inferior_tab_Rk8 = inf_loc
- 
-  END FUNCTION QDUtil_inferior_tab_Rk8
-  logical FUNCTION QDUtil_inferior_tab_Ik4(x1,x2)
+  
+  END FUNCTION QDUtil_inferior_tab_Rk4
+  FUNCTION QDUtil_inferior_tab_Rk8(x1,x2) RESULT (inferior)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
-    logical :: inf_loc
+
+    real (kind=Rk8), intent(in) :: x1(:),x2(:)
+
+    logical :: inferior
+    integer       :: i
+
+
+    IF (size(x1) /= size(x2)) then
+      write(out_unit,*) 'the size of the tab are different !!'
+      write(out_unit,*) 'x1(:)',x1(:)
+      write(out_unit,*) 'x2(:)',x2(:)
+      write(out_unit,*) 'Check the fortran'
+      STOP
+    END IF
+ 
+    inferior = .FALSE.
+ 
+    DO i=1,size(x1)
+      inferior = (x1(i) < x2(i))
+      IF (x1(i) == x2(i)) CYCLE
+      EXIT
+    END DO
+  
+  END FUNCTION QDUtil_inferior_tab_Rk8
+  FUNCTION QDUtil_inferior_tab_Rk16(x1,x2) RESULT (inferior)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  real (kind=Rk16), intent(in) :: x1(:),x2(:)
+
+  logical :: inferior
+  integer       :: i
+
+
+  IF (size(x1) /= size(x2)) then
+    write(out_unit,*) 'the size of the tab are different !!'
+    write(out_unit,*) 'x1(:)',x1(:)
+    write(out_unit,*) 'x2(:)',x2(:)
+    write(out_unit,*) 'Check the fortran'
+    STOP
+  END IF
+
+  inferior = .FALSE.
+
+  DO i=1,size(x1)
+    inferior = (x1(i) < x2(i))
+    IF (x1(i) == x2(i)) CYCLE
+    EXIT
+  END DO
+
+  END FUNCTION QDUtil_inferior_tab_Rk16
+  FUNCTION QDUtil_inferior_tab_Ik4(x1,x2) RESULT (inferior)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    logical :: inferior
     integer       :: i
     integer (kind=Ik4), intent(in) :: x1(:),x2(:)
   
@@ -138,17 +197,262 @@ MODULE QDUtil_Vector_m
       STOP
     END IF
   
-    inf_loc = .FALSE.
+    inferior = .FALSE.
   
     DO i=1,size(x1)
-      inf_loc = (x1(i) < x2(i))
+      inferior = (x1(i) < x2(i))
       IF (x1(i) == x2(i)) CYCLE
       EXIT
     END DO
   
-    QDUtil_inferior_tab_Ik4 = inf_loc
-
   END FUNCTION QDUtil_inferior_tab_Ik4
+  FUNCTION QDUtil_inferior_tab_Ik8(x1,x2) RESULT (inferior)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    logical :: inferior
+    integer       :: i
+    integer (kind=Ik8), intent(in) :: x1(:),x2(:)
+  
+  
+    IF (size(x1) /= size(x2)) then
+      write(out_unit,*) 'the size of the tab are different !!'
+      write(out_unit,*) 'x1(:)',x1(:)
+      write(out_unit,*) 'x2(:)',x2(:)
+      write(out_unit,*) 'Check the fortran'
+      STOP
+    END IF
+  
+    inferior = .FALSE.
+  
+    DO i=1,size(x1)
+      inferior = (x1(i) < x2(i))
+      IF (x1(i) == x2(i)) CYCLE
+      EXIT
+    END DO
+  
+  END FUNCTION QDUtil_inferior_tab_Ik8
+ !! @description: Compare two real (kind=Rk16) arrays L1 and L2 of equal size
+ !! @param: L1 First logical array
+ !! @param: L2 Second logical array
+ FUNCTION QDUtil_compare_Rk16(L1, L2) RESULT (compare)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  logical :: compare
+  real(kind=Rk16), intent(in) :: L1(:), L2(:)
+
+  integer :: i
+
+  if (size(L1) /= size(L2)) then
+    compare = .false.
+    return
+  end if
+
+  compare = .true.
+  do i=1, size(L1)
+    compare = (abs(L1(i)-L2(i)) <= ONETENTH**13)
+    IF (.NOT. compare) RETURN
+  end do
+
+END FUNCTION QDUtil_compare_Rk16
+ !! @description: Compare two real (kind=Rk8) arrays L1 and L2 of equal size
+ !! @param: L1 First logical array
+ !! @param: L2 Second logical array
+ FUNCTION QDUtil_compare_Rk8(L1, L2) RESULT (compare)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  logical :: compare
+  real(kind=Rk8), intent(in) :: L1(:), L2(:)
+
+  integer :: i
+
+  if (size(L1) /= size(L2)) then
+    compare = .false.
+    return
+  end if
+
+  compare = .true.
+  do i=1, size(L1)
+    compare = (abs(L1(i)-L2(i)) <= ONETENTH**13)
+    IF (.NOT. compare) RETURN
+  end do
+
+END FUNCTION QDUtil_compare_Rk8
+ !! @description: Compare two real (kind=Rk4) arrays L1 and L2 of equal size
+ !! @param: L1 First logical array
+ !! @param: L2 Second logical array
+ FUNCTION QDUtil_compare_Rk4(L1, L2) RESULT (compare)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  logical :: compare
+  real(kind=Rk4), intent(in) :: L1(:), L2(:)
+
+  integer :: i
+
+  if (size(L1) /= size(L2)) then
+    compare = .false.
+    return
+  end if
+
+  compare = .true.
+  do i=1, size(L1)
+    compare = (abs(L1(i)-L2(i)) <= ONETENTH**13)
+    IF (.NOT. compare) RETURN
+  end do
+
+  END FUNCTION QDUtil_compare_Rk4
+
+ !! @description: Compare two complex (kind=Rk16) arrays L1 and L2 of equal size
+ !! @param: L1 First logical array
+ !! @param: L2 Second logical array
+  FUNCTION QDUtil_compare_Ck16(L1, L2) RESULT (compare)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+  
+    logical :: compare
+    complex(kind=Rk16), intent(in) :: L1(:), L2(:)
+  
+    integer :: i
+  
+    if (size(L1) /= size(L2)) then
+      compare = .false.
+      return
+    end if
+  
+    compare = .true.
+    do i=1, size(L1)
+      compare = (abs(L1(i)-L2(i)) <= ONETENTH**13)
+      IF (.NOT. compare) RETURN
+    end do
+  
+  END FUNCTION QDUtil_compare_Ck16
+
+  !! @description: Compare two complex (kind=Rk8) arrays L1 and L2 of equal size
+  !! @param: L1 First logical array
+  !! @param: L2 Second logical array
+  FUNCTION QDUtil_compare_Ck8(L1, L2) RESULT (compare)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+  
+    logical :: compare
+    complex(kind=Rk8), intent(in) :: L1(:), L2(:)
+  
+    integer :: i
+  
+    if (size(L1) /= size(L2)) then
+      compare = .false.
+      return
+    end if
+  
+    compare = .true.
+    do i=1, size(L1)
+      compare = (abs(L1(i)-L2(i)) <= ONETENTH**13)
+      IF (.NOT. compare) RETURN
+    end do
+  
+  END FUNCTION QDUtil_compare_Ck8
+   !! @description: Compare two complex (kind=Rk4) arrays L1 and L2 of equal size
+   !! @param: L1 First logical array
+   !! @param: L2 Second logical array
+   FUNCTION QDUtil_compare_Ck4(L1, L2) RESULT (compare)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+  
+    logical :: compare
+    complex(kind=Rk4), intent(in) :: L1(:), L2(:)
+  
+    integer :: i
+  
+    if (size(L1) /= size(L2)) then
+      compare = .false.
+      return
+    end if
+  
+    compare = .true.
+    do i=1, size(L1)
+      compare = (abs(L1(i)-L2(i)) <= ONETENTH**13)
+      IF (.NOT. compare) RETURN
+    end do
+  
+  END FUNCTION QDUtil_compare_Ck4
+
+  !! @description: Compare two integer (kind=Ik4) arrays L1 and L2 of equal size
+  !! @param: L1 First logical array
+  !! @param: L2 Second logical array
+  FUNCTION QDUtil_compare_Ik4(L1, L2) RESULT (compare)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+  
+    logical :: compare
+    integer(kind=Ik4), intent(in) :: L1(:), L2(:)
+  
+    integer :: i
+  
+    if (size(L1) /= size(L2)) then
+      compare = .false.
+      return
+    end if
+  
+    compare = .true.
+    do i=1, size(L1)
+      compare = (L1(i) == L2(i))
+      IF (.NOT. compare) RETURN
+    end do
+
+  END FUNCTION QDUtil_compare_Ik4
+  !! @description: Compare two integer (kind=Ik8) arrays L1 and L2 of equal size
+  !! @param: L1 First logical array
+  !! @param: L2 Second logical array
+  FUNCTION QDUtil_compare_Ik8(L1, L2) RESULT (compare)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+  
+    logical :: compare
+    integer(kind=Ik8), intent(in) :: L1(:), L2(:)
+  
+    integer :: i
+  
+    if (size(L1) /= size(L2)) then
+      compare = .false.
+      return
+    end if
+  
+    compare = .true.
+    do i=1, size(L1)
+      compare = (L1(i) == L2(i))
+      IF (.NOT. compare) RETURN
+    end do
+
+  END FUNCTION QDUtil_compare_Ik8
+  !! @description: Compare two logical arrays L1 and L2 of equal size
+  !! @param: L1 First logical array
+  !! @param: L2 Second logical array
+  FUNCTION QDUtil_compare_L(L1, L2) RESULT (compare)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    logical :: compare
+    logical, intent(in) :: L1(:), L2(:)
+
+    integer :: i
+  
+    if (size(L1) /= size(L2)) then
+      compare = .false.
+      return
+    end if
+  
+    compare = .true.
+    do i=1, size(L1)
+      if (L1(i) .neqv. L2(i)) then
+        compare = .false.
+        return
+      end if
+    end do
+  
+  END FUNCTION QDUtil_compare_L
+  
   SUBROUTINE Test_QDUtil_Vector()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
@@ -192,6 +496,14 @@ MODULE QDUtil_Vector_m
       CALL Write_Vec(R2Vec,out_unit, nbcol=7, info='R2Vec')
     END IF
 
+    R1Vec = [TEN,FIVE,THREE,TWO,ONE,ZERO,ZERO] ! sorted vector
+    R2Vec = [TWO,ZERO,FIVE,ZERO,TEN,ONE,THREE] ! unsorted vector
+
+    res_test = compare_tab(R1Vec,R1Vec)
+    CALL Logical_Test(test_var,test1=res_test,info='compare_tab real(Rkind):T')
+
+    res_test = compare_tab(R1Vec,R2Vec)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info='compare_tab real(Rkind):F')
     CALL Flush_Test(test_var)
     !====================================================================
 
