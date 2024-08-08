@@ -46,6 +46,7 @@ MODULE QDUtil_Vector_m
   INTERFACE compare_tab
     MODULE PROCEDURE QDUtil_compare_Rk4, QDUtil_compare_Rk8, QDUtil_compare_Rk16
     MODULE PROCEDURE QDUtil_compare_Ik4, QDUtil_compare_Ik8
+    MODULE PROCEDURE QDUtil_compare_L
   END INTERFACE
 
   PUBLIC :: Test_QDUtil_Vector
