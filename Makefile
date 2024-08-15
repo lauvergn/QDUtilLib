@@ -88,7 +88,7 @@ ifeq ($(FFC),gfortran)
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   # lapact management (default with openmp), with cpreprocessing
-  ifneq ($(LLAPACK),0)
+  ifeq ($(LLAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
@@ -280,7 +280,7 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   # lapack management with cpreprocessing
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
-  ifneq ($(LLAPACK),1)
+  ifeq ($(LLAPACK),1)
     ifeq ($(FFC),ifort)
       FLIB += -mkl -lpthread
     else # ifx
@@ -335,7 +335,7 @@ ifeq ($(FFC),nagfor)
   FFLAGS += -fpp -D__LAPACK="$(LLAPACK)"
 
   # lapact management (default with openmp), with cpreprocessing
-  ifneq ($(LLAPACK),0)
+  ifeq ($(LLAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
