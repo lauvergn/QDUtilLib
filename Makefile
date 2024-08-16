@@ -41,70 +41,29 @@ endif
 #
 # Operating system, OS? automatic using uname:
 OS=$(shell uname)
-
+#
 # Extension for the object directory and the library
 ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
-
+#
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
 #=================================================================================
-
+#
 OBJ_DIR=OBJ/obj$(ext_obj)
 $(shell [ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR))
-
+#
 MOD_DIR=$(OBJ_DIR)
 SRC_DIR=SRC
 MAIN_DIR=APP
 TESTS_DIR=TESTS
-
+#
 #=================================================================================
-#=================================================================================
-# gfortran (osx and linux)
-#=================================================================================
-ifeq ($(FFC),gfortran)
-
-  # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
-    FFLAGS = -O5 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
-  else
-    FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
-    #FFLAGS = -O0 -fbounds-check -Wuninitialized
-  endif
-
-# integer kind management
-  ifeq ($(INT),8)
-    FFLAGS += -fdefault-integer-8
-  endif
-
-  FFLAGS +=-J$(MOD_DIR)
-
-  # omp management (default with openmp)
-  ifeq ($(OOMP),1)
-    FFLAGS += -fopenmp
-  endif
-
-
-  # lapack management with cpreprocessing
-  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
-
-  # lapact management (default with openmp), with cpreprocessing
-  ifeq ($(LLAPACK),1)
-    ifeq ($(OS),Darwin)    # OSX
-      # OSX libs (included lapack+blas)
-      FLIB = -framework Accelerate
-    else                   # Linux
-      # linux libs
-      FLIB = -llapack -lblas
-      #
-      # linux libs with mkl and with openmp
-      #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
-      # linux libs with mkl and without openmp
-      #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
-    endif
-  endif
-
-   FC_VER = $(shell $(FFC) --version | head -1 )
-
+# To deal with external compilers.mk file
+CompilersDIR=
+ifeq ($(CompilersDIR),)
+include compilers.mk
+else
+  include $(CompilersDIR)/compilers.mk
 endif
 #=================================================================================
 #=================================================================================
@@ -190,7 +149,7 @@ clean:
 	rm -f *.log test*.txt file.*
 	rm -f Test*.x App*.x
 	@echo "  done cleaning"
-
+#
 cleanall : clean
 	rm -fr OBJ/obj* OBJ/*mod build
 	rm -f libQD*.a
@@ -245,106 +204,3 @@ $(OBJ_DIR)/QDUtil_m.o:              $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/Matrix_m.o $
 
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
-
-
-#=================================================================================
-#=================================================================================
-# ifort compillation v17 v18 with mkl
-#=================================================================================
-ifeq ($(FFC),$(filter $(FFC),ifort ifx))
-
-  # opt management
-  ifeq ($(OOPT),1)
-    FFLAGS = -O  -g -traceback -heap-arrays
-  else
-    FFLAGS = -O0 -check all -g -traceback
-  endif
-
-# integer kind management
-  ifeq ($(INT),8)
-    FFLAGS += -i8
-  endif
-
-  # where to store the modules
-  FFLAGS +=-module $(MOD_DIR)
-
-  # omp management
-  ifeq ($(OOMP),1)
-    ifeq ($(FFC),ifort)
-      FFLAGS += -qopenmp -parallel
-    else # ifx
-      FFLAGS += -qopenmp
-    endif
-  endif
-
-  # lapack management with cpreprocessing
-  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
-
-  ifeq ($(LLAPACK),1)
-    ifeq ($(FFC),ifort)
-      FLIB += -mkl -lpthread
-    else # ifx
-    FLIB += -qmkl -lpthread
-    endif
-  else
-    FLIB += -lpthread
-  endif
-
-  FC_VER = $(shell $(FFC) --version | head -1 )
-
-endif
-#=================================================================================
-#=================================================================================
-#===============================================================================
-# nag compillation (nagfor)
-#===============================================================================
-ifeq ($(FFC),nagfor)
-
-  # opt management
-  ifeq ($(OOPT),1)
-      FFLAGS = -O4 -o -compatible -kind=byte -Ounroll=4 -s
-  else
-    ifeq ($(OOMP),0)
-      ifeq ($(LLAPACK),0)
-          FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf -C=undefined
-      else
-          FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf
-      endif
-    else
-          FFLAGS = -O0 -g        -kind=byte -C -C=alias -C=intovf
-    endif
-  endif
-
-  # integer kind management
-  ifeq ($(INT),8)
-    FFLAGS += -i8
-  endif
-
- # where to store the .mod files
-  FFLAGS +=-mdir $(MOD_DIR)
-
-# where to look the .mod files
-  FFLAGS +=-I $(MOD_DIR)
-
-  # omp management
-  ifeq ($(OOMP),1)
-    FFLAGS += -openmp
-  endif
-
-  # lapack management with cpreprocessing
-  FFLAGS += -fpp -D__LAPACK="$(LLAPACK)"
-
-  # lapact management (default with openmp), with cpreprocessing
-  ifeq ($(LLAPACK),1)
-    ifeq ($(OS),Darwin)    # OSX
-      # OSX libs (included lapack+blas)
-      FLIB = -framework Accelerate
-    else                   # Linux
-      # linux libs
-      FLIB = -llapack -lblas
-    endif
-  endif
-
-  FC_VER = $(shell $(FFC) -V 3>&1 1>&2 2>&3 | head -1 )
-
-endif
