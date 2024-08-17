@@ -633,7 +633,7 @@ MODULE QDUtil_RW_MatVec_m
     IMPLICIT NONE
 
     integer,                     intent(in) :: nio,nbcol
-    real(kind=Rk4),           intent(in) :: Mat(:,:)
+    real(kind=Rk4),              intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
     character (len=*), optional, intent(in) :: info
