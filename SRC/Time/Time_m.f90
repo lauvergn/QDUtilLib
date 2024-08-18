@@ -85,7 +85,7 @@ MODULE QDUtil_Time_m
     END IF
 
     CALL date_and_time(values=tab_time)
-    write(out_unit,21) name_sub,tab_time(5:8),tab_time(3:1:-1)
+    write(out_unit,21) name_sub,tab_time(5:8),(tab_time(3:1:-1))
 21  format('     Time and date in ',a,' : ',i2,'h:',                &
            i2,'m:',i2,'.',i3,'s, the ',i2,'/',i2,'/',i4)
 
