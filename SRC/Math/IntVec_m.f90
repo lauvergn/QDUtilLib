@@ -53,9 +53,11 @@ MODULE QDUtil_IntVec_m
   END INTERFACE
   INTERFACE alloc_array
     MODULE PROCEDURE QDUtil_alloc_array_OF_IntVecdim1
+    MODULE PROCEDURE QDUtil_alloc_NParray_OF_IntVecdim1
   END INTERFACE
   INTERFACE dealloc_array
     MODULE PROCEDURE QDUtil_dealloc_array_OF_IntVecdim1
+    MODULE PROCEDURE QDUtil_dealloc_NParray_OF_IntVecdim1
   END INTERFACE
   INTERFACE check_alloc_IntVec
     MODULE PROCEDURE QDUtil_check_alloc_IntVec
@@ -160,6 +162,71 @@ CONTAINS
     nullify(tab)
 
   END SUBROUTINE QDUtil_dealloc_array_OF_IntVecdim1
+
+
+  SUBROUTINE QDUtil_alloc_NParray_OF_IntVecdim1(tab,tab_ub,name_var,name_sub,tab_lb)
+    USE QDUtil_Memory_m
+    IMPLICIT NONE
+
+    TYPE (IntVec_t), allocatable, intent(inout)        :: tab(:)
+    integer,                      intent(in)           :: tab_ub(:)
+    integer,                      intent(in), optional :: tab_lb(:)
+    character (len=*),            intent(in)           :: name_var,name_sub
+
+    integer, parameter :: ndim=1
+    logical :: memory_test
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub_alloc = 'QDUtil_alloc_NParray_OF_IntVecdim1'
+    integer :: err_mem,memory
+    logical,parameter :: debug=.FALSE.
+    !logical,parameter :: debug=.TRUE.
+    !----- for debuging --------------------------------------------------
+
+    IF (allocated(tab))                                             &
+      CALL Write_error_NOT_null(name_sub_alloc,name_var,name_sub)
+
+    CALL sub_test_tab_ub(tab_ub,ndim,name_sub_alloc,name_var,name_sub)
+
+    IF (present(tab_lb)) THEN
+      CALL sub_test_tab_lb(tab_lb,ndim,name_sub_alloc,name_var,name_sub)
+      memory = product(tab_ub(:)-tab_lb(:)+1)
+      allocate(tab(tab_lb(1):tab_ub(1)),stat=err_mem)
+    ELSE
+      memory = product(tab_ub(:))
+    allocate(tab(tab_ub(1)),stat=err_mem)
+    END IF
+    CALL error_memo_allo(err_mem,memory,name_var,name_sub,'IntVec_t')
+
+  END SUBROUTINE QDUtil_alloc_NParray_OF_IntVecdim1
+  SUBROUTINE QDUtil_dealloc_NParray_OF_IntVecdim1(tab,name_var,name_sub)
+    USE QDUtil_Memory_m
+    IMPLICIT NONE
+
+    TYPE (IntVec_t), allocatable, intent(inout) :: tab(:)
+    character (len=*),            intent(in)    :: name_var,name_sub
+
+    integer :: i
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub_alloc = 'QDUtil_dealloc_NParray_OF_IntVecdim1'
+    integer :: err_mem,memory
+    logical,parameter :: debug=.FALSE.
+    !logical,parameter :: debug=.TRUE.
+    !----- for debuging --------------------------------------------------
+
+    IF (.NOT. allocated(tab))                                       &
+    CALL Write_error_null(name_sub_alloc,name_var,name_sub)
+
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)
+      CALL dealloc_IntVec(tab(i))
+    END DO
+ 
+    memory = size(tab)
+    deallocate(tab,stat=err_mem)
+    CALL error_memo_allo(err_mem,-memory,name_var,name_sub,'IntVec_t')
+
+  END SUBROUTINE QDUtil_dealloc_NParray_OF_IntVecdim1
+
 
   SUBROUTINE QDUtil_check_alloc_IntVec(A,name_A,name_sub)
     USE QDUtil_NumParameters_m
