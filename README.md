@@ -5,8 +5,9 @@ All modules contain a testing unit.
 
 It has been tested with:
 
-- gfortran (14.1.0_2 on macos)
-- ifx (2023 on linux)
+- gfortran (14.1.0_2 on macos, 12 on linux)
+- ifx/ifort (2023 on linux)
+- nagor (7.1 on linux)
 
 ## 1) Installation and testing
 

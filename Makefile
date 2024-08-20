@@ -53,6 +53,8 @@ OBJ_DIR=OBJ/obj$(ext_obj)
 $(shell [ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR))
 #
 MOD_DIR=$(OBJ_DIR)
+EXTMod= 
+
 SRC_DIR=SRC
 MAIN_DIR=APP
 TESTS_DIR=TESTS
