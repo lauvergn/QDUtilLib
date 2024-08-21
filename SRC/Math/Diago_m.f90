@@ -46,7 +46,8 @@ MODULE QDUtil_diago_m
 
     complex(kind=Rkind), intent(in)              :: CMat(:,:)
     complex(kind=Rkind), intent(inout)           :: CEigVal(:),CEigVec(:,:)
-    integer,          intent(in),       optional :: nb_diago ! when nb_diago < size(REigVal), only nb_diago eigenvavlues and  eigenREigVectors are calculated
+    integer,          intent(in),       optional :: nb_diago ! when nb_diago < size(REigVal), 
+                                                             !only nb_diago eigenvavlues and  eigenREigVectors are calculated
 
     integer,          intent(in),       optional :: diago_type,sort
     logical,          intent(in),       optional :: phase
@@ -154,7 +155,8 @@ MODULE QDUtil_diago_m
 
     real(kind=Rkind), intent(in)              :: RMat(:,:)
     real(kind=Rkind), intent(inout)           :: REigVal(:),REigVec(:,:)
-    integer,          intent(in),    optional :: nb_diago ! when nb_diago < size(REigVal), only nb_diago eigenvavlues and  eigenREigVectors are calculated
+    integer,          intent(in),    optional :: nb_diago ! when nb_diago < size(REigVal), 
+                                                          !only nb_diago eigenvavlues and  eigenREigVectors are calculated
     real(kind=Rkind), intent(inout), optional :: IEigVec(:)
 
     integer,          intent(in),    optional :: diago_type,sort
