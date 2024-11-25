@@ -46,7 +46,7 @@ MODULE QDUtil_diago_m
 
     complex(kind=Rkind), intent(in)              :: CMat(:,:)
     complex(kind=Rkind), intent(inout)           :: CEigVal(:),CEigVec(:,:)
-    integer,          intent(in),       optional :: nb_diago ! when nb_diago < size(REigVal), 
+    integer,             intent(in),    optional :: nb_diago ! when nb_diago < size(REigVal), 
                                                              !only nb_diago eigenvavlues and  eigenREigVectors are calculated
 
     integer,          intent(in),       optional :: diago_type,sort
@@ -56,14 +56,18 @@ MODULE QDUtil_diago_m
     !local variables
     integer            :: diago_type_loc
     integer            :: diago_type_default = 2 ! tred+tql
-    !                                   tred+tql
-    integer, parameter :: list_type(*) = [2]
+    integer, parameter :: list_type(*) = [2,4]
 
     complex(kind=Rkind), allocatable :: CMat_save(:,:)
     integer :: n_size,n_vect,n
 
-    integer              :: i,ierr
+    integer              ::    lwork ,ierr
+    integer(kind=int32)  :: n4,lwork4,ierr4
+    integer              :: i
     complex(kind=Rkind), allocatable :: work(:)
+
+    complex(kind=Rkind), allocatable :: CEigVecLeft(:)
+    real(kind=Rkind),    allocatable :: RWork(:)
 
 
     !----- for debuging --------------------------------------------------
@@ -125,8 +129,65 @@ MODULE QDUtil_diago_m
       CALL QDUtil_cTql2(n,n,CEigVal,work,CEigVec,ierr)
       IF (debug) write(out_unit,*)'ierr=',ierr
 
+      IF (debug) THEN
+        DO i=1,n
+          write(out_unit,*) 'Eigenvalue(', i, ') = ', CEigVal(i)
+        END DO
+      END IF
+
       deallocate(work)
       deallocate(CMat_save)
+
+    CASE (4) ! ZGEEV
+#if __LAPACK == 1
+      IF (debug) write(out_unit,*) 'lapack77: ZGEEV (non-symmetric)'
+      flush(out_unit)
+
+      CMat_save = CMat
+
+      !Query the optimal workspace.
+      lwork4 = -1_int32
+      n4     = int(n,kind=int32)
+      allocate(CEigVecLeft(1))
+      allocate(RWork(n+n))
+      allocate(work(1))
+
+      CALL ZGEEV('N','V',n4,CMat_save,n4,CEigVal,CEigVecLeft,1_int32,CEigVec,n4,work,lwork4,RWork,ierr4)
+      lwork4 = int(work(1),kind=int32)
+      deallocate(work)
+
+      ! diagonalization
+      allocate(work(lwork4))
+
+      CALL ZGEEV('N','V',n4,CMat_save,n4,CEigVal,CEigVecLeft,1_int32,CEigVec,n4,work,lwork4,RWork,ierr4)
+
+      IF (debug) write(out_unit,*)'ierr=',ierr4
+      IF (ierr4 /= 0_int32) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' ZGEEV lapack subroutine has FAILED!'
+        STOP 'ERROR in QDUtil_Cdiagonalization: ZGEEV lapack subroutine has FAILED!'
+      END IF
+      IF (debug) THEN
+        DO i=1,n
+          write(out_unit,*) 'Eigenvalue(', i, ') = ', CEigVal(i)
+        END DO
+      END IF
+
+      deallocate(work)
+      deallocate(Rwork)
+      deallocate(CEigVecLeft)
+      deallocate(CMat_save)
+#elif __LAPACK == 8
+      IF (debug) write(out_unit,*) 'lapack77: ZGEEV (non-symmetric): not yet (with _LAPACK == 8)'
+      STOP
+#else
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
+      write(out_unit,*) '  The program should not reach the LAPACK case.'
+      write(out_unit,*) '  => Probabely, wrong diago_type_default.'
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Cdiagonalization: LAPACK case impossible'
+#endif
 
     CASE DEFAULT
       write(out_unit,*) ' ERROR in ',name_sub
@@ -1425,9 +1486,10 @@ stop
     real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
 
     integer                          :: i,n,io,ioerr,diago_type
-    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:)
-    real(kind=Rkind),    allocatable :: R2Mat(:,:),Diag(:,:)
+    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:),R2Mat(:,:),Diag(:,:)
     character (len=:),   allocatable :: info
+
+    complex(kind=Rkind), allocatable :: CMat(:,:),CEigVal(:),CVec(:,:),CDiag(:,:),C2Mat(:,:)
 
     !====================================================================
     ! Tests for the matrix digonalization
@@ -1484,6 +1546,7 @@ stop
       R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
   
       res_test = all(abs(R2Mat-RMat) < ZeroTresh)
+  
       CALL Logical_Test(test_var,test1=res_test,info='diago')
       IF (.NOT. res_test) THEN
         CALL Write_Mat(RMat,out_unit,5,info='RMat')
@@ -1491,6 +1554,46 @@ stop
         CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
   
         CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      END IF
+      CALL Flush_Test(test_var)
+    END DO
+    !====================================================================
+
+    n = 3
+    CMat =  reshape([CONE,EYE,CZERO,                           &
+                     EYE,CONE,EYE,                             &
+                     CZERO,EYE,CONE],shape=[3,3])
+
+    allocate(CEigVal(n))
+    allocate(CVec(n,n))
+    allocate(CDiag(n,n))
+
+    DO diago_type=2,4,2
+      info = 'diago (#' // TO_string(diago_type) // ')'
+
+#if __LAPACK == 0
+      IF (diago_type == 4) THEN
+        write(out_unit,*) 'WARNING: LAPACK and BLAS are not linked'
+        write(out_unit,*) '=> diago with type=4 is not possible'
+        CYCLE
+      END IF
+#endif
+
+      CALL diagonalization(CMat,CEigVal,CVec,n,diago_type=diago_type)
+      CDiag = CZERO
+      DO i=1,n
+        CDiag(i,i) = CEigVal(i)
+      END DO
+      C2Mat = matmul(CVec,matmul(CDiag,transpose(CVec))) ! It doex not work !!!
+
+      res_test = all(abs(C2Mat-CMat) < ZeroTresh)
+      CALL Logical_Test(test_var,test1=res_test,info='diago (cplx)')
+      IF (.NOT. res_test) THEN
+        CALL Write_Mat(CMat,out_unit,5,info='CMat')
+        CALL Write_Mat(CVec,out_unit,5,info='CVec')
+        CALL Write_Vec(CEigVal,out_unit,5,info='CEigVal')
+  
+        CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
       END IF
       CALL Flush_Test(test_var)
     END DO
