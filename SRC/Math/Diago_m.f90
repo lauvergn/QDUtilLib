@@ -42,6 +42,7 @@ MODULE QDUtil_diago_m
   RECURSIVE SUBROUTINE QDUtil_Cdiagonalization(CMat,CEigVal,CEigVec,nb_diago,diago_type,sort,phase)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
     USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
     IMPLICIT NONE
 
     complex(kind=Rkind), intent(in)              :: CMat(:,:)
@@ -54,7 +55,8 @@ MODULE QDUtil_diago_m
 
 
     !local variables
-    integer            :: diago_type_loc
+    logical            :: phase_loc
+    integer            :: diago_type_loc,sort_loc
     integer            :: diago_type_default = 2 ! tred+tql
     integer, parameter :: list_type(*) = [2,4]
 
@@ -75,6 +77,18 @@ MODULE QDUtil_diago_m
     logical, parameter :: debug = .FALSE.
     !logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------
+
+    IF (present(sort)) THEN
+      sort_loc = sort
+    ELSE
+      sort_loc = 1
+    END IF
+    IF (present(phase)) THEN
+      phase_loc = phase
+    ELSE
+      phase_loc = .TRUE.
+    END IF
+
 
     n_size = size(CEigVal)
     IF (present(nb_diago)) THEN
@@ -195,6 +209,32 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in QDUtil_Cdiagonalization: default case impossible'
     END SELECT
+
+
+
+    SELECT CASE (sort_loc)
+    CASE(1)
+      CALL QDUtil_sort_VecCplx_EneC(CEigVal,CEigVec)
+    CASE(-1)
+      CEigVal = -CEigVal
+      CALL QDUtil_sort_VecCplx_EneC(CEigVal,CEigVec)
+      CEigVal = -CEigVal
+    CASE(2)
+      CALL QDUtil_sort_abs_VecCplx_EneC(CEigVal,CEigVec)
+    CASE DEFAULT ! no sort
+      CONTINUE
+    END SELECT
+
+    DO i=1,n
+      CEigVec(:,i) = CEigVec(:,i)/sqrt(dot_product(CEigVec(:,i),CEigVec(:,i)))
+    END DO
+
+    IF (phase_loc) CALL QDUtil_Unique_phase_cplx(CEigVec)
+
+    IF (debug) THEN
+      CMat_save = matmul(transpose(CEigVec),CEigVec)
+      CALL Write_Mat(CMat_save,out_unit,5,info='eigenvector Overlap')
+    END IF
 
   END SUBROUTINE QDUtil_Cdiagonalization
 !============================================================
@@ -1042,7 +1082,64 @@ SUBROUTINE QDUtil_sort_abs_VecCplx_EneR(ene,psi)
   END DO
 
 END SUBROUTINE QDUtil_sort_abs_VecCplx_EneR
-!
+SUBROUTINE QDUtil_sort_VecCplx_EneC(ene,psi)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  complex(kind=Rkind), intent(inout) :: ene(:)
+  complex(kind=Rkind), intent(inout) :: psi(:,:)
+
+  real(kind=Rkind)    :: a
+  complex(kind=Rkind) :: ca
+  integer             :: i,j,k
+
+
+  DO i=1,size(ene)
+  DO j=i+1,size(ene)
+   IF (ene(i)%re > ene(j)%re) THEN
+      ! permutation
+      a=ene(i)
+      ene(i)=ene(j)
+      ene(j)=a
+      DO k=1,size(ene)
+        ca=psi(k,i)
+        psi(k,i)=psi(k,j)
+        psi(k,j)=ca
+      END DO
+    END IF
+  END DO
+  END DO
+
+END SUBROUTINE QDUtil_sort_VecCplx_EneC
+SUBROUTINE QDUtil_sort_abs_VecCplx_EneC(ene,psi)
+USE QDUtil_NumParameters_m
+IMPLICIT NONE
+
+complex(kind=Rkind), intent(inout) :: ene(:)
+complex(kind=Rkind), intent(inout) :: psi(:,:)
+
+real(kind=Rkind)    :: a
+complex(kind=Rkind) :: ca
+integer             :: i,j,k
+
+
+DO i=1,size(ene)
+DO j=i+1,size(ene)
+ IF (abs(ene(i)) > abs(ene(j))) THEN
+    ! permutation
+    a=ene(i)
+    ene(i)=ene(j)
+    ene(j)=a
+    DO k=1,size(ene)
+      ca=psi(k,i)
+      psi(k,i)=psi(k,j)
+      psi(k,j)=ca
+    END DO
+  END IF
+END DO
+END DO
+
+END SUBROUTINE QDUtil_sort_abs_VecCplx_EneC
 !============================================================
 !
 !   Change the phase of Vec(:,i) shuch its largest coeficient is positive
