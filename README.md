@@ -13,7 +13,7 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1, INT=4)
+To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4)
 ```bash
 make lib
 ```
@@ -197,7 +197,7 @@ All functions are **elemental** (except **TO_string(frac)**). Therefore, one can
   TYPE(Frac_t), allocatable :: tab_Frac(:)
 
   Frac1 = '1/-2' ! use the conversion from string to Frac_t
-  write(*,*) 'Frac1: ',TO_String(Frac1) ! it give "Frac1: -1/2"
+  write(*,*) 'Frac1: ',TO_String(Frac1) ! it gives "Frac1: -1/2"
   Frac2 = -2*Frac1 ! here the result is one and it is simplified
   write(*,*) 'Frac2: ',TO_String(Frac2) ! it give "Frac2: 1"
   Frac2 = Frac1**3
