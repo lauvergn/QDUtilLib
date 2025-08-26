@@ -48,6 +48,8 @@ MODULE QDUtil_m
   USE QDUtil_FFT_OOURA_m
 
   USE QDUtil_Quadrature_m
+  USE QDUtil_HermiteP_m
+  USE QDUtil_Sine_m
 
   IMPLICIT NONE
 

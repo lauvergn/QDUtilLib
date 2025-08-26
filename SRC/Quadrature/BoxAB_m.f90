@@ -26,22 +26,21 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE QDUtil_HermiteP_m
+MODULE QDUtil_BoxAB_m
   USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
   PRIVATE
 
-  PUBLIC :: TabB_HermiteP0n_QDUtil,TabGB_HermiteP0n_QDUtil, X_Hermite_QDUtil
+  PUBLIC :: TabB_BoxAB_QDUtil,TabGB_BoxAB_QDUtil
 
 CONTAINS
-
-  SUBROUTINE TabGB_HermiteP0n_QDUtil(d0GB,x,gauss,ReNorm)
+  SUBROUTINE TabGB_BoxAB_QDUtil(d0GB,x,A,B,ReNorm)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: d0GB(:,:)
     real (kind=Rkind),   intent(in)           :: x(:)
-    logical,             intent(in)           :: gauss
+    real (kind=Rkind),   intent(in)           :: A,B
     logical,             intent(in)           :: ReNorm
 
     integer           :: nb,nq
@@ -52,80 +51,62 @@ CONTAINS
     nb = size(d0GB,dim=2)
 
     IF (nb < 1) THEN
-      write(out_unit,*) 'ERROR in TabGB_HermiteP0n_QDUtil:'
+      write(out_unit,*) 'ERROR in TabGB_BoxAB_QDUtil:'
       write(out_unit,*) 'nb < 1',nb
-      STOP 'ERROR in TabGB_HermiteP0n_QDUtil: nb<1'
+      STOP 'ERROR in TabGB_BoxAB_QDUtil: nb<1'
     END IF
     IF (nq /= size(x)) THEN
-      write(out_unit,*) 'ERROR in TabGB_HermiteP0n_QDUtil:'
+      write(out_unit,*) 'ERROR in TabGB_BoxAB_QDUtil:'
       write(out_unit,*) 'size(x) and nq differ',size(x),nq
-      STOP 'ERROR in TabGB_HermiteP0n_QDUtil: size(x) and nq differ'
+      STOP 'ERROR in TabGB_BoxAB_QDUtil: size(x) and nq differ'
     END IF
 
     DO iq=1,nq
-      CALL TabB_HermiteP0n_QDUtil(d0gb(iq,:),x(iq),ReNorm)
-      IF (gauss) d0gb(iq,:) = d0gb(iq,:) * exp(-HALF*x(iq)**2)
+      CALL TabB_BoxAB_QDUtil(d0gb(iq,:),x(iq),A,B,ReNorm)
     END DO
-    
-  END SUBROUTINE TabGB_HermiteP0n_QDUtil
+    IF (nb == nq .AND. ReNorm)  d0gb(:,nq) = d0gb(:,nq) / sqrt(TWO)
 
-  SUBROUTINE TabB_HermiteP0n_QDUtil(P0n,x,ReNorm)
+  END SUBROUTINE TabGB_BoxAB_QDUtil
+  SUBROUTINE TabB_BoxAB_QDUtil(BoxAB,x,A,B,ReNorm)
     IMPLICIT NONE
 
-    real (kind=Rkind),   intent(inout)        :: P0n(:)
+    real (kind=Rkind),   intent(inout)        :: BoxAB(:)
     real (kind=Rkind),   intent(in)           :: x
+    real (kind=Rkind),   intent(in)           :: A,B
     logical,             intent(in)           :: ReNorm
 
-    integer           :: degree
-    integer           :: ib,id,nb
-    real (kind=Rkind),   allocatable          :: Rnorm(:)
+    integer           :: ib,nb
+    logical           :: ReNorm_loc
 
-    nb = size(P0n)
-    degree = nb-1
-    IF ( degree < 0 ) RETURN
+    nb = size(BoxAB)
+    IF ( nb < 1 ) RETURN
 
-    allocate(Rnorm(nb))
-
-    IF (degree == 0) THEN
-      P0n(1)   = ONE
-      Rnorm(1) = sqrt(pi)
-    ELSE
-      P0n(1:2)   = [ONE,TWO*x]
-      Rnorm(1:2) = sqrt(pi)*[ONE,TWO]
-
-      DO id=2,degree
-        ib = id + 1
-        Rnorm(ib) = Rnorm(ib-1)*TWO*id
-        P0n(ib)   = TWO * ( x * P0n(ib-1) -(id-1) * P0n(ib-2) )
-      END DO
-    END IF
-
-    IF (ReNorm) THEN
-      P0n = P0n /  sqrt(Rnorm)
-    END IF
-    
-  END SUBROUTINE TabB_HermiteP0n_QDUtil
-
-  SUBROUTINE X_Hermite_QDUtil(X)
-    IMPLICIT NONE
-    real (kind=Rkind), intent(inout) :: X(:,:)
-
-
-    integer :: iq,nq
-
-    nq = size(X,dim=1)
-    IF (nq < 1) THEN
-      write(out_unit,*) 'ERROR in X_Hermite_QDUtil:'
-      write(out_unit,*) 'nq < 0',nq
-      STOP 'ERROR in X_Hermite_QDUtil: nq < 0'
-    END IF
-
-    X = ZERO
-    DO iq = 1, nq - 1                                                                                                 ! /!\ Fortran counts from 1 to Nb !!! /!\
-      X(iq,iq+1) = sqrt(real(iq,kind=Rkind)*HALF)
-      X(iq+1,iq) = sqrt(real(iq,kind=Rkind)*HALF)
+    DO ib=1,nb
+      BoxAB(ib) = BoxAB_QDutil(x,ib,A,B,ReNorm)
     END DO
 
-  END SUBROUTINE X_Hermite_QDUtil
+  END SUBROUTINE TabB_BoxAB_QDUtil
+  FUNCTION BoxAB_QDutil(x,ib,A,B,ReNorm) RESULT(f)
+    IMPLICIT NONE
 
-END MODULE QDUtil_HermiteP_m
+    real(kind=Rkind)    :: f
+
+    real (kind=Rkind),   intent(in)   :: x
+    integer,             intent(in)   :: ib
+    real (kind=Rkind),   intent(in)   :: A,B
+    logical,             intent(in)   :: ReNorm
+
+    !---------------------------------------------------------------------
+    real(kind=Rkind) :: xx
+    real(kind=Rkind), parameter :: Rnorm = ONE/sqrt(pi*HALF)
+    !---------------------------------------------------------------------
+
+    xx = mod((x-A)/(B-A)*pi*ib,pi+pi)
+    f = sin(xx)
+    IF (ReNorm) THEN
+      f = f * Rnorm*sqrt(pi/(B-A))
+    END IF
+
+  END function BoxAB_QDutil
+
+END MODULE QDUtil_BoxAB_m
