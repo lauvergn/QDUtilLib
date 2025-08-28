@@ -95,7 +95,9 @@ QDLIB=QD
 MAIN=App_QDLib
 TESTS=Test_QDLib
 
-SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 FFT_m.f90 \
+# liste of source files in SRCFILES
+include ./fortranlist.mk
+#SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 FFT_m.f90 \
          Quadrature_m.f90 HermiteP_m.f90 Sine_m.f90 BoxAB_m.f90 Fourier_m.f90 \
          String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Vector_m.f90 Diago_m.f90 \
          IntVec_m.f90 RealVec_m.f90 \
@@ -175,53 +177,17 @@ zip: cleanall
 	$(ExtLibSAVEDIR)/makezip.sh $(BaseName)
 	cd $(ExtLibSAVEDIR) ; ./cp_QDUtil.sh
 	@echo "  done zip"
+
+#===============================================
+#============= make dependencies =============
+#===============================================
+.PHONY: dep
+dependencies.mk fortranlist.mk dep:
+	./scripts/dependency.sh
 #===============================================
 #============= module dependencies =============
 #===============================================
-$(OBJ_DIR)/NumParameters_m.o:       $(OBJ_DIR)/Test_m.o
-
-$(OBJ_DIR)/Memory_base_m.o:         $(OBJ_DIR)/NumParameters_m.o
-$(OBJ_DIR)/Memory_NotPointer_m.o:   $(OBJ_DIR)/Memory_base_m.o $(OBJ_DIR)/NumParameters_m.o
-$(OBJ_DIR)/Memory_Pointer_m.o:      $(OBJ_DIR)/Memory_base_m.o $(OBJ_DIR)/NumParameters_m.o
-
-$(OBJ_DIR)/Time_m.o:                $(OBJ_DIR)/NumParameters_m.o
-
-
-$(OBJ_DIR)/MathUtil_m.o:            $(OBJ_DIR)/NumParameters_m.o
-$(OBJ_DIR)/FFT_m.o:                 $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o
-
-$(OBJ_DIR)/Quadrature_m.o:          $(OBJ_DIR)/HermiteP_m.o $(OBJ_DIR)/Sine_m.o $(OBJ_DIR)/BoxAB_m.o \
-                                    $(OBJ_DIR)/Fourier_m.o
-$(OBJ_DIR)/HermiteP_m.o:            $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/RW_MatVec_m.o \
-                                    $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Test_m.o
-$(OBJ_DIR)/Sine_m.o:                $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/RW_MatVec_m.o \
-                                    $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Test_m.o
-$(OBJ_DIR)/BoxAB_m.o:               $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/RW_MatVec_m.o \
-                                    $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Test_m.o
-$(OBJ_DIR)/Fourier_m.o:             $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/RW_MatVec_m.o \
-                                    $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Test_m.o
-
-$(OBJ_DIR)/String_m.o:              $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_base_m.o
-
-$(OBJ_DIR)/Frac_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
-
-$(OBJ_DIR)/File_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
-
-$(OBJ_DIR)/RW_MatVec_m.o:           $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
-$(OBJ_DIR)/Matrix_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
-$(OBJ_DIR)/Vector_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
-$(OBJ_DIR)/Diago_m.o:               $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o
-
-$(OBJ_DIR)/IntVec_m.o:              $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_m.o
-$(OBJ_DIR)/RealVec_m.o:             $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_m.o
-
-
-$(OBJ_DIR)/Memory_m.o:              $(OBJ_DIR)/Memory_NotPointer_m.o $(OBJ_DIR)/Memory_Pointer_m.o \
-                                    $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o
-
-$(OBJ_DIR)/QDUtil_m.o:              $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o \
-                                    $(OBJ_DIR)/Frac_m.o $(OBJ_DIR)/String_m.o $(OBJ_DIR)/Time_m.o \
-                                    $(OBJ_DIR)/Memory_m.o $(OBJ_DIR)/File_m.o
-
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
+
+include ./dependencies.mk

@@ -1,0 +1,26 @@
+#===============================================
+SRCFILES= \
+File_m.f90  \
+Frac_m.f90  \
+Diago_m.f90  \
+FFT_m.f90  \
+IntVec_m.f90  \
+MathUtil_m.f90  \
+Matrix_m.f90  \
+RealVec_m.f90  \
+RW_MatVec_m.f90  \
+Vector_m.f90  \
+Memory_base_m.f90  \
+Memory_m.f90  \
+Memory_NotPointer_m.f90  \
+Memory_Pointer_m.f90  \
+NumParameters_m.f90  \
+QDUtil_m.f90  \
+BoxAB_m.f90  \
+Fourier_m.f90  \
+HermiteP_m.f90  \
+Quadrature_m.f90  \
+Sine_m.f90  \
+String_m.f90  \
+Test_m.f90  \
+Time_m.f90  \
