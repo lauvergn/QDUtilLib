@@ -33,7 +33,7 @@ MODULE QDUtil_Vector_m
 
   PUBLIC Sort_Vec
   INTERFACE Sort_Vec
-    MODULE PROCEDURE QDUtil_Sort_Rk8Vec
+    MODULE PROCEDURE QDUtil_Sort_Rk4Vec,QDUtil_Sort_Rk8Vec,QDUtil_Sort_Rk16Vec
   END INTERFACE
 
   PUBLIC inferior_tab
@@ -52,9 +52,54 @@ MODULE QDUtil_Vector_m
   PUBLIC :: Test_QDUtil_Vector
   CONTAINS
   !================================================================
-  !   Sort a real matrix Rvec (in the same vector)
+  !   Sort a real vector Rvec (in the same vector)
   !   subroutine
   !================================================================
+  SUBROUTINE QDUtil_Sort_Rk4Vec(RVec,sort_type)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rk4), intent(inout)              :: RVec(:)
+    integer,          intent(in),    optional  :: sort_type
+
+    integer            :: sort_type_loc
+    integer, parameter :: sort_type_default = 1 ! ascending sort
+
+    real(kind=Rk4)   :: a
+    integer          :: i,j
+
+    IF (present(sort_type)) THEN
+      sort_type_loc = sort_type
+    ELSE
+      sort_type_loc = sort_type_default
+    END IF
+
+    SELECT CASE (sort_type_loc)
+    CASE (1) ! ascending
+      DO i=lbound(RVec,dim=1),ubound(RVec,dim=1)
+      DO j=i+1,ubound(RVec,dim=1)
+       IF (RVec(i) > RVec(j)) THEN
+          ! permutation
+          a=RVec(i)
+          RVec(i)=RVec(j)
+          RVec(j)=a
+        END IF
+      END DO
+      END DO
+    CASE (-1) ! descending
+      DO i=lbound(RVec,dim=1),ubound(RVec,dim=1)
+      DO j=i+1,ubound(RVec,dim=1)
+       IF (RVec(i) < RVec(j)) THEN
+          ! permutation
+          a=RVec(i)
+          RVec(i)=RVec(j)
+          RVec(j)=a
+        END IF
+      END DO
+      END DO
+    END SELECT
+
+  END SUBROUTINE QDUtil_Sort_Rk4Vec
   SUBROUTINE QDUtil_Sort_Rk8Vec(RVec,sort_type)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
@@ -100,7 +145,51 @@ MODULE QDUtil_Vector_m
     END SELECT
 
   END SUBROUTINE QDUtil_Sort_Rk8Vec
+  SUBROUTINE QDUtil_Sort_Rk16Vec(RVec,sort_type)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
 
+    real(kind=Rk16),  intent(inout)            :: RVec(:)
+    integer,          intent(in),    optional  :: sort_type
+
+    integer            :: sort_type_loc
+    integer, parameter :: sort_type_default = 1 ! ascending sort
+
+    real(kind=Rk16)   :: a
+    integer          :: i,j
+
+    IF (present(sort_type)) THEN
+      sort_type_loc = sort_type
+    ELSE
+      sort_type_loc = sort_type_default
+    END IF
+
+    SELECT CASE (sort_type_loc)
+    CASE (1) ! ascending
+      DO i=lbound(RVec,dim=1),ubound(RVec,dim=1)
+      DO j=i+1,ubound(RVec,dim=1)
+       IF (RVec(i) > RVec(j)) THEN
+          ! permutation
+          a=RVec(i)
+          RVec(i)=RVec(j)
+          RVec(j)=a
+        END IF
+      END DO
+      END DO
+    CASE (-1) ! descending
+      DO i=lbound(RVec,dim=1),ubound(RVec,dim=1)
+      DO j=i+1,ubound(RVec,dim=1)
+       IF (RVec(i) < RVec(j)) THEN
+          ! permutation
+          a=RVec(i)
+          RVec(i)=RVec(j)
+          RVec(j)=a
+        END IF
+      END DO
+      END DO
+    END SELECT
+
+  END SUBROUTINE QDUtil_Sort_Rk16Vec
   FUNCTION QDUtil_inferior_tab_Rk4(x1,x2) RESULT (inferior)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
