@@ -45,7 +45,7 @@ MODULE QDUtil_Quadrature_m
   PUBLIC :: Test_Quadrature_QDUtil
 
 CONTAINS
-  SUBROUTINE Init_Quadrature_QDUtil(Quadrature,nq,type_name,A,B,isym_grid,err)
+  SUBROUTINE Init_Quadrature_QDUtil(Quadrature,nq,type_name,A,B,xc,scale,isym_grid,err)
     USE QDUtil_String_m
     USE QDUtil_diago_m
     USE QDUtil_RW_MatVec_m
@@ -58,13 +58,15 @@ CONTAINS
     integer,             intent(in)            :: nq
     character (len=*),   intent(in)            :: type_name
     real (kind=Rkind),   intent(in),  optional :: A,B
+    real (kind=Rkind),   intent(in),  optional :: xc,scale
     integer,             intent(in),  optional :: isym_grid
     integer,             intent(out), optional :: err
 
 
     TYPE(BoxAB_t)                   :: BoxAB
     TYPE(FourierAB_t)               :: FourierAB
-    real (kind=Rkind)               :: dx
+    TYPE(HO_t)                      :: HO
+    real (kind=Rkind)               :: xc_loc,scale_loc
     integer                         :: i,isym_grid_loc,err_loc
     real (kind=Rkind), allocatable  :: Xmat(:,:),DVR(:,:),x(:),w(:)
 
@@ -123,6 +125,22 @@ CONTAINS
     !=========================================================================
 
     !=========================================================================
+    xc_loc = ZERO
+    IF (present(xc)) xc_loc = xc
+    scale_loc = ONE
+    IF (present(scale)) scale_loc = scale
+
+    IF (scale_loc <= ZERO) THEN
+      err_loc = -2
+      write(out_unit,*) 'ERROR in Init_Quadrature_QDUtil: the scale factor (scale) is <= ZERO'
+      write(out_unit,*) 'present(scale): ',present(scale)
+      write(out_unit,*) 'scale_loc:      ',scale_loc
+      IF (.NOT. present(err)) &
+        STOP 'ERROR in Init_Quadrature_QDUtil: the scale factor (scale) is <= ZERO'
+    END IF
+    !=========================================================================
+
+    !=========================================================================
     IF (err_loc == 0) THEN
       Quadrature%name = type_name
       SELECT CASE(TO_lowercase(type_name))
@@ -172,13 +190,12 @@ CONTAINS
           CALL TabGB_BoxAB_QDUtil(d0gb,x,BoxAB)
         END IF
        
-      CASE ('ho','hermite')
-        Quadrature%name = 'HO'
+      CASE ('ho','hermitep')
         allocate(x(nq))
         allocate(DVR(nq,nq))
        
         allocate(Xmat(nq,nq))
-        CALL X_Hermite_QDUtil(Xmat)
+        CALL X_HermiteP_QDUtil(Xmat)
         IF (debug) CALL Write_Mat(Xmat,nio=out_unit,nbcol=5,info='Xmat')
         CALL diagonalization(Xmat,x,DVR)
         IF (debug) CALL Write_Mat(DVR,nio=out_unit,nbcol=5,info='DVR')
@@ -186,13 +203,24 @@ CONTAINS
        
         allocate(d0gb(nq,nb))
         allocate(Quadrature%w(nq))
-        CALL TabGB_HermiteP0n_QDUtil(d0gb,x,gauss=.TRUE.,renorm=.TRUE.)
+        CALL TabGB_HermiteP_QDUtil(d0gb,x,gauss=.TRUE.,renorm=.TRUE.)
        
         ! weight
         DO iq=1,nq
           ib_max = maxloc(abs(d0gb(iq,:)),dim=1)
           Quadrature%w(iq) = (DVR(ib_max,iq)/d0gb(iq,ib_max))**2
         END DO
+
+        IF (TO_lowercase(type_name) == 'ho') THEN
+          HO = HO_t(xc=xc_loc,scale=scale_loc,ReNorm=.TRUE.)
+          x = x/HO%Scale + HO%xc
+          Quadrature%x = reshape(x,shape=[1,nq])
+          Quadrature%w = Quadrature%w * HO%Scale
+          IF (allocated(d0gb)) deallocate(d0gb)
+          allocate(d0gb(nq,nb))
+          CALL TabGB_HO_QDUtil(d0gb,x,HO)
+        END IF
+
       CASE default
         err_loc = -3
         IF (.NOT. present(err)) &
@@ -470,7 +498,7 @@ CONTAINS
 
     !========================================================================================
     ! HO quadrature test
-    name_grid = 'HO'
+    name_grid = 'HermiteP'
     DO nq=1,5
       info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
       CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
@@ -481,10 +509,21 @@ CONTAINS
       END IF
     END DO
 
-    name_grid = 'HO'
+    name_grid = 'HermiteP'
     nq = 65
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
     CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    res_test = (err_grid ==0)
+    CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+    IF (.NOT. res_test .OR. debug) THEN
+      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    END IF
+    !========================================================================================
+
+    name_grid = 'HO'
+    nq = 11
+    info_grid = name_grid // '_xc1._scale0.5' // ' quadrature_nq=' // TO_string(nq)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,xc=ONE,scale=HALF,err=err_grid)
     res_test = (err_grid ==0)
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN
@@ -747,7 +786,8 @@ CONTAINS
     CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
-    write(test_var%test_log_file_unit,*) 'When nb (=nq) is even and when the grid starts in A (-PI), the overlap CANNOT be the identity matrix.'
+    write(test_var%test_log_file_unit,*) &
+      'When nb (=nq) is even and when the grid starts in A (-PI), the overlap CANNOT be the identity matrix.'
     write(test_var%test_log_file_unit,*) ' Because,the last basis function on the grid is zero (d0gb(:,ib)=ZERO).'
     CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
 
@@ -763,6 +803,18 @@ CONTAINS
        'When nb (=nq) is even and when the grid ends in B (PI), the overlap CANNOT be the identity matrix.'
     write(test_var%test_log_file_unit,*) ' Because,the last basis function on the grid is zero (d0gb(:,ib)=ZERO).'
     CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    !========================================================================================
+
+    !========================================================================================
+    name_grid = 'HO'
+    nq = 5
+    info_grid = name_grid // '_xc1._scale-0.5' // ' quadrature_nq=' // TO_string(nq)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,xc=ONE,scale=-HALF,err=err_grid)
+    res_test = (err_grid ==0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+    IF (.NOT. res_test .OR. debug) THEN
+      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    END IF
     !========================================================================================
 
     CALL Finalize_Test(test_var)
