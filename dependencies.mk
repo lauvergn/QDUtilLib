@@ -18,6 +18,7 @@ qdutil_m = $(OBJ_DIR)/QDUtil_m.o
 qdutil_boxab_m = $(OBJ_DIR)/BoxAB_m.o
 qdutil_fourier_m = $(OBJ_DIR)/Fourier_m.o
 qdutil_hermitep_m = $(OBJ_DIR)/HermiteP_m.o
+qdutil_legendrep_m = $(OBJ_DIR)/LegendreP_m.o
 qdutil_quadrature_m = $(OBJ_DIR)/Quadrature_m.o
 qdutil_string_m = $(OBJ_DIR)/String_m.o
 qdutil_test_m = $(OBJ_DIR)/Test_m.o
@@ -107,6 +108,8 @@ $(OBJ_DIR)/Fourier_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/HermiteP_m.o : \
           $(qdutil_numparameters_m)
+$(OBJ_DIR)/LegendreP_m.o : \
+          $(qdutil_numparameters_m)
 $(OBJ_DIR)/Quadrature_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_string_m) \
@@ -115,6 +118,7 @@ $(OBJ_DIR)/Quadrature_m.o : \
           $(qdutil_hermitep_m) \
           $(qdutil_boxab_m) \
           $(qdutil_fourier_m) \
+          $(qdutil_legendrep_m) \
           $(qdutil_matrix_m) \
           $(qdutil_test_m)
 $(OBJ_DIR)/String_m.o : \

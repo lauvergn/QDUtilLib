@@ -52,6 +52,7 @@ CONTAINS
     USE QDUtil_HermiteP_m
     USE QDUtil_BoxAB_m
     USE QDUtil_Fourier_m
+    USE QDUtil_LegendreP_m
     IMPLICIT NONE
 
     TYPE (Quadrature_t), intent(inout)         :: Quadrature
@@ -210,16 +211,37 @@ CONTAINS
           ib_max = maxloc(abs(d0gb(iq,:)),dim=1)
           Quadrature%w(iq) = (DVR(ib_max,iq)/d0gb(iq,ib_max))**2
         END DO
+        !CALL Weight_OF_grid_QDUtil(Quadrature%w,d0gb,nb,nq)
 
         IF (TO_lowercase(type_name) == 'ho') THEN
           HO = HO_t(xc=xc_loc,scale=scale_loc,ReNorm=.TRUE.)
           x = x/HO%Scale + HO%xc
           Quadrature%x = reshape(x,shape=[1,nq])
           Quadrature%w = Quadrature%w * HO%Scale
-          IF (allocated(d0gb)) deallocate(d0gb)
-          allocate(d0gb(nq,nb))
           CALL TabGB_HO_QDUtil(d0gb,x,HO)
         END IF
+
+      CASE ('legendrep','pl0')
+        allocate(x(nq))
+        allocate(DVR(nq,nq))
+       
+        allocate(Xmat(nq,nq))
+        CALL X_LegendreP_QDUtil(Xmat)
+        IF (debug) CALL Write_Mat(Xmat,nio=out_unit,nbcol=5,info='Xmat')
+        CALL diagonalization(Xmat,x,DVR)
+        IF (debug) CALL Write_Mat(DVR,nio=out_unit,nbcol=5,info='DVR')
+        Quadrature%x = reshape(x,shape=[1,nq])
+       
+        allocate(d0gb(nq,nb))
+        allocate(Quadrature%w(nq))
+        CALL TabGB_LegendreP_QDUtil(d0gb,x,renorm=.TRUE.)
+       
+        ! weights
+        DO iq=1,nq
+          ib_max = maxloc(abs(d0gb(iq,:)),dim=1)
+          Quadrature%w(iq) = (DVR(ib_max,iq)/d0gb(iq,ib_max))**2
+        END DO
+        !CALL Weight_OF_grid_QDUtil(Quadrature%w,d0gb,nb,nq)
 
       CASE default
         err_loc = -3
@@ -231,7 +253,6 @@ CONTAINS
 
     !=========================================================================
     IF (err_loc == 0) THEN
-      !CALL Weight_OF_grid_QDUtil(Quadrature%w,d0gb,nb,nq)
       CALL Check_Overlap_QDUtil(Quadrature,d0gb,nio=out_unit)
       IF (abs(Quadrature%Sii) >= ZeroTresh .OR. abs(Quadrature%Sij) >= ZeroTresh) err_loc = 1
     END IF
@@ -457,6 +478,7 @@ CONTAINS
     CALL Test_QuadratureSine_QDUtil()
     CALL Test_QuadratureFourier_QDUtil()
     CALL Test_QuadratureHO_QDUtil()
+    CALL Test_QuadratureLegendre_QDUtil()
 
     !-----------------------------------------------------------
     IF (debug) THEN
@@ -544,6 +566,72 @@ CONTAINS
     !-----------------------------------------------------------
 
   END SUBROUTINE Test_QuadratureHO_QDUtil
+  SUBROUTINE Test_QuadratureLegendre_QDUtil()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+
+    TYPE (Quadrature_t) :: xw
+    integer :: nq,isym_grid,err_grid
+    logical :: skip
+    character (len=:), allocatable :: info_grid
+    character (len=:), allocatable :: name_grid
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QuadratureLegendre_QDUtil'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL set_print_level(prtlev=1,force=.TRUE.)
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+    CALL Initialize_Test(test_var,test_name='QuadratureLegendre')
+
+    !========================================================================================
+    ! HO quadrature test
+    name_grid = 'LegendreP'
+    DO nq=1,11
+      info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+      res_test = (err_grid ==0)
+      CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+      IF (.NOT. res_test .OR. debug) THEN
+        CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+      END IF
+    END DO
+
+    name_grid = 'LegendreP'
+    nq = 127
+    info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    res_test = (err_grid ==0)
+    CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+    IF (.NOT. res_test .OR. debug) THEN
+      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    END IF
+
+    CALL Finalize_Test(test_var)
+
+    !========================================================================================
+    CALL dealloc_Quadrature_QDUtil(xw)
+
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'END ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+
+  END SUBROUTINE Test_QuadratureLegendre_QDUtil
   SUBROUTINE Test_QuadratureSine_QDUtil()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m

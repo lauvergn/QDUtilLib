@@ -26,75 +26,24 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE QDUtil_HermiteP_m
+MODULE QDUtil_LegendreP_m
   USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
   PRIVATE
 
-  TYPE HO_t
-    real(kind=Rkind) :: xc        = ZERO
-    real(kind=Rkind) :: Scale     = ONE
+  TYPE LegendreP_t
     logical          :: ReNorm    = .TRUE. ! renormalization of the basis functions
-  END TYPE HO_t
-  PUBLIC :: HO_t,TabGB_HO_QDUtil,TabGB_HermiteP_QDUtil, X_HermiteP_QDUtil
+  END TYPE LegendreP_t
+  PUBLIC :: LegendreP_t,TabGB_LegendreP_QDUtil, X_LegendreP_QDUtil
 
 CONTAINS
 
-  SUBROUTINE TabGB_HO_QDUtil(d0GB,xHO,HO)
-    IMPLICIT NONE
-
-    real (kind=Rkind),   intent(inout)        :: d0GB(:,:)
-    real (kind=Rkind),   intent(in)           :: xHO(:)
-    TYPE(HO_t),          intent(in)           :: HO
-
-    integer           :: iq,nb,nq
-
-    nq = size(d0GB,dim=1)
-    nb = size(d0GB,dim=2)
-
-    IF (nb < 1) THEN
-      write(out_unit,*) 'ERROR in TabGB_HO_QDUtil:'
-      write(out_unit,*) 'nb < 1',nb
-      STOP 'ERROR in TabGB_HO_QDUtil: nb<1'
-    END IF
-    IF (nq /= size(xHO)) THEN
-      write(out_unit,*) 'ERROR in TabGB_HO_QDUtil:'
-      write(out_unit,*) 'size(x) and nq differ',size(xHO),nq
-      STOP 'ERROR in TabGB_HO_QDUtil: size(x) and nq differ'
-    END IF
-
-    DO iq=1,nq
-      CALL TabB_HO_QDUtil(d0gb(iq,:),xHO(iq),HO)
-    END DO
-    
-  END SUBROUTINE TabGB_HO_QDUtil
-  SUBROUTINE TabB_HO_QDUtil(d0b,xHO,HO)
-    IMPLICIT NONE
-
-    real (kind=Rkind),   intent(inout)        :: d0b(:)
-    real (kind=Rkind),   intent(in)           :: xHO
-    TYPE(HO_t),          intent(in)           :: HO
-
-    real (kind=Rkind) :: x
-
-    x = HO%Scale * (xHO - HO%xc)
-    CALL TabB_HermiteP_QDUtil(d0b,x,HO%ReNorm)
-
-    IF (HO%ReNorm) THEN
-      d0b = d0b * exp(-HALF*x**2) /  sqrt(HO%Scale)
-    ELSE
-      d0b = d0b * exp(-HALF*x**2)
-    END IF
-    
-  END SUBROUTINE TabB_HO_QDUtil
-
-  SUBROUTINE TabGB_HermiteP_QDUtil(d0GB,x,gauss,ReNorm)
+  SUBROUTINE TabGB_LegendreP_QDUtil(d0GB,x,ReNorm)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: d0GB(:,:)
     real (kind=Rkind),   intent(in)           :: x(:)
-    logical,             intent(in)           :: gauss
     logical,             intent(in)           :: ReNorm
 
     integer           :: nb,nq
@@ -105,24 +54,23 @@ CONTAINS
     nb = size(d0GB,dim=2)
 
     IF (nb < 1) THEN
-      write(out_unit,*) 'ERROR in TabGB_HermiteP_QDUtil:'
+      write(out_unit,*) 'ERROR in TabGB_LegendreP_QDUtil:'
       write(out_unit,*) 'nb < 1',nb
-      STOP 'ERROR in TabGB_HermiteP_QDUtil: nb<1'
+      STOP 'ERROR in TabGB_LegendreP_QDUtil: nb<1'
     END IF
     IF (nq /= size(x)) THEN
-      write(out_unit,*) 'ERROR in TabGB_HermiteP_QDUtil:'
+      write(out_unit,*) 'ERROR in TabGB_LegendreP_QDUtil:'
       write(out_unit,*) 'size(x) and nq differ',size(x),nq
-      STOP 'ERROR in TabGB_HermiteP_QDUtil: size(x) and nq differ'
+      STOP 'ERROR in TabGB_LegendreP_QDUtil: size(x) and nq differ'
     END IF
 
     DO iq=1,nq
-      CALL TabB_HermiteP_QDUtil(d0gb(iq,:),x(iq),ReNorm)
-      IF (gauss) d0gb(iq,:) = d0gb(iq,:) * exp(-HALF*x(iq)**2)
+      CALL TabB_LegendreP_QDUtil(d0gb(iq,:),x(iq),ReNorm)
     END DO
     
-  END SUBROUTINE TabGB_HermiteP_QDUtil
+  END SUBROUTINE TabGB_LegendreP_QDUtil
 
-  SUBROUTINE TabB_HermiteP_QDUtil(P0n,x,ReNorm)
+  SUBROUTINE TabB_LegendreP_QDUtil(P0n,x,ReNorm)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: P0n(:)
@@ -131,35 +79,31 @@ CONTAINS
 
     integer           :: degree
     integer           :: ib,id,nb
-    real (kind=Rkind),   allocatable          :: Rnorm(:)
 
     nb = size(P0n)
     degree = nb-1
     IF ( degree < 0 ) RETURN
 
-    allocate(Rnorm(nb))
-
     IF (degree == 0) THEN
       P0n(1)   = ONE
-      Rnorm(1) = sqrt(pi)
     ELSE
-      P0n(1:2)   = [ONE,TWO*x]
-      Rnorm(1:2) = sqrt(pi)*[ONE,TWO]
+      P0n(1:2)   = [ONE,x]
 
       DO id=2,degree
         ib = id + 1
-        Rnorm(ib) = Rnorm(ib-1)*TWO*id
-        P0n(ib)   = TWO * ( x * P0n(ib-1) -(id-1) * P0n(ib-2) )
+        P0n(ib)   = (x*(TWO*id-ONE)*P0n(ib-1) - (id-ONE)*P0n(ib-2) ) / real(id,kind=Rkind)
       END DO
     END IF
 
     IF (ReNorm) THEN
-      P0n = P0n /  sqrt(Rnorm)
+      DO ib=1,nb
+        P0n(ib)   = P0n(ib) * sqrt(ib-HALF)
+      END DO
     END IF
     
-  END SUBROUTINE TabB_HermiteP_QDUtil
+  END SUBROUTINE TabB_LegendreP_QDUtil
 
-  SUBROUTINE X_HermiteP_QDUtil(X)
+  SUBROUTINE X_LegendreP_QDUtil(X)
     IMPLICIT NONE
     real (kind=Rkind), intent(inout) :: X(:,:)
 
@@ -168,17 +112,17 @@ CONTAINS
 
     nb = size(X,dim=1)
     IF (nb < 1) THEN
-      write(out_unit,*) 'ERROR in X_HermiteP_QDUtil:'
+      write(out_unit,*) 'ERROR in X_LegendreP_QDUtil:'
       write(out_unit,*) 'nb < 0',nb
-      STOP 'ERROR in X_HermiteP_QDUtil: nb < 0'
+      STOP 'ERROR in X_LegendreP_QDUtil: nb < 0'
     END IF
 
     X = ZERO
     DO ib = 1, nb - 1
-      X(ib,ib+1) = sqrt(real(ib,kind=Rkind)*HALF)
-      X(ib+1,ib) = sqrt(real(ib,kind=Rkind)*HALF)
+      X(ib,ib+1) = real(ib,kind=Rkind)/sqrt(FOUR*ib**2-ONE)
+      X(ib+1,ib) = real(ib,kind=Rkind)/sqrt(FOUR*ib**2-ONE)
     END DO
 
-  END SUBROUTINE X_HermiteP_QDUtil
+  END SUBROUTINE X_LegendreP_QDUtil
 
-END MODULE QDUtil_HermiteP_m
+END MODULE QDUtil_LegendreP_m

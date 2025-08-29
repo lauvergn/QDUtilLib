@@ -46,7 +46,7 @@ MODULE QDUtil_NumParameters_m
   integer, parameter :: Ik4        = int32  ! 4
   integer, parameter :: Ik8        = int64  ! 8
 
-  integer, parameter :: Rkind      = RkD ! 8
+  integer, parameter :: Rkind      = real64 ! 8
   integer, parameter :: Ikind      = int32  ! 4
   integer, parameter :: ILkind     = int64  ! 8
 
