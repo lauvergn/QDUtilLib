@@ -19,7 +19,6 @@ qdutil_boxab_m = $(OBJ_DIR)/BoxAB_m.o
 qdutil_fourier_m = $(OBJ_DIR)/Fourier_m.o
 qdutil_hermitep_m = $(OBJ_DIR)/HermiteP_m.o
 qdutil_quadrature_m = $(OBJ_DIR)/Quadrature_m.o
-qdutil_sine_m = $(OBJ_DIR)/Sine_m.o
 qdutil_string_m = $(OBJ_DIR)/String_m.o
 qdutil_test_m = $(OBJ_DIR)/Test_m.o
 qdutil_time_m = $(OBJ_DIR)/Time_m.o
@@ -100,7 +99,8 @@ $(OBJ_DIR)/QDUtil_m.o : \
           $(qdutil_fft_ooura_m) \
           $(qdutil_quadrature_m) \
           $(qdutil_hermitep_m) \
-          $(qdutil_sine_m)
+          $(qdutil_boxab_m) \
+          $(qdutil_fourier_m)
 $(OBJ_DIR)/BoxAB_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/Fourier_m.o : \
@@ -113,13 +113,10 @@ $(OBJ_DIR)/Quadrature_m.o : \
           $(qdutil_diago_m) \
           $(qdutil_rw_matvec_m) \
           $(qdutil_hermitep_m) \
-          $(qdutil_sine_m) \
           $(qdutil_boxab_m) \
           $(qdutil_fourier_m) \
           $(qdutil_matrix_m) \
           $(qdutil_test_m)
-$(OBJ_DIR)/Sine_m.o : \
-          $(qdutil_numparameters_m)
 $(OBJ_DIR)/String_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_memory_base_m) \

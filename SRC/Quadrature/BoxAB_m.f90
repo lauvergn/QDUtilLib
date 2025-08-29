@@ -32,16 +32,22 @@ MODULE QDUtil_BoxAB_m
 
   PRIVATE
 
-  PUBLIC :: TabB_BoxAB_QDUtil,TabGB_BoxAB_QDUtil
+
+  TYPE BoxAB_t
+    real(kind=Rkind) :: A         = ZERO
+    real(kind=Rkind) :: B         = PI
+    integer          :: isym_grid = 0 ! Possible values: -1, 0, +1, the grids starts in A, A+dx/2, A+dx
+    logical          :: ReNorm    = .TRUE. ! renormalization os the basis functions
+  END TYPE BoxAB_t
+  PUBLIC :: BoxAB_t,BoxAB_Quadrature_QDutil,TabB_BoxAB_QDUtil,TabGB_BoxAB_QDUtil
 
 CONTAINS
-  SUBROUTINE TabGB_BoxAB_QDUtil(d0GB,x,A,B,ReNorm)
+  SUBROUTINE TabGB_BoxAB_QDUtil(d0GB,x,BoxAB)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: d0GB(:,:)
     real (kind=Rkind),   intent(in)           :: x(:)
-    real (kind=Rkind),   intent(in)           :: A,B
-    logical,             intent(in)           :: ReNorm
+    TYPE(BoxAB_t),       intent(in)           :: BoxAB
 
     integer           :: nb,nq
     integer           :: iq
@@ -62,51 +68,66 @@ CONTAINS
     END IF
 
     DO iq=1,nq
-      CALL TabB_BoxAB_QDUtil(d0gb(iq,:),x(iq),A,B,ReNorm)
+      CALL TabB_BoxAB_QDUtil(d0gb(iq,:),x(iq),BoxAB)
     END DO
-    IF (nb == nq .AND. ReNorm)  d0gb(:,nq) = d0gb(:,nq) / sqrt(TWO)
+    IF (nb == nq .AND. BoxAB%ReNorm)  d0gb(:,nq) = d0gb(:,nq) / sqrt(TWO)
 
   END SUBROUTINE TabGB_BoxAB_QDUtil
-  SUBROUTINE TabB_BoxAB_QDUtil(BoxAB,x,A,B,ReNorm)
+  SUBROUTINE TabB_BoxAB_QDUtil(d0b,x,BoxAB)
     IMPLICIT NONE
 
-    real (kind=Rkind),   intent(inout)        :: BoxAB(:)
+    real (kind=Rkind),   intent(inout)        :: d0b(:)
     real (kind=Rkind),   intent(in)           :: x
-    real (kind=Rkind),   intent(in)           :: A,B
-    logical,             intent(in)           :: ReNorm
+    TYPE(BoxAB_t),       intent(in)           :: BoxAB
 
     integer           :: ib,nb
-    logical           :: ReNorm_loc
 
-    nb = size(BoxAB)
+    nb = size(d0b)
     IF ( nb < 1 ) RETURN
 
     DO ib=1,nb
-      BoxAB(ib) = BoxAB_QDutil(x,ib,A,B,ReNorm)
+      d0b(ib) = BoxAB_QDutil(x,ib,BoxAB)
     END DO
 
   END SUBROUTINE TabB_BoxAB_QDUtil
-  FUNCTION BoxAB_QDutil(x,ib,A,B,ReNorm) RESULT(f)
+  FUNCTION BoxAB_QDutil(x,ib,BoxAB) RESULT(f)
     IMPLICIT NONE
 
     real(kind=Rkind)    :: f
 
     real (kind=Rkind),   intent(in)   :: x
     integer,             intent(in)   :: ib
-    real (kind=Rkind),   intent(in)   :: A,B
-    logical,             intent(in)   :: ReNorm
+    TYPE(BoxAB_t),       intent(in)   :: BoxAB
 
     !---------------------------------------------------------------------
     real(kind=Rkind) :: xx
     real(kind=Rkind), parameter :: Rnorm = ONE/sqrt(pi*HALF)
     !---------------------------------------------------------------------
 
-    xx = mod((x-A)/(B-A)*pi*ib,pi+pi)
+    xx = mod((x-BoxAB%A)/(BoxAB%B-BoxAB%A)*pi*ib,pi+pi)
     f = sin(xx)
-    IF (ReNorm) THEN
-      f = f * Rnorm*sqrt(pi/(B-A))
+    IF (BoxAB%ReNorm) THEN
+      f = f * Rnorm*sqrt(pi/(BoxAB%B-BoxAB%A))
     END IF
 
   END function BoxAB_QDutil
 
+
+  SUBROUTINE BoxAB_Quadrature_QDutil(x,w,nq,BoxAB,err)
+    IMPLICIT NONE
+
+    real (kind=Rkind), allocatable,  intent(inout) :: x(:),w(:)
+    integer,                         intent(in)    :: nq
+    TYPE(BoxAB_t),                   intent(in)    :: BoxAB
+    integer,                         intent(inout) :: err
+
+    integer           :: i
+    real (kind=Rkind) :: dx
+
+    err = 0
+    dx  = (BoxAB%B-BoxAB%A)/nq
+    x   = [(BoxAB%A+dx*(i-HALF),i=1,nq)]
+    w   = [(dx,i=1,nq)]
+
+  END SUBROUTINE BoxAB_Quadrature_QDutil
 END MODULE QDUtil_BoxAB_m

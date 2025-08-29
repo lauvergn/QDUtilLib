@@ -45,28 +45,32 @@ MODULE QDUtil_Quadrature_m
   PUBLIC :: Test_Quadrature_QDUtil
 
 CONTAINS
-  SUBROUTINE Init_Quadrature_QDUtil(Quadrature,nq,type_name,A,B)
+  SUBROUTINE Init_Quadrature_QDUtil(Quadrature,nq,type_name,A,B,isym_grid,err)
     USE QDUtil_String_m
     USE QDUtil_diago_m
     USE QDUtil_RW_MatVec_m
     USE QDUtil_HermiteP_m
-    USE QDUtil_Sine_m
     USE QDUtil_BoxAB_m
     USE QDUtil_Fourier_m
     IMPLICIT NONE
 
-    TYPE (Quadrature_t), intent(inout)        :: Quadrature
-    integer,             intent(in)           :: nq
-    character (len=*),   intent(in)           :: type_name
-    real (kind=Rkind),   intent(in), optional :: A,B
+    TYPE (Quadrature_t), intent(inout)         :: Quadrature
+    integer,             intent(in)            :: nq
+    character (len=*),   intent(in)            :: type_name
+    real (kind=Rkind),   intent(in),  optional :: A,B
+    integer,             intent(in),  optional :: isym_grid
+    integer,             intent(out), optional :: err
 
 
+    TYPE(BoxAB_t)                   :: BoxAB
+    TYPE(FourierAB_t)               :: FourierAB
     real (kind=Rkind)               :: dx
-    integer                         :: i
-    real (kind=Rkind), allocatable  :: Xmat(:,:),DVR(:,:),x(:)
+    integer                         :: i,isym_grid_loc,err_loc
+    real (kind=Rkind), allocatable  :: Xmat(:,:),DVR(:,:),x(:),w(:)
 
     integer                          :: ib,jb,ib_max,iq,nb
     real (kind=Rkind), allocatable   :: d0gb(:,:)
+    real (kind=Rkind), parameter     :: ZeroTresh    = ONETENTH**10
 
     !---------------------------------------------------------------------
     logical,parameter :: debug= .FALSE.
@@ -79,77 +83,142 @@ CONTAINS
       write(out_unit,*)
     END IF
     !---------------------------------------------------------------------
+    CALL dealloc_Quadrature_QDUtil(Quadrature)
+    err_loc = 0
+
+    IF (present(isym_grid)) THEN
+      isym_grid_loc = isym_grid
+    ELSE
+      isym_grid_loc = 0
+    END IF
+
+    !=========================================================================
+    IF (nq < 1) THEN
+      err_loc = -2
+      write(out_unit,*) 'ERROR in Init_Quadrature_QDUtil: nq < 1'
+      write(out_unit,*) 'nq: ',nq
+      IF (.NOT. present(err)) STOP 'ERROR in Init_Quadrature_QDUtil: nq < 1'
+    END IF
     nb = nq
+    !=========================================================================
 
-    SELECT CASE(TO_lowercase(type_name))
-    CASE ('fourier')
-      Quadrature%name = 'Fourier'
-      dx  = TWO*PI/nq
-      x   = [(dx*(-HALF+i),i=1,nq)]
-      Quadrature%x = reshape(x,shape=[1,nq])
-      Quadrature%w = [(dx,i=1,nq)]
-
-      allocate(d0gb(nq,nb))
-      CALL TabGB_Fourier_QDUtil(d0gb,x,ReNorm=.TRUE.)
-    CASE ('sine')
-      Quadrature%name = 'sine'
-      dx  = PI/nq
-      x   = [(dx*(-HALF+i),i=1,nq)]
-      Quadrature%x = reshape(x,shape=[1,nq])
-      Quadrature%w = [(dx,i=1,nq)]
-
-      allocate(d0gb(nq,nb))
-      CALL TabGB_Sine_QDUtil(d0gb,x,ReNorm=.TRUE.)
-
-    CASE ('boxab')
-      IF (.NOT. present(A) .AND. .NOT. present(B)) THEN
-        STOP 'ERROR in Init_Quadrature_QDUtil: A and B must be present for BoxAB quadrature'
+    !=========================================================================
+    IF (TO_lowercase(type_name) == 'fourierab' .OR. TO_lowercase(type_name) == 'boxab') THEN
+      IF (present(A) .AND. present(B)) THEN
+        IF (B <= A) THEN
+          err_loc = -2
+          write(out_unit,*) 'ERROR in Init_Quadrature_QDUtil: B <= A for FourierAB or BoxAB quadrature'
+          write(out_unit,*) 'A,B: ',A,B
+          IF (.NOT. present(err)) &
+            STOP 'ERROR in Init_Quadrature_QDUtil: B <= A for FourierAB or BoxAB quadrature'
+        END IF
+      ELSE ! A or B are not present
+        err_loc = -2
+        write(out_unit,*) 'ERROR in Init_Quadrature_QDUtil: A and B must be present for FourierAB or BoxAB quadrature'
+        write(out_unit,*) 'present(A),present(B): ',present(A),present(B)
+        IF (.NOT. present(err)) &
+          STOP 'ERROR in Init_Quadrature_QDUtil: A and B must be present for FourierAB or BoxAB quadrature'
       END IF
-      Quadrature%name = 'BoxAB'
-      dx  = (B-A)/nq
-      x   = [(A+dx*(-HALF+i),i=1,nq)]
-      Quadrature%x = reshape(x,shape=[1,nq])
-      Quadrature%w = [(dx,i=1,nq)]
+    END IF
+    !=========================================================================
 
-      allocate(d0gb(nq,nb))
-      CALL TabGB_BoxAB_QDUtil(d0gb,x,A,B,ReNorm=.TRUE.)
+    !=========================================================================
+    IF (err_loc == 0) THEN
+      Quadrature%name = type_name
+      SELECT CASE(TO_lowercase(type_name))
+      CASE ('fourier')
+        FourierAB = FourierAB_t(A=-PI,B=PI,ReNorm=.TRUE.,isym_grid=isym_grid_loc)
+        CALL Fourier_Quadrature_QDutil(x,w,nq,FourierAB,err_loc)
+       
+        IF (err_loc == 0) THEN
+          Quadrature%x = reshape(x,shape=[1,nq])
+          Quadrature%w = w
+         
+          allocate(d0gb(nq,nb))
+          CALL TabGB_Fourier_QDUtil(d0gb,x,FourierAB)
+        END IF
+       
+      CASE ('fourierab')
+        FourierAB = FourierAB_t(A=A,B=B,ReNorm=.TRUE.,isym_grid=isym_grid_loc)
+        CALL Fourier_Quadrature_QDutil(x,w,nq,FourierAB,err_loc)
+       
+        IF (err_loc == 0) THEN
+          Quadrature%x = reshape(x,shape=[1,nq])
+          Quadrature%w = w
+         
+          allocate(d0gb(nq,nb))
+          CALL TabGB_Fourier_QDUtil(d0gb,x,FourierAB)
+        END IF
+      CASE ('sine')
+        BoxAB = BoxAB_t(A=ZERO,B=PI,ReNorm=.TRUE.,isym_grid=isym_grid_loc)
+        CALL BoxAB_Quadrature_QDutil(x,w,nq,BoxAB,err_loc)
+       
+        IF (err_loc == 0) THEN
+          Quadrature%x = reshape(x,shape=[1,nq])
+          Quadrature%w = w
+         
+          allocate(d0gb(nq,nb))
+          CALL TabGB_BoxAB_QDUtil(d0gb,x,BoxAB)
+        END IF
+      CASE ('boxab')
+        BoxAB = BoxAB_t(A=A,B=B,ReNorm=.TRUE.,isym_grid=isym_grid_loc)
+        CALL BoxAB_Quadrature_QDutil(x,w,nq,BoxAB,err_loc)
+       
+        IF (err_loc == 0) THEN
+          Quadrature%x = reshape(x,shape=[1,nq])
+          Quadrature%w = w
+         
+          allocate(d0gb(nq,nb))
+          CALL TabGB_BoxAB_QDUtil(d0gb,x,BoxAB)
+        END IF
+       
+      CASE ('ho','hermite')
+        Quadrature%name = 'HO'
+        allocate(x(nq))
+        allocate(DVR(nq,nq))
+       
+        allocate(Xmat(nq,nq))
+        CALL X_Hermite_QDUtil(Xmat)
+        IF (debug) CALL Write_Mat(Xmat,nio=out_unit,nbcol=5,info='Xmat')
+        CALL diagonalization(Xmat,x,DVR)
+        IF (debug) CALL Write_Mat(DVR,nio=out_unit,nbcol=5,info='DVR')
+        Quadrature%x = reshape(x,shape=[1,nq])
+       
+        allocate(d0gb(nq,nb))
+        allocate(Quadrature%w(nq))
+        CALL TabGB_HermiteP0n_QDUtil(d0gb,x,gauss=.TRUE.,renorm=.TRUE.)
+       
+        ! weight
+        DO iq=1,nq
+          ib_max = maxloc(abs(d0gb(iq,:)),dim=1)
+          Quadrature%w(iq) = (DVR(ib_max,iq)/d0gb(iq,ib_max))**2
+        END DO
+      CASE default
+        err_loc = -3
+        IF (.NOT. present(err)) &
+          STOP 'ERROR in Init_Quadrature_QDUtil: no default quadrature'
+      END SELECT
+    END IF
+    !=========================================================================
 
-    CASE ('ho','hermite')
-      Quadrature%name = 'HO'
-      allocate(x(nq))
-      allocate(DVR(nq,nq))
-
-      allocate(Xmat(nq,nq))
-      CALL X_Hermite_QDUtil(Xmat)
-      IF (debug) CALL Write_Mat(Xmat,nio=out_unit,nbcol=5,info='Xmat')
-      CALL diagonalization(Xmat,x,DVR)
-      IF (debug) CALL Write_Mat(DVR,nio=out_unit,nbcol=5,info='DVR')
-      Quadrature%x = reshape(x,shape=[1,nq])
-
-      allocate(d0gb(nq,nb))
-      allocate(Quadrature%w(nq))
-      CALL TabGB_HermiteP0n_QDUtil(d0gb,x,gauss=.TRUE.,renorm=.TRUE.)
-
-      ! weight
-      DO iq=1,nq
-        ib_max = maxloc(abs(d0gb(iq,:)),dim=1)
-        Quadrature%w(iq) = (DVR(ib_max,iq)/d0gb(iq,ib_max))**2
-      END DO
-    CASE default
-      STOP 'ERROR in Init_Quadrature_QDUtil: no default quadrature'
-    END SELECT
-
-    !CALL Weight_OF_grid_QDUtil(Quadrature%w,d0gb,nb,nq)
-
-    CALL Check_Overlap_QDUtil(Quadrature,d0gb,nio=out_unit)
+    !=========================================================================
+    IF (err_loc == 0) THEN
+      !CALL Weight_OF_grid_QDUtil(Quadrature%w,d0gb,nb,nq)
+      CALL Check_Overlap_QDUtil(Quadrature,d0gb,nio=out_unit)
+      IF (abs(Quadrature%Sii) >= ZeroTresh .OR. abs(Quadrature%Sij) >= ZeroTresh) err_loc = 1
+    END IF
+    !=========================================================================
 
     IF (allocated(x))    deallocate(x)
+    IF (allocated(w))    deallocate(w)
     IF (allocated(Xmat)) deallocate(Xmat)
     IF (allocated(DVR))  deallocate(DVR)
     IF (allocated(d0gb)) deallocate(d0gb)
 
+    IF (present(err)) err = err_loc
     !---------------------------------------------------------------------
     IF (debug) THEN
+      write(out_unit,*) 'err_loc: ',err_loc
       CALL Write_Quadrature_QDUtil(Quadrature)
       write(out_unit,*) 'END ',name_sub
     END IF
@@ -171,7 +240,7 @@ CONTAINS
   END SUBROUTINE dealloc_Quadrature_QDUtil
   SUBROUTINE Check_Overlap_QDUtil(Quadrature,d0gb,nio)
     USE QDUtil_RW_MatVec_m
-    USE QDUtil_HermiteP_m
+    USE QDUtil_String_m
     IMPLICIT NONE
 
     TYPE (Quadrature_t), intent(inout)        :: Quadrature
@@ -213,13 +282,19 @@ CONTAINS
     END DO
     Quadrature%Sii = Sii
     Quadrature%Sij = Sij
-    IF (print_level == 1 ) write(nio,*) 'Sii,Sij',Quadrature%Sii,Quadrature%Sij
 
-    IF (debug .OR. print_level == 2 .OR. Sii > ONETENTH**6 .OR. Sij > ONETENTH**6 ) THEN
+    IF (debug .OR. print_level >= 2 .OR. Sii > ONETENTH**6 .OR. Sij > ONETENTH**6 ) THEN
       write(nio,*)
       write(nio,*) 'Sii,Sij',Quadrature%Sii,Quadrature%Sij
       write(nio,*)
       CALL write_Mat(S,nio=nio,nbcol=5,info='S')
+      write(nio,*)
+      DO ib=1,nb
+        write(nio,*) 'd0gb(:,',TO_string(ib),')',d0gb(:,ib)
+      END DO
+      !CALL write_Mat(d0gb,nio=nio,nbcol=5,info='d0gb')
+    ELSE
+      IF (print_level == 1 ) write(nio,*) 'Sii,Sij',Quadrature%Sii,Quadrature%Sij
     END IF
 
     IF (allocated(S)) deallocate(S)
@@ -256,8 +331,10 @@ CONTAINS
     ELSE
       write(nio_loc,*) 'nq: not initialized'
     END IF
-    IF (Quadrature%Sii /= -HUGE(ONE) .AND. Quadrature%Sii /= -HUGE(ONE)) THEN
+    IF (Quadrature%Sii /= -HUGE(ONE) .OR. Quadrature%Sii /= -HUGE(ONE)) THEN
       write(nio_loc,*) 'Sii,Sij (errors on the overlap)',Quadrature%Sii,Quadrature%Sij
+    ELSE
+      write(nio_loc,*) 'Sii,Sij (errors on the overlap): -HUGE, -HUGE'
     END IF
 
     IF (allocated(Quadrature%x)) THEN
@@ -330,19 +407,8 @@ CONTAINS
     !---------------------------------------------------------------------
   END SUBROUTINE Weight_OF_grid_QDUtil
   SUBROUTINE Test_Quadrature_QDUtil()
-    USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
-    USE QDUtil_String_m
     IMPLICIT NONE
-
-    TYPE (test_t)                    :: test_var
-    logical                          :: res_test
-    real (kind=Rkind), parameter     :: ZeroTresh    = ONETENTH**10
-    integer                          :: iVal,iExaVal
-    real (kind=Rkind)                :: Val,ExaVal
-
-    TYPE (Quadrature_t) :: xw
-    integer :: nq
 
     !----- for debuging --------------------------------------------------
     character (len=*), parameter :: name_sub='Test_Quadrature_QDUtil'
@@ -357,59 +423,12 @@ CONTAINS
     END IF
     flush(out_unit)
     !-----------------------------------------------------------
-    CALL Initialize_Test(test_var,test_name='Quadrature')
 
-    ! sine quadrature test
-    nq=128
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name='fourier')
-    res_test = (xw%Sii < ZeroTresh .AND. xw%Sij < ZeroTresh)
-    CALL Logical_Test(test_var,test1=res_test,info=('Fourier quadrature, Overlap check. nq=' // TO_string(nq)))
-    IF (.NOT. res_test .OR. debug) THEN
-      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
-    END IF
-    CALL dealloc_Quadrature_QDUtil(xw)
+    CALL Test_QuadratureError_QDUtil()
 
-    ! sine quadrature test
-    nq=10
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name='sine')
-    res_test = (xw%Sii < ZeroTresh .AND. xw%Sij < ZeroTresh)
-    CALL Logical_Test(test_var,test1=res_test,info=('Sine quadrature, Overlap check. nq=' // TO_string(nq)))
-    IF (.NOT. res_test .OR. debug) THEN
-      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
-    END IF
-    CALL dealloc_Quadrature_QDUtil(xw)
-
-    ! BoxAB quadrature test
-    nq=10
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,A=-ONE,B=ONE,type_name='BoxAB')
-    res_test = (xw%Sii < ZeroTresh .AND. xw%Sij < ZeroTresh)
-    CALL Logical_Test(test_var,test1=res_test,info=('BoxAB quadrature, Overlap check. nq=' // TO_string(nq)))
-    IF (.NOT. res_test .OR. debug) THEN
-      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
-    END IF
-    CALL dealloc_Quadrature_QDUtil(xw)
-
-    ! HO quadrature test
-    DO nq=1,5
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name='HO')
-    res_test = (xw%Sii < ZeroTresh .AND. xw%Sij < ZeroTresh)
-    CALL Logical_Test(test_var,test1=res_test,info=('HO quadrature, Overlap check. nq=' // TO_string(nq)))
-    IF (.NOT. res_test .OR. debug) THEN
-      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
-    END IF
-    CALL dealloc_Quadrature_QDUtil(xw)
-    END DO
-
-    nq = 65
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name='HO')
-    res_test = (xw%Sii < ZeroTresh .AND. xw%Sij < ZeroTresh)
-    CALL Logical_Test(test_var,test1=res_test,info=('HO quadrature, Overlap check. nq=' // TO_string(nq)))
-    IF (.NOT. res_test .OR. debug) THEN
-      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
-    END IF
-    CALL dealloc_Quadrature_QDUtil(xw)
-
-    CALL Finalize_Test(test_var)
+    CALL Test_QuadratureSine_QDUtil()
+    CALL Test_QuadratureFourier_QDUtil()
+    CALL Test_QuadratureHO_QDUtil()
 
     !-----------------------------------------------------------
     IF (debug) THEN
@@ -419,4 +438,344 @@ CONTAINS
     !-----------------------------------------------------------
 
   END SUBROUTINE Test_Quadrature_QDUtil
+  SUBROUTINE Test_QuadratureHO_QDUtil()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+
+    TYPE (Quadrature_t) :: xw
+    integer :: nq,isym_grid,err_grid
+    logical :: skip
+    character (len=:), allocatable :: info_grid
+    character (len=:), allocatable :: name_grid
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QuadratureHO_QDUtil'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL set_print_level(prtlev=1,force=.TRUE.)
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+    CALL Initialize_Test(test_var,test_name='QuadratureHO')
+
+    !========================================================================================
+    ! HO quadrature test
+    name_grid = 'HO'
+    DO nq=1,5
+      info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+      res_test = (err_grid ==0)
+      CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+      IF (.NOT. res_test .OR. debug) THEN
+        CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+      END IF
+    END DO
+
+    name_grid = 'HO'
+    nq = 65
+    info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    res_test = (err_grid ==0)
+    CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+    IF (.NOT. res_test .OR. debug) THEN
+      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    END IF
+    !========================================================================================
+
+    CALL Finalize_Test(test_var)
+
+    !========================================================================================
+    CALL dealloc_Quadrature_QDUtil(xw)
+
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'END ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+
+  END SUBROUTINE Test_QuadratureHO_QDUtil
+  SUBROUTINE Test_QuadratureSine_QDUtil()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+
+    TYPE (Quadrature_t) :: xw
+    integer :: nq,isym_grid,err_grid
+    logical :: skip
+    character (len=:), allocatable :: info_grid
+    character (len=:), allocatable :: name_grid
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QuadratureSine_QDUtil'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL set_print_level(prtlev=1,force=.TRUE.)
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+    CALL Initialize_Test(test_var,test_name='QuadratureSine')
+
+    !========================================================================================
+    ! sine quadrature test
+    name_grid = 'sine'
+    DO nq=1,8
+      info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
+
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+      res_test = (err_grid ==0)
+      CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+      IF (.NOT. res_test .OR. debug) THEN
+        CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+      END IF
+    END DO
+
+    ! BoxAB quadrature test
+    nq=10
+    name_grid = 'BoxAB'
+    info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,A=-ONE,B=ONE,type_name=name_grid,err=err_grid)
+    res_test = (err_grid ==0)
+    CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+    IF (.NOT. res_test .OR. debug) THEN
+      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    END IF
+    !========================================================================================
+
+    CALL Finalize_Test(test_var)
+
+    !========================================================================================
+    CALL dealloc_Quadrature_QDUtil(xw)
+
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'END ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+
+  END SUBROUTINE Test_QuadratureSine_QDUtil
+  SUBROUTINE Test_QuadratureFourier_QDUtil()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+
+    TYPE (Quadrature_t) :: xw
+    integer :: nq,isym_grid,err_grid
+    logical :: skip
+    character (len=:), allocatable :: info_grid
+    character (len=:), allocatable :: name_grid
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QuadratureFourier_QDUtil'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL set_print_level(prtlev=1,force=.TRUE.)
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+    CALL Initialize_Test(test_var,test_name='QuadratureFourier')
+
+  
+    !========================================================================================
+    ! Fourier quadrature test
+    nq=9
+    name_grid = 'Fourier'
+    DO nq=1,8
+    DO isym_grid=-1,1
+      info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
+
+      skip = (mod(nq,2) == 0 .AND. isym_grid /= 0)
+      IF (skip) CYCLE
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
+      res_test = (err_grid ==0)
+      CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ', Overlap check: T = ' // TO_string(res_test)))
+      IF (.NOT. res_test .OR. debug) THEN
+        CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+      END IF
+    END DO
+    END DO
+
+    ! FourierAB (-1.,1.)
+    nq=7
+    isym_grid = 0
+    name_grid = 'FourierAB'
+    info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,A=-ONE,B=ONE,isym_grid=isym_grid,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
+    IF (.NOT. res_test .OR. debug) THEN
+      CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    END IF
+    !========================================================================================
+
+    CALL Finalize_Test(test_var)
+
+    !========================================================================================
+    CALL dealloc_Quadrature_QDUtil(xw)
+
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'END ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+
+  END SUBROUTINE Test_QuadratureFourier_QDUtil
+  SUBROUTINE Test_QuadratureError_QDUtil()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+    integer                          :: iVal,iExaVal
+    real (kind=Rkind)                :: Val,ExaVal
+
+    TYPE (Quadrature_t) :: xw
+    integer :: nq,isym_grid,err_grid
+    logical :: skip
+    character (len=:), allocatable :: info_grid
+    character (len=:), allocatable :: name_grid
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QuadratureError_QDUtil'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL set_print_level(prtlev=1,force=.TRUE.)
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+
+    CALL Initialize_Test(test_var,test_name='QuadratureError')
+
+    !========================================================================================
+    ! XX quadrature test
+    nq=4
+    name_grid = 'XXX'
+    info_grid = name_grid // ' quadrature' // '_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
+    write(test_var%test_log_file_unit,*) 'The grid ',name_grid,' does not exist.'
+    CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    !========================================================================================
+
+    !========================================================================================
+    ! Fourier with nq=0 test
+    nq=0
+    name_grid = 'Fourier'
+    info_grid = name_grid // ' quadrature' // '_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
+    write(test_var%test_log_file_unit,*) 'The number grid points is ZERO.'
+    CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    !========================================================================================
+
+    !========================================================================================
+    ! BoxAB (1.,1.), it should rise an error (B<=A)
+    nq=7
+    isym_grid = 0
+    name_grid = 'BoxAB'
+    info_grid = name_grid // ' quadrature_isym_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,A=ONE,B=ONE,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
+    write(test_var%test_log_file_unit,*) 'Quadrature impossible: B = A'
+    CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+
+    ! FourierAB (1.,-1.), it should rise an error (B<=A)
+    nq=7
+    isym_grid = 0
+    name_grid = 'FourierAB'
+    info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,A=ONE,B=-ONE,isym_grid=isym_grid,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
+    write(test_var%test_log_file_unit,*) 'Quadrature impossible: B <= A'
+    CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    !========================================================================================
+
+    !========================================================================================
+    ! This should generate an error on the overlap (the last basis function on the grid is zero)
+    nq=6
+    isym_grid = -1
+    name_grid = 'Fourier'
+    info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
+    write(test_var%test_log_file_unit,*) 'When nb (=nq) is even and when the grid starts in A (-PI), the overlap CANNOT be the identity matrix.'
+    write(test_var%test_log_file_unit,*) ' Because,the last basis function on the grid is zero (d0gb(:,ib)=ZERO).'
+    CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+
+    nq=4
+    isym_grid = 1
+    name_grid = 'Fourier'
+    info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
+
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
+    res_test = (err_grid == 0)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
+    write(test_var%test_log_file_unit,*) &
+       'When nb (=nq) is even and when the grid ends in B (PI), the overlap CANNOT be the identity matrix.'
+    write(test_var%test_log_file_unit,*) ' Because,the last basis function on the grid is zero (d0gb(:,ib)=ZERO).'
+    CALL Write_Quadrature_QDUtil(xw,nio=test_var%test_log_file_unit)
+    !========================================================================================
+
+    CALL Finalize_Test(test_var)
+
+    !========================================================================================
+    CALL dealloc_Quadrature_QDUtil(xw)
+
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'END ',name_sub
+    END IF
+    flush(out_unit)
+    !-----------------------------------------------------------
+
+  END SUBROUTINE Test_QuadratureError_QDUtil
 END MODULE QDUtil_Quadrature_m

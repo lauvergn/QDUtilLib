@@ -31,16 +31,21 @@ MODULE QDUtil_Fourier_m
   IMPLICIT NONE
 
   PRIVATE
-
-  PUBLIC :: TabGB_Fourier_QDUtil
+  TYPE FourierAB_t
+    real(kind=Rkind) :: A         = -PI
+    real(kind=Rkind) :: B         = +PI
+    integer          :: isym_grid = 0 ! Possible values: -1, 0, +1, the grids starts in A, A+dx/2, A+dx
+    logical          :: ReNorm    = .TRUE. ! renormalization os the basis functions
+  END TYPE FourierAB_t
+  PUBLIC :: FourierAB_t,Fourier_Quadrature_QDutil,TabGB_Fourier_QDUtil
 
 CONTAINS
-  SUBROUTINE TabGB_Fourier_QDUtil(d0GB,x,ReNorm)
+  SUBROUTINE TabGB_Fourier_QDUtil(d0GB,x,FourierAB)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: d0GB(:,:)
     real (kind=Rkind),   intent(in)           :: x(:)
-    logical,             intent(in)           :: ReNorm
+    TYPE(FourierAB_t),   intent(in)           :: FourierAB
 
     integer           :: nb,nq
     integer           :: iq
@@ -61,51 +66,51 @@ CONTAINS
     END IF
 
     DO iq=1,nq
-      CALL TabB_Fourier_QDUtil(d0gb(iq,:),x(iq),ReNorm)
+      CALL TabB_Fourier_QDUtil(d0gb(iq,:),x(iq),FourierAB)
     END DO
-    IF (nb == nq .AND. ReNorm)  d0gb(:,nq) = d0gb(:,nq) / sqrt(TWO)
+    IF (nb == nq .AND. mod(nb,2) == 0 .AND. FourierAB%ReNorm)  d0gb(:,nq) = d0gb(:,nq) / sqrt(TWO)
 
   END SUBROUTINE TabGB_Fourier_QDUtil
-  SUBROUTINE TabB_Fourier_QDUtil(Fourier,x,ReNorm)
+  SUBROUTINE TabB_Fourier_QDUtil(Fourier,x,FourierAB)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: Fourier(:)
     real (kind=Rkind),   intent(in)           :: x
-    logical,             intent(in)           :: ReNorm
+    TYPE(FourierAB_t),   intent(in)           :: FourierAB
 
     integer           :: ib,nb
-    logical           :: ReNorm_loc
 
     nb = size(Fourier)
     IF ( nb < 1 ) RETURN
 
     DO ib=1,nb
-      Fourier(ib) = Fourier_QDutil(x,ib,ReNorm)
+      Fourier(ib) = Fourier_QDutil(x,ib,FourierAB)
     END DO
 
   END SUBROUTINE TabB_Fourier_QDUtil
-  FUNCTION Fourier_QDutil(x,ib,ReNorm) RESULT(f)
+  FUNCTION Fourier_QDutil(x,ib,FourierAB) RESULT(f)
     IMPLICIT NONE
 
     real(kind=Rkind)    :: f
 
     real (kind=Rkind),   intent(in)   :: x
     integer,             intent(in)   :: ib
-    logical,             intent(in)   :: ReNorm
+    TYPE(FourierAB_t),   intent(in)   :: FourierAB
 
     !---------------------------------------------------------------------
     real(kind=Rkind) :: xx
     integer          :: ii
+    real(kind=Rkind), parameter :: twopi = pi+pi
     real(kind=Rkind), parameter :: sqpi = ONE/sqrt(pi)
     real(kind=Rkind), parameter :: sq2pi = ONE/sqrt(pi+pi)
     !---------------------------------------------------------------------
 
     ii = ib/2
-    xx = mod(x*ii,pi+pi)
+    xx = mod((x/(FourierAB%B-FourierAB%A)*twopi)*ii,twopi)
 
     IF (ii == 0) THEN
-      IF (ReNorm) THEN
-        f = sq2pi
+      IF (FourierAB%ReNorm) THEN
+        f = ONE/sqrt(FourierAB%B-FourierAB%A)
       ELSE
         f = ONE
       END IF
@@ -115,8 +120,41 @@ CONTAINS
       ELSE
         f = cos(xx)
       END IF
-      IF (ReNorm) f = f * sqpi
+      IF (FourierAB%ReNorm) f = f /sqrt((FourierAB%B-FourierAB%A)/TWO)
     END IF
   END function Fourier_QDutil
 
+  SUBROUTINE Fourier_Quadrature_QDutil(x,w,nq,FourierAB,err)
+    IMPLICIT NONE
+
+    real (kind=Rkind), allocatable,  intent(inout) :: x(:),w(:)
+    integer,                         intent(in)    :: nq
+    TYPE(FourierAB_t),               intent(in)    :: FourierAB
+    integer,                         intent(inout) :: err
+
+    integer           :: i
+    real (kind=Rkind) :: dx
+
+    err = 0
+    IF (mod(nq,2) == 0 .AND. FourierAB%isym_grid /= 0) err = -1
+
+    IF (err == 0) THEN
+      dx  = (FourierAB%B-FourierAB%A)/nq
+      SELECT CASE (FourierAB%isym_grid)
+      CASE (-1)
+        x   = [(FourierAB%A+dx*(i-ONE),i=1,nq)]
+      CASE (0)
+        x   = [(FourierAB%A+dx*(i-HALF),i=1,nq)]
+      CASE (1)
+        x   = [(FourierAB%A+dx*(i-ZERO),i=1,nq)]
+      CASE default
+        err = -2
+        write(out_unit,*) 'ERROR in Fourier_Quadrature_QDutil: Wrong isym_grid value'
+        write(out_unit,*) 'isym_grid: ',FourierAB%isym_grid
+        write(out_unit,*) 'Possible value: -1, 0, 1'
+      END SELECT
+      w = [(dx,i=1,nq)]
+    END IF
+
+  END SUBROUTINE Fourier_Quadrature_QDutil
 END MODULE QDUtil_Fourier_m
