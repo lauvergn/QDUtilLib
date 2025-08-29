@@ -554,7 +554,7 @@ END FUNCTION QDUtil_compare_Rk8
 
     integer                          :: io,ioerr
     real(kind=Rkind),    allocatable :: R1Vec(:),R2Vec(:)
-    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     !====================================================================
     ! Tests the sorting

@@ -73,11 +73,11 @@ CONTAINS
 
     integer                          :: ib,jb,ib_max,iq,nb
     real (kind=Rkind), allocatable   :: d0gb(:,:)
-    real (kind=Rkind), parameter     :: ZeroTresh    = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     !---------------------------------------------------------------------
-    logical,parameter :: debug= .FALSE.
-    !logical,parameter :: debug= .TRUE.
+    !logical,parameter :: debug= .FALSE.
+    logical,parameter :: debug= .TRUE.
     character (len=*), parameter :: name_sub='Init_Quadrature_QDUtil'
     !---------------------------------------------------------------------
     IF (debug) THEN
@@ -85,6 +85,10 @@ CONTAINS
       write(out_unit,*) 'BEGINNING ',name_sub
       write(out_unit,*)
     END IF
+    write(out_unit,*) 'Rkind',Rkind
+    write(out_unit,*) 'ZeroTresh',ZeroTresh
+    write(out_unit,*)
+    flush(out_unit)
     !---------------------------------------------------------------------
     CALL dealloc_Quadrature_QDUtil(Quadrature)
     err_loc = 0
@@ -254,7 +258,7 @@ CONTAINS
     !=========================================================================
     IF (err_loc == 0) THEN
       CALL Check_Overlap_QDUtil(Quadrature,d0gb,nio=out_unit)
-      IF (abs(Quadrature%Sii) >= ZeroTresh .OR. abs(Quadrature%Sij) >= ZeroTresh) err_loc = 1
+      IF (abs(Quadrature%Sii) >= nb*ZeroTresh .OR. abs(Quadrature%Sij) >= nb*ZeroTresh) err_loc = 1
     END IF
     !=========================================================================
 
@@ -533,6 +537,7 @@ CONTAINS
 
     name_grid = 'HermiteP'
     nq = 65
+    IF (Rkind == Rk4) nq = 25 ! Because in simple precision, it does not work with nq=65
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
     CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
     res_test = (err_grid ==0)

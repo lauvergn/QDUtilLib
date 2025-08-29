@@ -2009,7 +2009,8 @@ MODULE QDUtil_RW_MatVec_m
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+    !real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     integer                          :: io,ioerr
     real(kind=Rkind),    allocatable :: R1Mat(:,:),R1Vec(:)

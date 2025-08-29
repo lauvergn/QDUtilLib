@@ -46,7 +46,9 @@ MODULE QDUtil_NumParameters_m
   integer, parameter :: Ik4        = int32  ! 4
   integer, parameter :: Ik8        = int64  ! 8
 
+  !integer, parameter :: Rkind      = real32 ! 4
   integer, parameter :: Rkind      = real64 ! 8
+  !integer, parameter :: Rkind      = real128 ! 8
   integer, parameter :: Ikind      = int32  ! 4
   integer, parameter :: ILkind     = int64  ! 8
 
@@ -86,7 +88,6 @@ MODULE QDUtil_NumParameters_m
   integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
   integer :: out_unit  = OUTPUT_UNIT ! Unit for the input   files, with the ISO_FORTRAN_ENV
 
-  !integer, protected :: print_level  = 1        ! 0 minimal, 1 default, 2 large, -1 nothing, -2 not initialized
   integer, protected :: print_level  = -2        ! 0 minimal, 1 default, 2 large, -1 nothing, -2 not initialized
 
   integer, parameter :: Name_len     = 20
@@ -118,7 +119,7 @@ CONTAINS
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind), parameter     :: ZeroTresh    = 10._Rkind**(-10)
+    real (kind=Rkind),   parameter   :: ZeroTresh    = 100._Rkind*epsilon(1._Rkind)
     integer                          :: i
 
     real (kind=Rkind), parameter   :: tab_ParaReal(*) = [                      &
