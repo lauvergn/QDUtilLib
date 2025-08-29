@@ -1098,7 +1098,7 @@ MODULE QDUtil_Matrix_m
     IF ( lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
-    SELECT CASE (lu_type)
+    SELECT CASE (lu_type_loc)
     CASE(1) ! ori
       allocate(work(n))
       CALL QDUtil_ludcmp_cplx(a,n,work,LU_index,d)
