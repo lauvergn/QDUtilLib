@@ -3,10 +3,11 @@
 here=`pwd`
 
 cd ..
-  make cleanall
+  make cleanall &> comp.log
 cd $here
 
 rm -f ALL_Tests.log
+num=0
 
 for FC in gfortran
 do
@@ -19,21 +20,29 @@ do
   do
   for INT in 4 8
   do
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                  >> ALL_Tests.log
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                  >> ALL_Tests.log
-  echo $FC  OPT $OPT OpenMP $OMP LAPACK $LAPACK INT $INT  >> ALL_Tests.log
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                  >> ALL_Tests.log
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                  >> ALL_Tests.log
+  for RKIND in real32 real64 real128
+  do
+  num=$(($num + 1))
+  echo test number: $num
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
+  echo $FC  OPT $OPT OpenMP $OMP LAPACK $LAPACK INT $INT RKIND $RKIND >> ALL_Tests.log
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
 
   cd ..
-     ext=$F90"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK"_INT"$INT
+     ext=$F90"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK"_INT"$INT"_RKIND"$RKIND
      RES="res_QDLib_"$ext
      LOG="comp_"$ext".log"
-     #make clean > $here/$LOG 2>&1
-     make FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT > $here/$LOG 2>&1
+     make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND > $here/$LOG 2>&1
      ./Test_QDLib.x > $here/$RES
+      make clean       FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND >> $here/$LOG 2>&1
+      rm -f libQD*.a
   cd  $here
-  grep "Number of error(s)" $RES >> ALL_Tests.log
+  #grep "Number of error(s)" $RES >> ALL_Tests.log
+  awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$2} END {print "Number of tests: " test}'                 $RES >> ALL_Tests.log
+	awk  -F: 'BEGIN{err=0}  /Number of error/ {err+=$2}  END {print "Number of error(s) for all tests: " err}' $RES >> ALL_Tests.log
+  done
   done
   done
   done

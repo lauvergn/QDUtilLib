@@ -163,7 +163,7 @@ doc:
 #================ cleaning =====================
 .PHONY: clean cleanall
 clean:
-	rm -f $(OBJ_DIR)/*/*.o $(OBJ_DIR)/*.o
+	rm -f $(OBJ_DIR)/*.o
 	rm -f *.log test*.txt file.*
 	rm -f Test*.x App*.x
 	@echo "  done cleaning"

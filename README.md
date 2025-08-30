@@ -29,10 +29,9 @@ The compiler options are (the first values are the default):
 - OMP=1 or 0: with or without openmp
 - LAPACK=1 or 0: with or without blas and lapack libraries
 - INT=4 or 8: change the integer kind default compilation option
-- RKIND=real64 or real32 or real 128: change the real kind
+- RKIND=real64 or real32 or real128: change the real kind
 
 Exemple: 
-
 
 ```bash
 make FC=gfortran OPT=1 OMP=0 RKIND=real128
@@ -52,7 +51,7 @@ make cleanall
 
 Remove all files (executable, library, .mod, .o, build, documentation)
 
-To test the module, in TESTS directory, run
+To test the module (it is long), from the TESTS directory, run
 
 ```bash
 ./run_tests.sh
@@ -64,8 +63,15 @@ The tests are running with gfortran and with combinations of several options:
 - OMP=1 or 0: with or without openmp
 - LAPACK=1 or 0: with or without blas and lapack libraries
 - INT=4 or 8: change the integer kind default compilation option
+- RKIND=real64 or real32 or real128: change the real kind
 
 The file, **ALL_Tests.log**, contains a summary of all the tests.
+
+Alternatively, you run a test with the makefile:
+
+```bash
+make ut FC=gfortran OPT=1 OMP=0 RKIND=real128
+```
 
 ### b) with fpm:
 
@@ -320,5 +326,11 @@ isym_grid=-1 => the first grid point is in A+dx (last point in B)
 Examples for an HO grid (with 10 points):
 
 ```Fortran
-CALL Init_Quadrature_QDUtil(Quadrature,nq=10,name="HO",xc=1._real64,scale=0.5_real64,err=err_grid)
+CALL Init_Quadrature(Quadrature,nq=10,name="HO",xc=1._real64,scale=0.5_real64,err=err_grid)
+```
+
+Or for High Precision (HP) calculation
+
+```Fortran
+CALL Init_Quadrature_HP(Quadrature,nq=10,name="HO",xc=1._real64,scale=0.5_real64,err=err_grid)
 ```
