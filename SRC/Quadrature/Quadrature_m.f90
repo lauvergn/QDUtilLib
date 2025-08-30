@@ -45,11 +45,11 @@ MODULE QDUtil_Quadrature_m
   PUBLIC :: Test_Quadrature_QDUtil
 
 CONTAINS
-  SUBROUTINE Init_Quadrature_QDUtil(Quadrature,nq,type_name,A,B,xc,scale,isym_grid,err)
+  SUBROUTINE Init_Quadrature_QDUtil(Quadrature,nq,name,A,B,xc,scale,isym_grid,err)
     USE QDUtil_String_m
     USE QDUtil_diago_m
     USE QDUtil_RW_MatVec_m
-    USE QDUtil_HermiteP_m
+    USE QDUtil_hermiteh_m
     USE QDUtil_BoxAB_m
     USE QDUtil_Fourier_m
     USE QDUtil_LegendreP_m
@@ -57,7 +57,7 @@ CONTAINS
 
     TYPE (Quadrature_t), intent(inout)         :: Quadrature
     integer,             intent(in)            :: nq
-    character (len=*),   intent(in)            :: type_name
+    character (len=*),   intent(in)            :: name
     real (kind=Rkind),   intent(in),  optional :: A,B
     real (kind=Rkind),   intent(in),  optional :: xc,scale
     integer,             intent(in),  optional :: isym_grid
@@ -76,8 +76,8 @@ CONTAINS
     real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     !---------------------------------------------------------------------
-    !logical,parameter :: debug= .FALSE.
-    logical,parameter :: debug= .TRUE.
+    logical,parameter :: debug= .FALSE.
+    !logical,parameter :: debug= .TRUE.
     character (len=*), parameter :: name_sub='Init_Quadrature_QDUtil'
     !---------------------------------------------------------------------
     IF (debug) THEN
@@ -85,7 +85,6 @@ CONTAINS
       write(out_unit,*) 'BEGINNING ',name_sub
       write(out_unit,*)
     END IF
-    write(out_unit,*) 'Rkind',Rkind
     write(out_unit,*) 'ZeroTresh',ZeroTresh
     write(out_unit,*)
     flush(out_unit)
@@ -110,7 +109,7 @@ CONTAINS
     !=========================================================================
 
     !=========================================================================
-    IF (TO_lowercase(type_name) == 'fourierab' .OR. TO_lowercase(type_name) == 'boxab') THEN
+    IF (TO_lowercase(name) == 'fourierab' .OR. TO_lowercase(name) == 'boxab') THEN
       IF (present(A) .AND. present(B)) THEN
         IF (B <= A) THEN
           err_loc = -2
@@ -147,8 +146,8 @@ CONTAINS
 
     !=========================================================================
     IF (err_loc == 0) THEN
-      Quadrature%name = type_name
-      SELECT CASE(TO_lowercase(type_name))
+      Quadrature%name = name
+      SELECT CASE(TO_lowercase(name))
       CASE ('fourier')
         FourierAB = FourierAB_t(A=-PI,B=PI,ReNorm=.TRUE.,isym_grid=isym_grid_loc)
         CALL Fourier_Quadrature_QDutil(x,w,nq,FourierAB,err_loc)
@@ -195,12 +194,12 @@ CONTAINS
           CALL TabGB_BoxAB_QDUtil(d0gb,x,BoxAB)
         END IF
        
-      CASE ('ho','hermitep')
+      CASE ('ho','hermiteh')
         allocate(x(nq))
         allocate(DVR(nq,nq))
        
         allocate(Xmat(nq,nq))
-        CALL X_HermiteP_QDUtil(Xmat)
+        CALL X_hermiteh_QDUtil(Xmat)
         IF (debug) CALL Write_Mat(Xmat,nio=out_unit,nbcol=5,info='Xmat')
         CALL diagonalization(Xmat,x,DVR)
         IF (debug) CALL Write_Mat(DVR,nio=out_unit,nbcol=5,info='DVR')
@@ -208,7 +207,7 @@ CONTAINS
        
         allocate(d0gb(nq,nb))
         allocate(Quadrature%w(nq))
-        CALL TabGB_HermiteP_QDUtil(d0gb,x,gauss=.TRUE.,renorm=.TRUE.)
+        CALL TabGB_hermiteh_QDUtil(d0gb,x,gauss=.TRUE.,renorm=.TRUE.)
        
         ! weight
         DO iq=1,nq
@@ -217,7 +216,7 @@ CONTAINS
         END DO
         !CALL Weight_OF_grid_QDUtil(Quadrature%w,d0gb,nb,nq)
 
-        IF (TO_lowercase(type_name) == 'ho') THEN
+        IF (TO_lowercase(name) == 'ho') THEN
           HO = HO_t(xc=xc_loc,scale=scale_loc,ReNorm=.TRUE.)
           x = x/HO%Scale + HO%xc
           Quadrature%x = reshape(x,shape=[1,nq])
@@ -524,10 +523,10 @@ CONTAINS
 
     !========================================================================================
     ! HO quadrature test
-    name_grid = 'HermiteP'
+    name_grid = 'hermiteh'
     DO nq=1,5
       info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
-      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
       IF (.NOT. res_test .OR. debug) THEN
@@ -535,11 +534,11 @@ CONTAINS
       END IF
     END DO
 
-    name_grid = 'HermiteP'
+    name_grid = 'hermiteh'
     nq = 65
     IF (Rkind == Rk4) nq = 25 ! Because in simple precision, it does not work with nq=65
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
     res_test = (err_grid ==0)
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN
@@ -550,7 +549,7 @@ CONTAINS
     name_grid = 'HO'
     nq = 11
     info_grid = name_grid // '_xc1._scale0.5' // ' quadrature_nq=' // TO_string(nq)
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,xc=ONE,scale=HALF,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,xc=ONE,scale=HALF,err=err_grid)
     res_test = (err_grid ==0)
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN
@@ -606,7 +605,7 @@ CONTAINS
     name_grid = 'LegendreP'
     DO nq=1,11
       info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
-      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
       IF (.NOT. res_test .OR. debug) THEN
@@ -617,7 +616,7 @@ CONTAINS
     name_grid = 'LegendreP'
     nq = 127
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
     res_test = (err_grid ==0)
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN
@@ -673,7 +672,7 @@ CONTAINS
     DO nq=1,8
       info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
 
-      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
       IF (.NOT. res_test .OR. debug) THEN
@@ -686,7 +685,7 @@ CONTAINS
     name_grid = 'BoxAB'
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,A=-ONE,B=ONE,type_name=name_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,A=-ONE,B=ONE,name=name_grid,err=err_grid)
     res_test = (err_grid ==0)
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN
@@ -748,7 +747,7 @@ CONTAINS
 
       skip = (mod(nq,2) == 0 .AND. isym_grid /= 0)
       IF (skip) CYCLE
-      CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
+      CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,isym_grid=isym_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ', Overlap check: T = ' // TO_string(res_test)))
       IF (.NOT. res_test .OR. debug) THEN
@@ -763,7 +762,7 @@ CONTAINS
     name_grid = 'FourierAB'
     info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,A=-ONE,B=ONE,isym_grid=isym_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,A=-ONE,B=ONE,isym_grid=isym_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN
@@ -823,7 +822,7 @@ CONTAINS
     name_grid = 'XXX'
     info_grid = name_grid // ' quadrature' // '_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
     write(test_var%test_log_file_unit,*) 'The grid ',name_grid,' does not exist.'
@@ -836,7 +835,7 @@ CONTAINS
     name_grid = 'Fourier'
     info_grid = name_grid // ' quadrature' // '_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
     write(test_var%test_log_file_unit,*) 'The number grid points is ZERO.'
@@ -850,7 +849,7 @@ CONTAINS
     name_grid = 'BoxAB'
     info_grid = name_grid // ' quadrature_isym_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,A=ONE,B=ONE,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,A=ONE,B=ONE,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
     write(test_var%test_log_file_unit,*) 'Quadrature impossible: B = A'
@@ -862,7 +861,7 @@ CONTAINS
     name_grid = 'FourierAB'
     info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,A=ONE,B=-ONE,isym_grid=isym_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,A=ONE,B=-ONE,isym_grid=isym_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
     write(test_var%test_log_file_unit,*) 'Quadrature impossible: B <= A'
@@ -876,7 +875,7 @@ CONTAINS
     name_grid = 'Fourier'
     info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,isym_grid=isym_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
     write(test_var%test_log_file_unit,*) &
@@ -889,7 +888,7 @@ CONTAINS
     name_grid = 'Fourier'
     info_grid = name_grid // ' quadrature_isym' // TO_string(isym_grid) // '_nq=' // TO_string(nq)
 
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,isym_grid=isym_grid,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,isym_grid=isym_grid,err=err_grid)
     res_test = (err_grid == 0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: F = ' // TO_string(res_test)))
     write(test_var%test_log_file_unit,*) &
@@ -902,7 +901,7 @@ CONTAINS
     name_grid = 'HO'
     nq = 5
     info_grid = name_grid // '_xc1._scale-0.5' // ' quadrature_nq=' // TO_string(nq)
-    CALL Init_Quadrature_QDUtil(xw,nq=nq,type_name=name_grid,xc=ONE,scale=-HALF,err=err_grid)
+    CALL Init_Quadrature_QDUtil(xw,nq=nq,name=name_grid,xc=ONE,scale=-HALF,err=err_grid)
     res_test = (err_grid ==0)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     IF (.NOT. res_test .OR. debug) THEN

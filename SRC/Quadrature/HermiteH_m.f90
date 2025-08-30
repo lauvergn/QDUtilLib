@@ -26,7 +26,7 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE QDUtil_HermiteP_m
+MODULE QDUtil_hermiteh_m
   USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
@@ -37,7 +37,7 @@ MODULE QDUtil_HermiteP_m
     real(kind=Rkind) :: Scale     = ONE
     logical          :: ReNorm    = .TRUE. ! renormalization of the basis functions
   END TYPE HO_t
-  PUBLIC :: HO_t,TabGB_HO_QDUtil,TabGB_HermiteP_QDUtil, X_HermiteP_QDUtil
+  PUBLIC :: HO_t,TabGB_HO_QDUtil,TabGB_hermiteh_QDUtil, X_hermiteh_QDUtil
 
 CONTAINS
 
@@ -79,7 +79,7 @@ CONTAINS
     real (kind=Rkind) :: x
 
     x = HO%Scale * (xHO - HO%xc)
-    CALL TabB_HermiteP_QDUtil(d0b,x,HO%ReNorm)
+    CALL TabB_hermiteh_QDUtil(d0b,x,HO%ReNorm)
 
     IF (HO%ReNorm) THEN
       d0b = d0b * exp(-HALF*x**2) /  sqrt(HO%Scale)
@@ -89,7 +89,7 @@ CONTAINS
     
   END SUBROUTINE TabB_HO_QDUtil
 
-  SUBROUTINE TabGB_HermiteP_QDUtil(d0GB,x,gauss,ReNorm)
+  SUBROUTINE TabGB_hermiteh_QDUtil(d0GB,x,gauss,ReNorm)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: d0GB(:,:)
@@ -105,24 +105,24 @@ CONTAINS
     nb = size(d0GB,dim=2)
 
     IF (nb < 1) THEN
-      write(out_unit,*) 'ERROR in TabGB_HermiteP_QDUtil:'
+      write(out_unit,*) 'ERROR in TabGB_hermiteh_QDUtil:'
       write(out_unit,*) 'nb < 1',nb
-      STOP 'ERROR in TabGB_HermiteP_QDUtil: nb<1'
+      STOP 'ERROR in TabGB_hermiteh_QDUtil: nb<1'
     END IF
     IF (nq /= size(x)) THEN
-      write(out_unit,*) 'ERROR in TabGB_HermiteP_QDUtil:'
+      write(out_unit,*) 'ERROR in TabGB_hermiteh_QDUtil:'
       write(out_unit,*) 'size(x) and nq differ',size(x),nq
-      STOP 'ERROR in TabGB_HermiteP_QDUtil: size(x) and nq differ'
+      STOP 'ERROR in TabGB_hermiteh_QDUtil: size(x) and nq differ'
     END IF
 
     DO iq=1,nq
-      CALL TabB_HermiteP_QDUtil(d0gb(iq,:),x(iq),ReNorm)
+      CALL TabB_hermiteh_QDUtil(d0gb(iq,:),x(iq),ReNorm)
       IF (gauss) d0gb(iq,:) = d0gb(iq,:) * exp(-HALF*x(iq)**2)
     END DO
     
-  END SUBROUTINE TabGB_HermiteP_QDUtil
+  END SUBROUTINE TabGB_hermiteh_QDUtil
 
-  SUBROUTINE TabB_HermiteP_QDUtil(P0n,x,ReNorm)
+  SUBROUTINE TabB_hermiteh_QDUtil(P0n,x,ReNorm)
     IMPLICIT NONE
 
     real (kind=Rkind),   intent(inout)        :: P0n(:)
@@ -157,9 +157,9 @@ CONTAINS
       P0n = P0n /  sqrt(Rnorm)
     END IF
     
-  END SUBROUTINE TabB_HermiteP_QDUtil
+  END SUBROUTINE TabB_hermiteh_QDUtil
 
-  SUBROUTINE X_HermiteP_QDUtil(X)
+  SUBROUTINE X_hermiteh_QDUtil(X)
     IMPLICIT NONE
     real (kind=Rkind), intent(inout) :: X(:,:)
 
@@ -168,9 +168,9 @@ CONTAINS
 
     nb = size(X,dim=1)
     IF (nb < 1) THEN
-      write(out_unit,*) 'ERROR in X_HermiteP_QDUtil:'
+      write(out_unit,*) 'ERROR in X_hermiteh_QDUtil:'
       write(out_unit,*) 'nb < 0',nb
-      STOP 'ERROR in X_HermiteP_QDUtil: nb < 0'
+      STOP 'ERROR in X_hermiteh_QDUtil: nb < 0'
     END IF
 
     X = ZERO
@@ -179,6 +179,6 @@ CONTAINS
       X(ib+1,ib) = sqrt(real(ib,kind=Rkind)*HALF)
     END DO
 
-  END SUBROUTINE X_HermiteP_QDUtil
+  END SUBROUTINE X_hermiteh_QDUtil
 
-END MODULE QDUtil_HermiteP_m
+END MODULE QDUtil_hermiteh_m
