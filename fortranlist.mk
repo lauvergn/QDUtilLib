@@ -18,7 +18,7 @@ NumParameters_m.f90  \
 QDUtil_m.f90  \
 BoxAB_m.f90  \
 Fourier_m.f90  \
-HermiteP_m.f90  \
+HermiteH_m.f90  \
 LegendreP_m.f90  \
 Quadrature_m.f90  \
 String_m.f90  \

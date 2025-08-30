@@ -8,13 +8,10 @@ PROGRAM App_QDLib
 
   TYPE(Frac_t)                     :: Frac1, Frac2
   TYPE(Frac_t),        allocatable :: tab_Frac(:)
-  character (len=:), allocatable   :: str
+  character (len=:),   allocatable :: str
 
-!  #if __LAPACK == 0
-!    write(out_unit,*) '  Lapack library is not linked'
-!  #else
-!    write(out_unit,*) '  Lapack library is linked'
-!  #endif
+  CALL version_QDUtil(Print_Version=.TRUE.)
+
  !====================================================================
   ! Tests string
   write(*,*) 'TO_string, integer: ',TO_string([0,1,2,3,4,5,6,7,8],max_col=5)

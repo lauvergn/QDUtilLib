@@ -17,7 +17,7 @@ qdutil_numparameters_m = $(OBJ_DIR)/NumParameters_m.o
 qdutil_m = $(OBJ_DIR)/QDUtil_m.o
 qdutil_boxab_m = $(OBJ_DIR)/BoxAB_m.o
 qdutil_fourier_m = $(OBJ_DIR)/Fourier_m.o
-qdutil_hermitep_m = $(OBJ_DIR)/HermiteP_m.o
+qdutil_hermiteh_m = $(OBJ_DIR)/HermiteH_m.o
 qdutil_legendrep_m = $(OBJ_DIR)/LegendreP_m.o
 qdutil_quadrature_m = $(OBJ_DIR)/Quadrature_m.o
 qdutil_string_m = $(OBJ_DIR)/String_m.o
@@ -82,6 +82,7 @@ $(OBJ_DIR)/Memory_Pointer_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_memory_base_m)
 $(OBJ_DIR)/NumParameters_m.o : \
+          $(iso_fortran_env) \
           $(qdutil_test_m)
 $(OBJ_DIR)/QDUtil_m.o : \
           $(qdutil_numparameters_m) \
@@ -99,14 +100,14 @@ $(OBJ_DIR)/QDUtil_m.o : \
           $(qdutil_memory_m) \
           $(qdutil_fft_ooura_m) \
           $(qdutil_quadrature_m) \
-          $(qdutil_hermitep_m) \
+          $(qdutil_hermiteh_m) \
           $(qdutil_boxab_m) \
           $(qdutil_fourier_m)
 $(OBJ_DIR)/BoxAB_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/Fourier_m.o : \
           $(qdutil_numparameters_m)
-$(OBJ_DIR)/HermiteP_m.o : \
+$(OBJ_DIR)/HermiteH_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/LegendreP_m.o : \
           $(qdutil_numparameters_m)
@@ -115,7 +116,7 @@ $(OBJ_DIR)/Quadrature_m.o : \
           $(qdutil_string_m) \
           $(qdutil_diago_m) \
           $(qdutil_rw_matvec_m) \
-          $(qdutil_hermitep_m) \
+          $(qdutil_hermiteh_m) \
           $(qdutil_boxab_m) \
           $(qdutil_fourier_m) \
           $(qdutil_legendrep_m) \

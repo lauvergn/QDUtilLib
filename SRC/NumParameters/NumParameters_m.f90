@@ -46,8 +46,14 @@ MODULE QDUtil_NumParameters_m
   integer, parameter :: Ik4        = int32  ! 4
   integer, parameter :: Ik8        = int64  ! 8
 
+  integer, parameter :: Rkind       =                         &
+#if defined(__RKIND)
+      __RKIND
+#else
+      real64
+#endif
   !integer, parameter :: Rkind      = real32 ! 4
-  integer, parameter :: Rkind      = real64 ! 8
+  !integer, parameter :: Rkind      = real64 ! 8
   !integer, parameter :: Rkind      = real128 ! 8
   integer, parameter :: Ikind      = int32  ! 4
   integer, parameter :: ILkind     = int64  ! 8
@@ -95,6 +101,28 @@ MODULE QDUtil_NumParameters_m
   integer, parameter :: Line_len     = 255
   integer, parameter :: error_l      = 80
 
+  character (len=*), parameter :: QDUtil_version =                         &
+#if defined(__QD_VERSION)
+      __QD_VERSION
+#else
+      'unknown: -D__QD_VERSION=?'
+#endif
+
+  character (len=*), parameter :: QDUtil_compile_date =                     &
+#if defined(__COMPILE_DATE)
+      __COMPILE_DATE
+#else
+      'unknown: -D__COMPILE_DATE=?'
+#endif
+
+  character (len=*), parameter :: QDUtil_compile_host =                      &
+#if defined(__COMPILE_HOST)
+      __COMPILE_HOST
+#else
+      "unknown: -D__COMPILE_HOST=?"
+#endif
+  logical, private :: QDUtil_Print_Version_done = .FALSE.
+
   PRIVATE :: QDUtil_set_print_level
   INTERFACE set_print_level
     MODULE PROCEDURE QDUtil_set_print_level
@@ -113,6 +141,38 @@ CONTAINS
     END IF
 
   END SUBROUTINE QDUtil_set_print_level
+  SUBROUTINE version_QDUtil(Print_Version)
+    USE iso_fortran_env
+    IMPLICIT NONE
+
+    logical,             intent(in)    :: Print_Version
+
+    IF (Print_Version) THEN
+      QDUtil_Print_Version_done = .TRUE.
+      write(out_unit,*) '================================================='
+      write(out_unit,*) '================================================='
+      write(out_unit,*) '== QD (Quantum Dynamics) Util Libraries ========='
+      write(out_unit,*) '== QDUtil version:    ',QDUtil_version
+      write(out_unit,*) '-------------------------------------------------'
+      write(out_unit,*) '== Compiled on       "',QDUtil_compile_host, '" the ',QDUtil_compile_date
+      write(out_unit,*) '== Compiler:         ',compiler_version()
+      write(out_unit,*) '== Compiler options: ',compiler_options()
+      write(out_unit,*) '-------------------------------------------------'
+      write(out_unit,*) 'QDUtil is a free software under the MIT Licence.'
+      write(out_unit,*) '  Copyright (c) 2022 David Lauvergnat [1]'
+      write(out_unit,*)
+      write(out_unit,*) '  [1]: Institut de Chimie Physique, UMR 8000, CNRS-Université Paris-Saclay, France'
+      write(out_unit,*) '=================================================' 
+#if __LAPACK == 0
+      write(out_unit,*) '  Lapack library is not linked'
+#else
+      write(out_unit,*) '  Lapack library is linked'
+#endif
+      write(out_unit,*) '  Rkind',Rkind
+      write(out_unit,*) '=================================================' 
+    END IF
+    
+  END SUBROUTINE version_QDUtil
   SUBROUTINE Test_QDUtil_NumParameters()
     USE QDUtil_Test_m
     IMPLICIT NONE
