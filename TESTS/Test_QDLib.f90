@@ -20,4 +20,7 @@ PROGRAM Test_QDLib
 
   CALL Test_Quadrature_QDUtil()
 
+
+  CALL Test_QDUtil_DiagoRk16()
+  CALL Test_Quadrature_Rk16_QDUtil()
 END PROGRAM Test_QDLib

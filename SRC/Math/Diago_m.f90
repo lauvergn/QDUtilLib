@@ -490,7 +490,6 @@ MODULE QDUtil_diago_m
 
   END SUBROUTINE QDUtil_Rdiagonalization
 
-
   SUBROUTINE QDUtil_Cdiagonalization_Her(Mat,Eig,Vec,diago_type,sort,phase)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
@@ -735,7 +734,7 @@ MODULE QDUtil_diago_m
 !
 !============================================================
 !
-!   diagonalisation trigonalisation puis diagonalisation
+!   diagonalization:  trigonalization then diagonalization
 !
 !============================================================
 !
@@ -898,7 +897,6 @@ MODULE QDUtil_diago_m
       RETURN
   END SUBROUTINE QDUtil_TQLI_EISPACK
 
-!
 !============================================================
 !
 !   Sort the eigenvalues and the eigenvectors

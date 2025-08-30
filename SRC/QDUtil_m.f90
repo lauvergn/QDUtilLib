@@ -48,9 +48,9 @@ MODULE QDUtil_m
   USE QDUtil_FFT_OOURA_m
 
   USE QDUtil_Quadrature_m
-  USE QDUtil_hermiteh_m
-  USE QDUtil_BoxAB_m
-  USE QDUtil_Fourier_m
+
+  USE QDUtil_diagoRk16_m
+  USE QDUtil_Quadrature_Rk16_m
 
   IMPLICIT NONE
 

@@ -85,6 +85,15 @@ MODULE QDUtil_NumParameters_m
   real (kind=Rkind), parameter ::                                              &
                 pi = 3.14159265358979323846264338327950288419716939937511_Rkind
 
+  real(kind=Rk4), parameter :: pi_Rk4         = &
+                 3.14159265358979323846264338327950288419716939937511_Rk4
+
+  real(kind=Rk8), parameter :: pi_Rk8         = &
+                3.14159265358979323846264338327950288419716939937511_Rk8
+
+  real(kind=Rk16), parameter :: pi_Rk16         = &
+                 3.14159265358979323846264338327950288419716939937511_Rk16
+  
   complex (kind=Rkind), parameter :: EYE      = (ZERO,ONE)
   complex (kind=Rkind), parameter :: CZERO    = (ZERO,ZERO)
   complex (kind=Rkind), parameter :: CONE     = (ONE,ZERO)
