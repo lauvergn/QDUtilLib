@@ -34,36 +34,46 @@ MODULE QDUtil_RW_MatVec_m
   INTERFACE Write_VecMat
     MODULE PROCEDURE QDUtil_Write_Rk4Mat,QDUtil_Write_Ck4Mat,QDUtil_Write_Rk4Mat_string
     MODULE PROCEDURE QDUtil_Write_Rk8Mat,QDUtil_Write_Ck8Mat,QDUtil_Write_Rk8Mat_string
-    MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
     MODULE PROCEDURE QDUtil_Write_Rk4Vec,QDUtil_Write_Ck4Vec
     MODULE PROCEDURE QDUtil_Write_Rk8Vec,QDUtil_Write_Ck8Vec
-    MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
     MODULE PROCEDURE QDUtil_Write_Ik4Mat,QDUtil_Write_Ik4Vec
     MODULE PROCEDURE QDUtil_Write_Ik8Mat,QDUtil_Write_Ik8Vec
+#if __WITHRK16 == 1
+    MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
+    MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
+#endif
   END INTERFACE
   INTERFACE Write_Mat
     MODULE PROCEDURE QDUtil_Write_Rk4Mat,QDUtil_Write_Ck4Mat,QDUtil_Write_Rk4Mat_string
     MODULE PROCEDURE QDUtil_Write_Rk8Mat,QDUtil_Write_Ck8Mat,QDUtil_Write_Rk8Mat_string
-    MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
     MODULE PROCEDURE QDUtil_Write_Ik4Mat,QDUtil_Write_Ik8Mat
+#if __WITHRK16 == 1
+    MODULE PROCEDURE QDUtil_Write_Rk16Mat,QDUtil_Write_Ck16Mat,QDUtil_Write_Rk16Mat_string
+#endif
   END INTERFACE
   INTERFACE Write_Vec
     MODULE PROCEDURE QDUtil_Write_Rk4Vec,QDUtil_Write_Ck4Vec
     MODULE PROCEDURE QDUtil_Write_Rk8Vec,QDUtil_Write_Ck8Vec
-    MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
     MODULE PROCEDURE QDUtil_Write_Ik4Vec,QDUtil_Write_Ik8Vec
+#if __WITHRK16 == 1
+    MODULE PROCEDURE QDUtil_Write_Rk16Vec,QDUtil_Write_Ck16Vec
+#endif
   END INTERFACE
   INTERFACE Read_Mat
     MODULE PROCEDURE QDUtil_Read_Rk4Mat,QDUtil_Read_Ck4Mat
     MODULE PROCEDURE QDUtil_Read_Rk8Mat,QDUtil_Read_Ck8Mat
-    MODULE PROCEDURE QDUtil_Read_Rk16Mat,QDUtil_Read_Ck16Mat
     MODULE PROCEDURE QDUtil_Read_Ik4Mat,QDUtil_Read_Ik8Mat
+#if __WITHRK16 == 1
+    MODULE PROCEDURE QDUtil_Read_Rk16Mat,QDUtil_Read_Ck16Mat
+#endif
   END INTERFACE
   INTERFACE Read_Vec
     MODULE PROCEDURE QDUtil_Read_Rk4Vec,QDUtil_Read_Ck4Vec
     MODULE PROCEDURE QDUtil_Read_Rk8Vec,QDUtil_Read_Ck8Vec
-    MODULE PROCEDURE QDUtil_Read_Rk16Vec,QDUtil_Read_Ck16Vec
     MODULE PROCEDURE QDUtil_Read_Ik4Vec,QDUtil_Read_Ik8Vec
+#if __WITHRK16 == 1
+    MODULE PROCEDURE QDUtil_Read_Rk16Vec,QDUtil_Read_Ck16Vec
+#endif
   END INTERFACE
 
   PUBLIC :: Write_VecMat, Write_Mat, Write_Vec, Read_Mat, Read_Vec
@@ -1094,13 +1104,13 @@ MODULE QDUtil_RW_MatVec_m
 
   END SUBROUTINE QDUtil_Read_Ck4Vec
 
-
+#if __WITHRK16 == 1
 
   SUBROUTINE QDUtil_Write_Rk16Mat(Mat,nio,nbcol,Rformat,info,iprint)
     USE QDUtil_NumParameters_m, ONLY : out_unit,Rk16
     IMPLICIT NONE
 
-    integer,                     intent(in) :: nio,nbcol
+    integer,                  intent(in) :: nio,nbcol
     real(kind=Rk16),          intent(in) :: Mat(:,:)
 
     character (len=*), optional, intent(in) :: Rformat
@@ -1561,7 +1571,7 @@ MODULE QDUtil_RW_MatVec_m
      END IF
 
   END SUBROUTINE QDUtil_Read_Ck16Vec
-
+#endif
   SUBROUTINE QDUtil_Write_Ik4Mat(Mat,nio,nbcol,Iformat,info,iprint)
     USE QDUtil_NumParameters_m, ONLY : out_unit,Ik4,Rk8
     USE QDUtil_String_m,        ONLY : TO_String
@@ -2009,7 +2019,6 @@ MODULE QDUtil_RW_MatVec_m
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    !real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
     real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     integer                          :: io,ioerr

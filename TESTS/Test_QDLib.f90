@@ -20,7 +20,8 @@ PROGRAM Test_QDLib
 
   CALL Test_Quadrature_QDUtil()
 
-
+#if __WITHRK16 == 1
   CALL Test_QDUtil_DiagoRk16()
   CALL Test_Quadrature_Rk16_QDUtil()
+#endif
 END PROGRAM Test_QDLib

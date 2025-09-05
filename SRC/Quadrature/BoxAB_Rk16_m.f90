@@ -27,7 +27,9 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_BoxAB_Rk16_m
+#if __WITHRK16 == 1
   USE QDUtil_NumParameters_m, ONLY : out_unit, Rk16, pi => pi_Rk16
+
   IMPLICIT NONE
 
   PRIVATE
@@ -43,9 +45,9 @@ MODULE QDUtil_BoxAB_Rk16_m
   real(kind=Rk16), parameter :: TWOTENTHS = TWO/TEN
 
   TYPE BoxAB_Rk16_t
-    real(kind=Rk16) :: A         = ZERO
-    real(kind=Rk16) :: B         = pi
-    integer          :: isym_grid = 0 ! Possible values: -1, 0, +1, the grids starts in A, A+dx/2, A+dx
+    real(kind=Rk16)  :: A         = ZERO
+    real(kind=Rk16)  :: B         = pi
+    integer          :: isym_grid = 0 ! Possible values: -1, 0, +1. The grids start, respectively, in A, A+dx/2, A+dx
     logical          :: ReNorm    = .TRUE. ! renormalization os the basis functions
   END TYPE BoxAB_Rk16_t
  
@@ -153,4 +155,5 @@ CONTAINS
     w   = [(dx,i=1,nq)]
 
   END SUBROUTINE BoxAB_Quadrature_Rk16_QDutil
+#endif
 END MODULE QDUtil_BoxAB_Rk16_m

@@ -27,11 +27,13 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_Fourier_Rk16_m
+#if __WITHRK16 == 1
+
   USE QDUtil_NumParameters_m, ONLY : out_unit, Rkind => Rk16, pi => pi_Rk16
   IMPLICIT NONE
 
   PRIVATE
-  
+
   real(kind=Rkind), parameter :: ZERO      = 0._Rkind
   real(kind=Rkind), parameter :: ONE       = 1._Rkind
   real(kind=Rkind), parameter :: TWO       = 2._Rkind
@@ -181,4 +183,5 @@ CONTAINS
     END IF
 
   END SUBROUTINE Fourier_Quadrature_Rk16_QDutil
+#endif
 END MODULE QDUtil_Fourier_Rk16_m
