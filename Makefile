@@ -17,6 +17,9 @@ INT = 4
 ## change the real kind
 ## default real64: , possibilities, real32, real64, real128
 RKIND = real64
+# For some compilers (like lfortran), real128 (quadruple precision) is not implemented
+# WITHRK16 = 1 (0) compilation with (without) real128
+WITHRK16 = 1
 #=================================================================================
 ifeq ($(FC),)
   FFC      := gfortran
@@ -64,19 +67,19 @@ TESTS_DIR=TESTS
 #
 QD_VERSION=$(shell awk '/version/ {print $$3}' fpm.toml | head -1)
 #
-CPPSHELL_QD = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
+CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
               -D__COMPILE_HOST="\"$(shell hostname -s)\"" \
               -D__QD_VERSION='$(QD_VERSION)' \
-			  -D__RKIND="$(RKIND)"
+			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WITHRK16)" \
+			  -D__LAPACK="$(LLAPACK)"
 #=================================================================================
 # To deal with external compilers.mk file
 CompilersDIR=
 ifeq ($(CompilersDIR),)
-include compilers.mk
+  include compilers.mk
 else
   include $(CompilersDIR)/compilers.mk
 endif
-FFLAGS += $(CPPSHELL_QD)
 #=================================================================================
 #=================================================================================
 
