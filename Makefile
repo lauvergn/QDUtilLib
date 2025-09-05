@@ -167,6 +167,7 @@ doc:
 .PHONY: clean cleanall
 clean:
 	rm -f $(OBJ_DIR)/*.o
+	rm -f SRC/*.mod SRC/*/*.mod
 	rm -f *.log test*.txt file.*
 	rm -f Test*.x App*.x
 	@echo "  done cleaning"
@@ -200,4 +201,6 @@ dependencies.mk fortranlist.mk dep:
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
 
+
+$(QDLIBA): $(OBJ)
 include ./dependencies.mk

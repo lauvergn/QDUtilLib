@@ -36,11 +36,15 @@ MODULE QDUtil_NumParameters_m
 
   integer, parameter :: RkS        = real32 ! 4
   integer, parameter :: RkD        = real64 ! 8
-  integer, parameter :: RkQ        = real128 ! 16
   integer, parameter :: Rk4        = real32 ! 4
   integer, parameter :: Rk8        = real64 ! 8
+#if __WITHRK16 == 1
   integer, parameter :: Rk16       = real128 ! 16
-
+  integer, parameter :: RkQ        = real128 ! 16
+#else
+  integer, parameter :: Rk16       = -1
+  integer, parameter :: RkQ        = -1
+#endif
   integer, parameter :: IkS        = int32  ! 4
   integer, parameter :: IkD        = int64  ! 8
   integer, parameter :: Ik4        = int32  ! 4
@@ -177,9 +181,9 @@ CONTAINS
       write(out_unit,*) '  Lapack library is linked'
 #endif
 #if __WITHRK16 == 1
-    write(out_unit,*) 'Reals with quadruple precision (real128) are NOT available'
+      write(out_unit,*) 'Reals with quadruple precision (real128) are available'
 #else
-    write(out_unit,*) 'Reals with quadruple precision (real128) are available'
+    write(out_unit,*) 'Reals with quadruple precision (real128) are NOT available'
 #endif
       write(out_unit,*) '  Rk16',Rk16
       write(out_unit,*) '  Rkind',Rkind
