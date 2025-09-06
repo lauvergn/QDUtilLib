@@ -64,6 +64,7 @@ QDLIBOLDA=lib$(QDLIB)$(extold_obj).a
 #=================================================================================
 #
 OBJ_DIR=OBJ/obj$(ext_obj)
+OBJOLD_DIR=OBJ/obj$(extold_obj)
 $(shell [ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR))
 #
 MOD_DIR=$(OBJ_DIR)
@@ -105,6 +106,9 @@ $(info ***********QD_VERSION:   $(QD_VERSION))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
 $(info ***********ext_obj:      $(ext_obj))
+$(info ***********************************************************************)
+$(info ***********OBJ_DIR:      $(OBJ_DIR))
+$(info ***********OBJOLD_DIR:   $(OBJOLD_DIR))
 $(info ***********************************************************************)
 
 
@@ -160,10 +164,18 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
-	rm -f $(QDLIBOLDA)
+	rm -f  $(OBJOLD_DIR)
+	cd OBJ ; ln -s obj$(ext_obj) obj$(extold_obj)
+	rm -f  $(QDLIBOLDA)
 	ln -s  $(QDLIBA) $(QDLIBOLDA)
+	@echo "  OBJ_DIR:    "$(OBJ_DIR)
+	@echo "  OBJOLD_DIR: "$(OBJOLD_DIR)
 	@echo "  done Library: "$(QDLIBA)
 
+
+# In the makefile, symling with directories does not work !!
+#	ln -s $(OBJ_DIR) $(OBJOLD_DIR)
+#	ln -s OBJ/obj$(ext_obj) OBJ/obj$(extold_obj)
 #===============================================
 #============= compilation =====================
 #===============================================
