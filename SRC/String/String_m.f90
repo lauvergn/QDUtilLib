@@ -188,32 +188,31 @@ CONTAINS
    QDUtil_strdup = trim(string)
 
   END FUNCTION QDUtil_strdup
-SUBROUTINE QDUtil_SET_Astring(string,string1,string2,string3,string4,string5, &
+  SUBROUTINE QDUtil_SET_Astring(string,string1,string2,string3,string4,string5, &
                               string6,string7,string8,string9,string10)
   IMPLICIT NONE
 
-character (len=:),  allocatable, intent(inout) :: string
-character (len=*),               intent(in)    :: string1
-character (len=*),  optional,    intent(in)    :: string2,string3,string4,string5
-character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
+    character (len=:),  allocatable, intent(inout) :: string
+    character (len=*),               intent(in)    :: string1
+    character (len=*),  optional,    intent(in)    :: string2,string3,string4,string5
+    character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
 
-!$OMP  CRITICAL (QDUtil_SET_Astring_CRIT)
+    !$OMP  CRITICAL (QDUtil_SET_Astring_CRIT)
 
-string = string1
-IF (present(string2 )) string = string // string2
-IF (present(string3 )) string = string // string3
-IF (present(string4 )) string = string // string4
-IF (present(string5 )) string = string // string5
+    string = string1
+    IF (present(string2 )) string = string // string2
+    IF (present(string3 )) string = string // string3
+    IF (present(string4 )) string = string // string4
+    IF (present(string5 )) string = string // string5
+    IF (present(string6 )) string = string // string6
+    IF (present(string7 )) string = string // string7
+    IF (present(string8 )) string = string // string8
+    IF (present(string9 )) string = string // string9
+    IF (present(string10)) string = string // string10
 
-IF (present(string6 )) string = string // string6
-IF (present(string7 )) string = string // string7
-IF (present(string8 )) string = string // string8
-IF (present(string9 )) string = string // string9
-IF (present(string10)) string = string // string10
+    !$OMP  END CRITICAL (QDUtil_SET_Astring_CRIT)
 
-!$OMP  END CRITICAL (QDUtil_SET_Astring_CRIT)
-
-END SUBROUTINE QDUtil_SET_Astring
+  END SUBROUTINE QDUtil_SET_Astring
   SUBROUTINE QDUtil_ADD_TO_Astring(string,string1,string2,string3,string4,string5, &
                                           string6,string7,string8,string9,string10)
     IMPLICIT NONE
@@ -244,21 +243,124 @@ END SUBROUTINE QDUtil_SET_Astring
       !$OMP  END CRITICAL (QDUtil_ADD_TO_Astring_CRIT)
   
   END SUBROUTINE QDUtil_ADD_TO_Astring
-  FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
+  PURE FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
 
     character (len=:), allocatable  :: string
     logical, intent(in)             :: l
 
-    !$OMP  CRITICAL (QDUtil_logical_TO_string_CRIT)
     IF (l) THEN
       string = 'T'
     ELSE
       string = 'F'
     END IF
-    !$OMP  END CRITICAL (QDUtil_logical_TO_string_CRIT)
 
   END FUNCTION QDUtil_logical_TO_string
-  FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
+  PURE FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4
+    IMPLICIT NONE
+
+    character (len=:),  allocatable             :: string
+    integer (kind=Ik4),             intent(in)  :: i
+
+
+    character (len=:), allocatable  :: name_int
+    character (len=1), allocatable  :: ch
+    integer (kind=Ik4) :: i0,iloc
+
+    name_int = ''
+    iloc = abs(i)
+    DO
+      i0 = mod(iloc,10)
+      iloc = iloc/10_Ik4
+      SELECT CASE(i0)
+      CASE(0_Ik4)
+        ch = '0'
+      CASE(1_Ik4)
+        ch = '1'
+      CASE(2_Ik4)
+        ch = '2'
+      CASE(3_Ik4)
+        ch = '3'
+      CASE(4_Ik4)
+        ch = '4'
+      CASE(5_Ik4)
+        ch = '5'
+      CASE(6_Ik4)
+        ch = '6'
+      CASE(7_Ik4)
+        ch = '7'
+      CASE(8_Ik4)
+        ch = '8'
+      CASE(9_Ik4)
+        ch = '9'
+      END SELECT
+      name_int = ch // name_int
+      IF (iloc == 0_Ik4) EXIT
+    END DO
+
+    IF (i < 0_Ik4) THEN
+      string = '-' // trim(adjustl(name_int))
+    ELSE
+      string = trim(adjustl(name_int))
+    END IF
+
+    ! deallocate name_int
+    deallocate(name_int)
+
+  END FUNCTION QDUtil_int32_TO_string
+  PURE FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik8
+    IMPLICIT NONE
+
+    character (len=:),  allocatable             :: string
+    integer (kind=Ik8),             intent(in)  :: i
+
+
+    character (len=:), allocatable  :: name_int
+    character (len=1), allocatable  :: ch
+    integer (kind=Ik8) :: i0,iloc
+
+    name_int = ''
+    iloc = abs(i)
+    DO
+      i0 = mod(iloc,10)
+      iloc = iloc/10_ik8
+      SELECT CASE(i0)
+      CASE(0_ik8)
+        ch = '0'
+      CASE(1_ik8)
+        ch = '1'
+      CASE(2_ik8)
+        ch = '2'
+      CASE(3_ik8)
+        ch = '3'
+      CASE(4_ik8)
+        ch = '4'
+      CASE(5_ik8)
+        ch = '5'
+      CASE(6_ik8)
+        ch = '6'
+      CASE(7_ik8)
+        ch = '7'
+      CASE(8_Ik8)
+        ch = '8'
+      CASE(9_Ik8)
+        ch = '9'
+      END SELECT
+      name_int = ch // name_int
+      IF (iloc == 0_Ik8) EXIT
+    END DO
+
+    IF (i < 0_Ik8) THEN
+      string = '-' // trim(adjustl(name_int))
+    ELSE
+      string = trim(adjustl(name_int))
+    END IF
+
+    deallocate(name_int)
+
+  END FUNCTION QDUtil_int64_TO_string
+  FUNCTION QDUtil_int32_TO_string_old(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Rk8
     IMPLICIT NONE
 
@@ -293,8 +395,8 @@ END SUBROUTINE QDUtil_SET_Astring
     deallocate(name_int)
     !$OMP  END CRITICAL (QDUtil_int32_TO_string_CRIT)
 
-  END FUNCTION QDUtil_int32_TO_string
-  FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
+  END FUNCTION QDUtil_int32_TO_string_old
+  FUNCTION QDUtil_int64_TO_string_old(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik8,Rk8
     IMPLICIT NONE
 
@@ -330,7 +432,7 @@ END SUBROUTINE QDUtil_SET_Astring
 
     !$OMP  END CRITICAL (QDUtil_int64_TO_string_CRIT)
 
-  END FUNCTION QDUtil_int64_TO_string
+  END FUNCTION QDUtil_int64_TO_string_old
 
   FUNCTION QDUtil_Dim1logical_TO_string(tab,max_col)  RESULT(string)
 

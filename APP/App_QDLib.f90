@@ -14,6 +14,12 @@ PROGRAM App_QDLib
 
  !====================================================================
   ! Tests string
+  write(*,*) 'TO_string, integer: ',TO_string(-123)
+  write(*,*) 'TO_string, integer: ',TO_string(+123)
+  write(*,*) 'TO_string, integer: ',TO_string(HUGE(1))
+  write(*,*) 'TO_string, integer: ',TO_string(-HUGE(1_Ik8))
+
+
   write(*,*) 'TO_string, integer: ',TO_string([0,1,2,3,4,5,6,7,8],max_col=5)
   write(*,*) 'TO_string, integer Ik8: ',TO_string([integer(kind=Ik8) :: 0,1,2,3,4,5,6,7,8],max_col=5)
 
