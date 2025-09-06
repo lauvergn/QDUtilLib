@@ -9,8 +9,15 @@ IntVec_m.f90  \
 MathUtil_m.f90  \
 Matrix_m.f90  \
 RealVec_m.f90  \
+RW_MatVec_base_m.f90  \
 RW_MatVec_m.f90  \
+RW_MatVec_Rk16_m.f90  \
+RW_MatVec_Rk4_m.f90  \
+RW_MatVec_Rk8_m.f90  \
 Vector_m.f90  \
+Vector_Rk16_m.f90  \
+Vector_Rk4_m.f90  \
+Vector_Rk8_m.f90  \
 Memory_base_m.f90  \
 Memory_m.f90  \
 Memory_NotPointer_m.f90  \
@@ -28,5 +35,8 @@ LegendreP_Rk16_m.f90  \
 Quadrature_m.f90  \
 Quadrature_Rk16_m.f90  \
 String_m.f90  \
+String_Rk16_m.f90  \
+String_Rk4_m.f90  \
+String_Rk8_m.f90  \
 Test_m.f90  \
 Time_m.f90  \

@@ -31,7 +31,7 @@ MODULE QDUtil_diagoRk16_m
   IMPLICIT NONE
 
   PRIVATE
-
+#if __WITHRK16 == 1
   PUBLIC diagonalizationRk16
   INTERFACE diagonalizationRk16
     MODULE PROCEDURE QDUtil_Rk16diagonalization
@@ -674,4 +674,5 @@ CONTAINS
     ! finalize the tests
     CALL Finalize_Test(test_var)
   END  SUBROUTINE Test_QDUtil_DiagoRk16
+#endif
 END MODULE QDUtil_diagoRk16_m

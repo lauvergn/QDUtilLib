@@ -5,7 +5,7 @@ All modules contain a testing unit.
 
 It has been tested with:
 
-- gfortran (14.1.0_2 on macos, 12 on linux)
+- gfortran (11, 12, 13, 14, 15 on macos, 12 on linux)
 - ifx/ifort (2023 on linux)
 - nagor (7.1 on linux)
 
@@ -30,6 +30,7 @@ The compiler options are (the first values are the default):
 - LAPACK=1 or 0: with or without blas and lapack libraries
 - INT=4 or 8: change the integer kind default compilation option
 - RKIND=real64 or real32 or real128: change the real kind
+- WITHRK16=1 or 0: enables to turn on (off) the quadruple precision (real128)
 
 Exemple: 
 
