@@ -19,7 +19,7 @@ INT = 4
 RKIND = real64
 # For some compilers (like lfortran), real128 (quadruple precision) is not implemented
 # WITHRK16 = 1 (0) compilation with (without) real128
-WITHRK16 = 1
+WITHRK16 = 
 #=================================================================================
 ifeq ($(FC),)
   FFC      := gfortran
@@ -41,6 +41,11 @@ ifeq ($(LAPACK),)
 else
   LLAPACK      := $(LAPACK)
 endif
+ifeq ($(WITHRK16),)
+  WWITHRK16      :=$(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+else
+  WWITHRK16      := 1
+endif
 #=================================================================================
 
 #=================================================================================
@@ -49,10 +54,13 @@ endif
 OS=$(shell uname)
 #
 # Extension for the object directory and the library
-ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
+ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)_$(RKIND)
+extold_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
+
 #
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
+QDLIBOLDA=lib$(QDLIB)$(extold_obj).a
 #=================================================================================
 #
 OBJ_DIR=OBJ/obj$(ext_obj)
@@ -70,7 +78,7 @@ QD_VERSION=$(shell awk '/version/ {print $$3}' fpm.toml | head -1)
 CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
               -D__COMPILE_HOST="\"$(shell hostname -s)\"" \
               -D__QD_VERSION='$(QD_VERSION)' \
-			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WITHRK16)" \
+			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
 			  -D__LAPACK="$(LLAPACK)"
 #=================================================================================
 # To deal with external compilers.mk file
@@ -91,6 +99,7 @@ $(info ***********OPTIMIZATION: $(OOPT))
 $(info ***********OpenMP:       $(OOMP))
 $(info ***********INT:          $(INT))
 $(info ***********RKIND:        $(RKIND))
+$(info ***********WITHRK16:     $(WWITHRK16))
 $(info ***********LAPACK:       $(LLAPACK))
 $(info ***********QD_VERSION:   $(QD_VERSION))
 $(info ***********FFLAGS:       $(FFLAGS))
@@ -149,6 +158,7 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
+	ln -s  $(QDLIBA) $(QDLIBOLDA)
 	@echo "  done Library: "$(QDLIBA)
 
 #===============================================

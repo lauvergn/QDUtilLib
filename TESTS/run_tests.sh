@@ -36,8 +36,6 @@ do
      LOG="comp_"$ext".log"
      make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND > $here/$LOG 2>&1
      ./Test_QDLib.x > $here/$RES
-      make clean       FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND >> $here/$LOG 2>&1
-      rm -f libQD*.a
   cd  $here
   #grep "Number of error(s)" $RES >> ALL_Tests.log
   awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$2} END {print "Number of tests: " test}'                 $RES >> ALL_Tests.log
@@ -48,3 +46,6 @@ do
   done
   done
 done
+echo "Number of options: " $num
+awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$2} END {print "Number of tests for all options: " test}'   ALL_Tests.log
+awk  -F: 'BEGIN{err=0}  /Number of error/ {err+=$2}  END {print "Number of error(s) for all test options: " err}' ALL_Tests.log
