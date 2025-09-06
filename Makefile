@@ -160,7 +160,7 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
-	unlink $(QDLIBOLDA)
+	rm -f $(QDLIBOLDA)
 	ln -s  $(QDLIBA) $(QDLIBOLDA)
 	@echo "  done Library: "$(QDLIBA)
 
