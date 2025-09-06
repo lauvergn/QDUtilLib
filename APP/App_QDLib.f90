@@ -26,11 +26,15 @@ PROGRAM App_QDLib
   write(*,*) 'TO_string, real: ',TO_string([0.,1.,2.,3.,4.,5.,6.,7.,8.],max_col=5)
   write(*,*) 'TO_string, real Rk4: ',TO_string([real(kind=Rk4) :: 0,1,2,3,4,5,6,7,8],max_col=5)
   write(*,*) 'TO_string, real Rk8: ',TO_string([real(kind=Rk8) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+#if __WITHRK16 == 1
   write(*,*) 'TO_string, real Rk16: ',TO_string([real(kind=Rk16) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+#endif
 
   write(*,*) 'TO_string, complex Rk4: ',TO_string([complex(kind=Rk4) :: 0,1,2,3,4,5,6,7,8],max_col=5)
   write(*,*) 'TO_string, complex Rk8: ',TO_string([complex(kind=Rk8) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+#if __WITHRK16 == 1
   write(*,*) 'TO_string, complex Rk16: ',TO_string([complex(kind=Rk16) :: 0,1,2,3,4,5,6,7,8],max_col=5)
+#endif
   !====================================================================
   ! Tests on fractions
   Frac1 = '1/-2' ! use the conversion from string to Frac_t
