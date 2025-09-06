@@ -30,7 +30,7 @@ The compiler options are (the first values are the default):
 - LAPACK=1 or 0: with or without blas and lapack libraries
 - INT=4 or 8: change the integer kind default compilation option
 - RKIND=real64 or real32 or real128: change the real kind
-- WITHRK16=1 or 0: enables to turn on (off) the quadruple precision (real128)
+- WITHRK16=1 or 0: enables to turn on (off) the quadruple precision (real128). There is no default, hence the value is defined automatically
 
 Exemple: 
 

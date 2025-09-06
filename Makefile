@@ -145,6 +145,8 @@ all: $(QDLIBA) $(MAIN).x $(TESTS).x
 #===============================================
 #============= Main executable and tests  ======
 #===============================================
+.PHONY: exe app
+app exe: $(MAIN).x
 $(MAIN).x: $(OBJ_DIR)/$(MAIN).o $(QDLIBA)
 	$(FFC) $(FFLAGS) -o $(MAIN).x  $(OBJ_DIR)/$(MAIN).o  $(QDLIBA) $(FLIB)
 
@@ -158,6 +160,7 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
+	unlink $(QDLIBOLDA)
 	ln -s  $(QDLIBA) $(QDLIBOLDA)
 	@echo "  done Library: "$(QDLIBA)
 
