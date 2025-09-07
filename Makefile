@@ -31,23 +31,60 @@ ifeq ($(OPT),)
 else
   OOPT      := $(OPT)
 endif
+ifneq ($(OOPT),$(filter $(OOPT),0 1))
+  $(info *********** OPT (optimisation):        $(OOPT))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
 ifeq ($(OMP),)
   OOMP      := 1
 else
   OOMP      := $(OMP)
+endif
+ifneq ($(OOMP),$(filter $(OOMP),0 1))
+  $(info *********** OMP (openmp):        $(OOMP))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
 endif
 ifeq ($(LAPACK),)
   LLAPACK      := 1
 else
   LLAPACK      := $(LAPACK)
 endif
+ifneq ($(LLAPACK),$(filter $(LLAPACK),0 1))
+  $(info *********** LAPACK:        $(LLAPACK))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
 ifeq ($(WITHRK16),)
   WWITHRK16      :=$(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
 else
-  WWITHRK16      := 1
+  WWITHRK16      := $(WITHRK16)
+endif
+ifneq ($(WWITHRK16),$(filter $(WWITHRK16),0 1))
+  $(info *********** WITHRK16 (compilation with real128):        $(WWITHRK16))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
+ifneq ($(INT),$(filter $(INT),4 8))
+  $(info *********** INT (change default integer):        $(INT))
+  $(info Possible values: 4, 8)
+  $(error ERROR: Incompatible options)
+endif
+ifneq ($(RKIND),$(filter $(RKIND),real32 real64 real128))
+  $(info *********** RKIND (select the real kind):        $(RKIND))
+  $(info Possible values (case sensitive): real32 real64 real128)
+  $(error ERROR: Incompatible options)
 endif
 #=================================================================================
-
+ifeq ($(RKIND),real128)
+  ifeq ($(WWITHRK16),0)
+    $(info "Incompatible options:")
+    $(info ***********RKIND:        $(RKIND))
+    $(info ***********WITHRK16:     $(WWITHRK16))
+    $(error ERROR: Incompatible options)
+  endif
+endif
 #=================================================================================
 #
 # Operating system, OS? automatic using uname:
@@ -81,6 +118,7 @@ CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
               -D__QD_VERSION='$(QD_VERSION)' \
 			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
 			  -D__LAPACK="$(LLAPACK)"
+
 #=================================================================================
 # To deal with external compilers.mk file
 CompilersDIR=
