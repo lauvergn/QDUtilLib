@@ -97,6 +97,8 @@ PROGRAM App_QDLib
   !====================================================================
   ! Test on quadrature:
   !
+  CALL Init_Quadrature(xw,nq=10,name='HO',err=err_grid)
+  CALL Write_Quadrature(xw)
   CALL Init_Quadrature_HP(xw,nq=10,name='HO',err=err_grid)
   CALL Write_Quadrature(xw)
   IF (err_grid == 0) THEN

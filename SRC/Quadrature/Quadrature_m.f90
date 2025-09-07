@@ -62,7 +62,7 @@ MODULE QDUtil_Quadrature_m
     MODULE PROCEDURE Init_Quadrature_NP_QDUtil
   END INTERFACE
   INTERFACE Init_Quadrature
-    MODULE PROCEDURE Init_Quadrature_HP_QDUtil
+    MODULE PROCEDURE Init_Quadrature_NP_QDUtil
   END INTERFACE
   INTERFACE dealloc_Quadrature
     MODULE PROCEDURE dealloc_Quadrature_QDUtil
