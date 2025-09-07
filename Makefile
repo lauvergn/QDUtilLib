@@ -116,8 +116,8 @@ QD_VERSION=$(shell awk '/version/ {print $$3}' fpm.toml | head -1)
 CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
               -D__COMPILE_HOST="\"$(shell hostname -s)\"" \
               -D__QD_VERSION='$(QD_VERSION)' \
-			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
-			  -D__LAPACK="$(LLAPACK)"
+              -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
+              -D__LAPACK="$(LLAPACK)"
 
 #=================================================================================
 # To deal with external compilers.mk file

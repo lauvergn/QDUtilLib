@@ -31,7 +31,7 @@ do
   echo ---------------------------------------------------            >> ALL_Tests.log
 
   cd ..
-     ext=$F90"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK"_INT"$INT"_RKIND"$RKIND
+     ext=$FC"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK"_INT"$INT"_RKIND"$RKIND
      RES="res_QDLib_"$ext
      LOG="comp_"$ext".log"
      make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND > $here/$LOG 2>&1

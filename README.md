@@ -13,14 +13,14 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
+To build the library, **libQD_gfortran_opt1_lapack1_omp1_real64.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
 ```bash
 make lib
 ```
-It creates a library with the folowing name: **libQD_XXX_optW_lapackX_ompY_intZ.a**
-with XXX, the compiler name (like gfortran), W, X, Y the value O or 1 and Z the value 4 or 8.
-For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4.a**
-The module file (.mod) are in the OBJ/obj__XXX_optW_lapackX_ompY_intZ directory.
+It creates a library with the folowing name: **libQD_XXX_optW_lapackX_ompY_intZ_realA.a**
+with XXX, the compiler name (like gfortran), W, X, Y the value O or 1, Z the value 4 or 8 and A the value of real kind (32, 64, 128)
+For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4_real64.a**
+The module file (.mod) are in the **OBJ/obj__XXX_optW_lapackX_ompY_intZ_realA** directory.
 
 The compiler options are (the first values are the default):
 
@@ -44,7 +44,7 @@ Two options to clean:
 make clean
 ```
 
-Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ.a**
+Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ_realA.a**
 
 ```bash
 make cleanall
