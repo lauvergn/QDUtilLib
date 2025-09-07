@@ -10,6 +10,10 @@ PROGRAM App_QDLib
   TYPE(Frac_t),        allocatable :: tab_Frac(:)
   character (len=:),   allocatable :: str
 
+  TYPE (Quadrature_t) :: xw
+  integer             :: err_grid
+
+
   CALL version_QDUtil(Print_Version=.TRUE.)
 
  !====================================================================
@@ -73,8 +77,7 @@ PROGRAM App_QDLib
     write(out_unit,*) i,matmul(Rmat,REigVec(:,i))-REigVal(i)*REigVec(:,i)
   END DO
 
-
- !====================================================================
+  !====================================================================
   ! Tests for identity matrix
   !
   ! define the matrices
@@ -87,5 +90,13 @@ PROGRAM App_QDLib
 
   write(out_unit,*) 'RVec(1) and RVec(n)',RVec(1),RVec(n)
   write(out_unit,*) 'diff',maxval(abs((RVec-RVec2)))
+
+  !====================================================================
+  ! Test on quadrature:
+  !
+  CALL Init_Quadrature(xw,nq=10,name='HO',err=err_grid)
+  CALL Write_Quadrature(xw)
+  RMat = matmul(xw%d0bgw,xw%d0gb)
+  CALL Write_Mat(RMat, nio=out_unit, nbcol=5, info='Overlap')
 
 END PROGRAM App_QDLib
