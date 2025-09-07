@@ -27,6 +27,9 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_diagoRk16_m
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
   USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : Rkind => real128, out_unit => OUTPUT_UNIT
   IMPLICIT NONE
 

@@ -1,4 +1,7 @@
 PROGRAM App_QDLib
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
   USE QDUtil_m
   IMPLICIT NONE
 
@@ -94,9 +97,11 @@ PROGRAM App_QDLib
   !====================================================================
   ! Test on quadrature:
   !
-  CALL Init_Quadrature(xw,nq=10,name='HO',err=err_grid)
+  CALL Init_Quadrature_HP(xw,nq=10,name='HO',err=err_grid)
   CALL Write_Quadrature(xw)
-  RMat = matmul(xw%d0bgw,xw%d0gb)
-  CALL Write_Mat(RMat, nio=out_unit, nbcol=5, info='Overlap')
+  IF (err_grid == 0) THEN
+    RMat = matmul(xw%d0bgw,xw%d0gb)
+    CALL Write_Mat(RMat, nio=out_unit, nbcol=5, info='Overlap')
+  END IF
 
 END PROGRAM App_QDLib

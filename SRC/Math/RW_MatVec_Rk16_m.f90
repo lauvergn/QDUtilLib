@@ -26,6 +26,9 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_RW_MatVec_Rk16_m
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
 #if __WITHRK16 == 1
   USE QDUtil_RW_MatVec_base_m
   IMPLICIT NONE

@@ -27,6 +27,9 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_String_m
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
   USE QDUtil_String_Rk4_m
   USE QDUtil_String_Rk8_m
   USE QDUtil_String_Rk16_m

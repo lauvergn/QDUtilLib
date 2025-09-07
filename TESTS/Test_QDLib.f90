@@ -1,4 +1,7 @@
 PROGRAM Test_QDLib
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
   USE QDUtil_m
   IMPLICIT NONE
 

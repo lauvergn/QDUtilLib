@@ -27,6 +27,9 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_Quadrature_m
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
   USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
