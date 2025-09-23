@@ -1,9 +1,8 @@
 DEBUG := f
-DDEBUG := $(subst T,t,$(DEBUG))
 #=================================================================================
 #=================================================================================
 # Compiler?
-#Possible values: ifort, ifx, gfortran (default), nagfor 
+ #Possible values: ifort, ifx, gfortran (default), nagfor 
  FC := gfortran
 #FC := ifort
 #FC := nagfor
@@ -25,7 +24,6 @@ RKIND := real64
 WITHRK16 :=
 ## how to get external libraries;  "loc" (default): from local zip file, Empty or something else, from github
 EXTLIB_TYPE := loc
-BRANCH      := dev2
 #=================================================================================
 ifeq ($(FC),)
   override FC := gfortran
@@ -90,7 +88,7 @@ ifeq ($(RKIND),real128)
     $(error ERROR: Incompatible RKIND and WITHRK16 option values)
   endif
 endif
-export RKIND WITHRK16 INT  LAPACK  FC  OPT  OMP BRANCH
+export RKIND WITHRK16 INT  LAPACK  FC  OPT  OMP
 export      WWITHRK16     LLAPACK FFC OOPT OOMP
 #
 #=================================================================================
@@ -137,7 +135,7 @@ else
   include $(CompilersDIR)/compilers.mk
 endif
 #=================================================================================
-# External Libraries : QDUtilLib
+# External Libraries: no
 #=================================================================================
 EXTLIB_LIST :=
 ifneq ($(EXTLIB_LIST),)
@@ -146,9 +144,9 @@ ifneq ($(EXTLIB_LIST),)
   endif
   $(info ***********ExtLibDIR:       $(ExtLibDIR))
   OK := $(shell if test -d $(ExtLibDIR); then echo "ok"; fi)
-  #$(info ***********OK:       $(OK))
+  $(info ***********OK:       $(OK))
   ifeq ($(OK),)
-    $(error ERROR: $(ExtLibDIR) does not exist!)
+    $(error $(ExtLibDIR) does not exist!)
   endif
   export ExtLibDIR
 
@@ -158,6 +156,8 @@ ifneq ($(EXTLIB_LIST),)
   $(info ***********EXTLib_DIR:       $(EXTLib_DIR))
   EXTLib := $(shell for LLIB in $(EXTLIB_LIST) ; do echo $(ExtLibDIR)/$$LLIB"/lib"$$LLIB""$(ext_obj)".a" ; done)
 endif
+$(info ***********EXTLib:          $(EXTLib))
+$(info ***********EXTMod:          $(EXTMod))
 #=================================================================================
 #=================================================================================
 #=================================================================================
@@ -177,22 +177,20 @@ $(info ***********LAPACK:          $(LAPACK))
 $(info ***********FFLAGS:          $(FFLAGS))
 $(info ***********FLIB:            $(FLIB))
 $(info ***********ext_obj:         $(ext_obj))
-$(info )
-$(info ***********EXTLib:          $(EXTLib))
-$(info ***********EXTMod:          $(EXTMod))
 $(info ***********************************************************************)
 #
 SRCPATH := $(shell find $(SRC_DIR)/* -maxdepth 1 -type d )
 VPATH := $(APP_DIR):$(TESTS_DIR):$(SRC_DIR):$(SRCPATH)
 #
 include fortranlist.mk
-
+#
 OBJ0=$(SRCFILES:.f90=.o)
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
-
-ifeq ($(DEGUB),t) 
+#
+ifeq ($(DEBUG),t) 
   $(info ***********SRCPATH:         $(SRCPATH))
   $(info ***********OBJ files:       $(OBJ))
+  $(info ***********************************************************************)
 endif
 #===============================================
 #============= Main programs: tests + example ==
@@ -207,15 +205,15 @@ SRCAPPFILES := $(notdir $(shell ls $(APP_DIR)/*f90))
 OBJAPP      := $(addprefix $(OBJ_DIR)/, $(SRCAPPFILES:.f90=.o))
 APPEXE      := $(SRCAPPFILES:.f90=.x)
 #
-ifeq ($(DDEBUG),t)
+ifeq ($(DEBUG),t)
   $(info ***********SRCAPPFILES:     $(SRCAPPFILES))
   $(info ***********OBJ app files:   $(OBJAPP))
   $(info ***********app test exe:    $(APPEXE))
   $(info ***********************************************************************)
 endif
 #
-.PHONY: app
-app: $(APPEXE)
+.PHONY: exe app
+exe app: $(APPEXE)
 	@echo "Application compilation: OK"
 #
 #===============================================
@@ -225,10 +223,10 @@ SRCTESTFILES := $(notdir $(shell ls $(TESTS_DIR)/*.f90))
 OBJTEST      := $(addprefix $(OBJ_DIR)/, $(SRCTESTFILES:.f90=.o))
 TESTEXE      := $(SRCTESTFILES:.f90=.x)
 #
-ifeq ($(DDEBUG),t)
+ifeq ($(DEBUG),t)
   $(info ***********SRCTESTFILES:    $(SRCTESTFILES))
   $(info ***********OBJ test files:  $(OBJTEST))
-  $(info ***********app test exe:    $(TESTEXE))
+  $(info *********** app test exe:   $(TESTEXE))
   $(info ***********************************************************************)
 endif
 #
@@ -267,7 +265,6 @@ $(OBJ_DIR):
 LIBAshort      := lib$(LIB_NAME).a
 LIBA           := lib$(LIB_NAME)$(ext_obj).a
 LIBAOLD        := libQD$(extold_obj).a
-
 #
 .PHONY: lib
 lib: $(LIBA)
@@ -275,18 +272,16 @@ $(LIBA): $(OBJ)
 	ar -cr $(LIBA) $(OBJ)
 	rm -f  $(LIBAOLD)
 	ln -s  $(LIBA) $(LIBAOLD)
-	rm -f $(LIBAshort)
-	ln -s  $(LIBA) $(LIBAshort)
+	#rm -f $(LIBAshort)
+	#ln -s  $(LIBA) $(LIBAshort)
 	@echo "  done Library: "$(LIBA)
 #===============================================
+#============= Tests ===========================
 #===============================================
-#============= External libraries  =============
-#===============================================
-.PHONY: getlib
-getlib: $(EXTLib)
-#
-$(EXTLib):
-	$(MAKE) -C $(ExtLibDIR) -f $(MAIN_path)/makefile-extlib LIBA=$@
+.PHONY: help
+help:
+	@echo " Makefile usage:"
+	@./scripts/makefile_usage.sh
 #===============================================
 #================ cleaning =====================
 .PHONY: clean cleanall cleanlocextlib
@@ -296,17 +291,17 @@ clean:
 	rm -fr *.dSYM
 	rm -fr build
 	rm -f $(OBJ_DIR)/*.o $(OBJ_DIR)/*.mod $(OBJ_DIR)/*.MOD
+	cd $(TESTS_DIR) 2> /dev/null && ./clean
 	@echo "  done cleaning"
 cleanall: clean
 	rm -f lib*.a
 	rm -rf OBJ
-	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall $(ExtLibDIR); fi  
+	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall $(ExtLibDIR); fi
 	@echo "  done remove the *.a libraries and the OBJ directory"
 cleanlocextlib: clean
 	rm -f lib*.a
 	rm -rf OBJ
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib $(ExtLibDIR); fi 
+	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib $(ExtLibDIR); fi
 	@echo "  done remove all local library directories (..._loc)"
 #===============================================
 #============= make dependencies ===============
