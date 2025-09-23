@@ -130,9 +130,9 @@ CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
 #=================================================================================
 # To deal with external compilers.mk file
 #=================================================================================
-CompilersDIR = $(MAIN_path)
+CompilersDIR = $(MAIN_path)/scripts
 ifeq ($(CompilersDIR),)
-  include compilers.mk
+  include scripts/compilers.mk
 else
   include $(CompilersDIR)/compilers.mk
 endif
@@ -185,7 +185,7 @@ $(info ***********************************************************************)
 SRCPATH := $(shell find $(SRC_DIR)/* -maxdepth 1 -type d )
 VPATH := $(APP_DIR):$(TESTS_DIR):$(SRC_DIR):$(SRCPATH)
 #
-include fortranlist.mk
+include scripts/fortranlist.mk
 
 OBJ0=$(SRCFILES:.f90=.o)
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
@@ -267,7 +267,6 @@ $(OBJ_DIR):
 LIBAshort      := lib$(LIB_NAME).a
 LIBA           := lib$(LIB_NAME)$(ext_obj).a
 LIBAOLD        := libQD$(extold_obj).a
-
 #
 .PHONY: lib
 lib: $(LIBA)
@@ -279,6 +278,12 @@ $(LIBA): $(OBJ)
 	ln -s  $(LIBA) $(LIBAshort)
 	@echo "  done Library: "$(LIBA)
 #===============================================
+#============= makefile help ===================
+#===============================================
+.PHONY: help
+help:
+	@echo " Makefile usage:"
+	@./scripts/makefile_usage.sh
 #===============================================
 #============= External libraries  =============
 #===============================================
@@ -306,13 +311,14 @@ cleanall: clean
 cleanlocextlib: clean
 	rm -f lib*.a
 	rm -rf OBJ
+	cd $(TESTS_DIR) && ./clean
 	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib $(ExtLibDIR); fi 
 	@echo "  done remove all local library directories (..._loc)"
 #===============================================
 #============= make dependencies ===============
 #===============================================
 .PHONY: dep
-dependencies.mk fortranlist.mk dep:
+scripts/dependencies.mk scripts/fortranlist.mk dep:
 	./scripts/dependency.sh
 #===============================================
 #============= module dependencies =============
@@ -321,5 +327,5 @@ $(OBJ) $(OBJAPP) $(OBJTEST):         | $(OBJ_DIR)
 $(OBJAPP):                   $(LIBA) | $(EXTLib)
 $(OBJTEST):                  $(LIBA) | $(EXTLib)
 $(OBJ):                              | $(EXTLib)
-include ./dependencies.mk
+include scripts/dependencies.mk
 #===============================================

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-name_dep=dependencies.mk
-SRCFile=fortranlist.mk
+name_dep=scripts/dependencies.mk
+SRCFile=scripts/fortranlist.mk
 
 list=`ls SRC/*.f90 SRC/*/*.f90`
 ExcludeList=''
