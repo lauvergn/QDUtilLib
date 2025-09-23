@@ -74,7 +74,7 @@ ifneq ($(RKIND),$(filter $(RKIND),real32 real64 real128))
   $(error ERROR: Incompatible option values)
 endif
 ifeq ($(WITHRK16),)
-  override WITHRK16 := $(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+  override WITHRK16 := $(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &> /dev/null ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
 endif
 WWITHRK16 := $(WITHRK16)
 ifneq ($(WITHRK16),$(filter $(WITHRK16),0 1))
@@ -306,13 +306,13 @@ cleanall: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall $(ExtLibDIR); fi  
+	#if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall $(ExtLibDIR); fi  
 	@echo "  done remove the *.a libraries and the OBJ directory"
 cleanlocextlib: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib $(ExtLibDIR); fi 
+	#if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib $(ExtLibDIR); fi 
 	@echo "  done remove all local library directories (..._loc)"
 #===============================================
 #============= make dependencies ===============
