@@ -2,6 +2,7 @@
 # gfortran (osx and linux)
 #=================================================================================
 ifeq ($(FC),$(filter $(FC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortran-14 gfortran-15))
+  $(info IN compilers.mk gfortran block)
 
   # optimization management (default without optimization)
   ifeq ($(OPT),1)
@@ -51,6 +52,7 @@ endif
 # nvfortran (linux)
 #=================================================================================
 ifeq ($(FC),nvfortran)
+  $(info IN compilers.mk nvfortran block)
 
   # optimization management (default without optimization)
   ifeq ($(OPT),1)
@@ -100,6 +102,7 @@ endif
 # (it does not work)
 #=================================================================================
 ifeq ($(FC),flang)
+  $(info IN compilers.mk flang (aocc, amd) block)
 
   # optimization management (default without optimization)
   ifeq ($(OPT),1)
@@ -147,6 +150,7 @@ endif
 # lfortran (it does not work)
 #=================================================================================
 ifeq ($(FC),lfortran)
+  $(info IN compilers.mk lfortran block)
 
   # optimization management (default without optimization)
   ifeq ($(OPT),1)
@@ -192,7 +196,7 @@ endif
 # ifort and ifx compillation v17 v18 with/without mkl
 #=================================================================================
 ifeq ($(FC),$(filter $(FC),ifort ifx))
-
+  $(info IN compilers.mk ifort or ifx block)
   # opt management + add/remove some flag to ifort/ifx (mainly to avoid bugs with ifx)
   ifeq ($(OPT),1)
     FFLAGS = -O  -g -traceback 
@@ -252,6 +256,7 @@ endif
 # nag compillation (nagfor)
 #===============================================================================
 ifeq ($(FC),nagfor)
+  $(info IN compilers.mk nagfor block)
 
   # opt management
   ifeq ($(OPT),1)
