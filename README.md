@@ -1,5 +1,7 @@
 # QDUtilLib
 
+Version: 2.4.0
+
 List of Fortran modules which contain utilities for codes.
 All modules contain a testing unit.
 
